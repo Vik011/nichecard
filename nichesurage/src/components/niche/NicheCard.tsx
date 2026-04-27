@@ -1,4 +1,4 @@
-import { NicheCardData, UserTier } from '@/lib/types'
+import { NicheCardData, UserTier, ViralityRating, ContentLanguage } from '@/lib/types'
 import { LockedField } from './LockedField'
 import { SpikeIndicator } from './SpikeIndicator'
 import { ScoreBar } from './ScoreBar'
@@ -9,15 +9,15 @@ interface NicheCardProps {
   rank: number
 }
 
-const LANG_FLAG: Record<string, string> = { en: '🇬🇧', de: '🇩🇪' }
+const LANG_FLAG: Record<ContentLanguage, string> = { en: '🇬🇧', de: '🇩🇪' }
 
-const VIRALITY_STYLE: Record<string, string> = {
+const VIRALITY_STYLE: Record<ViralityRating, string> = {
   excellent: 'text-green-400',
   good: 'text-yellow-400',
   average: 'text-slate-400',
 }
 
-const VIRALITY_LABEL: Record<string, string> = {
+const VIRALITY_LABEL: Record<ViralityRating, string> = {
   excellent: '✨ Excellent',
   good: '⭐ Good',
   average: '~ Average',
@@ -71,7 +71,7 @@ export function NicheCard({ data, userTier, rank }: NicheCardProps) {
             {VIRALITY_LABEL[data.viralityRating]}
           </span>
         </LockedField>
-        {data.engagementRate !== undefined && (
+        {!locked && data.engagementRate !== undefined && (
           <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">
             📈 {data.engagementRate}% eng
           </span>
