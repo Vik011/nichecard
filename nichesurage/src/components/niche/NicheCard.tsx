@@ -31,11 +31,6 @@ function formatK(n: number): string {
 function ShortsMetrics({ data, locked }: { data: ShortsNicheCardData; locked: boolean }) {
   return (
     <>
-      {!locked && data.engagementRate !== undefined && (
-        <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">
-          📈 {data.engagementRate}% eng
-        </span>
-      )}
       {!locked && data.avgViewDurationPct !== undefined && (
         <span className="bg-slate-800 text-indigo-400 px-2 py-0.5 rounded-full text-xs">
           ⏱ {data.avgViewDurationPct}% duration
@@ -53,11 +48,6 @@ function ShortsMetrics({ data, locked }: { data: ShortsNicheCardData; locked: bo
 function LongformMetrics({ data, locked }: { data: LongformNicheCardData; locked: boolean }) {
   return (
     <>
-      {!locked && data.engagementRate !== undefined && (
-        <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">
-          📈 {data.engagementRate}% eng
-        </span>
-      )}
       {!locked && data.searchVolume !== undefined && (
         <span className="bg-slate-800 text-blue-400 px-2 py-0.5 rounded-full text-xs">
           🔍 {formatK(data.searchVolume)} searches
@@ -128,6 +118,11 @@ export function NicheCard({ data, userTier, rank }: NicheCardProps) {
         <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">
           {LANG_FLAG[data.language]} {data.language.toUpperCase()}
         </span>
+        {!locked && data.engagementRate !== undefined && (
+          <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">
+            📈 {data.engagementRate}% eng
+          </span>
+        )}
         {data.contentType === 'shorts'
           ? <ShortsMetrics data={data} locked={locked} />
           : <LongformMetrics data={data} locked={locked} />
