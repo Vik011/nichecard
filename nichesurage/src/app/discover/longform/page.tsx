@@ -62,6 +62,7 @@ export default function LongformDiscoverPage() {
       </p>
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">
+        {/* TODO: contentType toggle — when real fetch is wired, either hide this toggle or navigate to /discover/shorts on switch */}
         <SearchFilters value={filters} onChange={setFilters} />
         <button
           type="button"
@@ -86,6 +87,7 @@ export default function LongformDiscoverPage() {
       {!loading && results.length > 0 && (
         <div className="flex flex-col gap-3">
           {results.map((niche, i) => (
+            // TODO: replace "basic" with real user tier from session/context
             <NicheCard key={niche.id} data={niche} userTier="basic" rank={i + 1} />
           ))}
         </div>
