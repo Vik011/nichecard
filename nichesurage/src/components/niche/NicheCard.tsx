@@ -36,7 +36,7 @@ export function NicheCard({ data, userTier, rank }: NicheCardProps) {
           </div>
           <div className="flex items-center gap-1.5">
             <LockedField locked={locked}>
-              {data.channelName ? (
+              {data.channelName && data.channelUrl ? (
                 <a
                   href={data.channelUrl}
                   className="text-slate-200 text-sm font-semibold hover:text-indigo-300 transition-colors"

@@ -29,9 +29,12 @@ describe('NicheCard', () => {
     // No <a> tag — channel name is blurred text, not a link
     expect(screen.queryByRole('link')).toBeNull()
 
-    // At least one element has blur applied
-    const blurred = document.querySelector('[style*="blur"]')
-    expect(blurred).not.toBeNull()
+    // Channel name placeholder is inside a blur wrapper
+    expect(document.querySelector('[style*="blur"] span')).not.toBeNull()
+
+    // Virality badge is also inside a blur wrapper
+    const viralityEl = screen.getByText(/Excellent/i)
+    expect(viralityEl.closest('[style*="blur"]')).not.toBeNull()
 
     // No engagement rate badge (undefined for free tier)
     expect(screen.queryByText(/eng/)).toBeNull()
