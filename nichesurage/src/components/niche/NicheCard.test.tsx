@@ -75,7 +75,9 @@ describe('NicheCard', () => {
   it('basic tier longform: search volume, competition score, avg views/video visible', () => {
     render(<NicheCard data={longformBasic} userTier="basic" rank={2} />)
 
-    expect(screen.getByRole('link', { name: /Finance Explained/i })).toBeTruthy()
+    expect(screen.getByText(/5\.1% eng/i)).toBeTruthy()
+    const link = screen.getByRole('link', { name: /Finance Explained/i })
+    expect(link).toHaveAttribute('href', 'https://youtube.com/@financeexp')
     expect(screen.getByText(/48k searches/i)).toBeTruthy()
     expect(screen.getByText(/34% comp/i)).toBeTruthy()
     expect(screen.getByText(/12\.4k views\/video/i)).toBeTruthy()
