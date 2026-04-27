@@ -44,12 +44,12 @@ describe('NicheCard', () => {
     render(<NicheCard data={basicData} userTier="basic" rank={1} />)
 
     // Channel name is an <a> link pointing to channelUrl
-    const link = screen.getByRole('link')
+    const link = screen.getByRole('link', { name: /Tech Tutorials DE/i })
     expect(link).toHaveAttribute('href', 'https://youtube.com/@techde')
 
-    // Virality badge visible and not blurred
+    // Virality badge visible and not blurred (checks no blur wrapper exists in ancestry)
     const viralityEl = screen.getByText(/Excellent/i)
-    expect(viralityEl).not.toHaveStyle('filter: blur(5px)')
+    expect(viralityEl.closest('[style*="blur"]')).toBeNull()
 
     // Engagement rate badge present
     expect(screen.getByText(/eng/)).toBeTruthy()
