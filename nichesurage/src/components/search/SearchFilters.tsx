@@ -1,6 +1,6 @@
 'use client'
 
-import type { SearchFilters as SearchFiltersType, ChannelAge, ContentType } from '@/lib/types'
+import type { SearchFilters as SearchFiltersType, ChannelAge } from '@/lib/types'
 
 interface SearchFiltersProps {
   value: SearchFiltersType
@@ -19,27 +19,24 @@ export function SearchFilters({ value, onChange }: SearchFiltersProps) {
   const set = <K extends keyof SearchFiltersType>(key: K, val: SearchFiltersType[K]) =>
     onChange({ ...value, [key]: val })
 
-  const contentTypeBtn = (type: ContentType, label: string) => (
-    <button
-      key={type}
-      type="button"
-      onClick={() => set('contentType', type)}
-      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-        value.contentType === type
-          ? 'bg-indigo-600 text-white'
-          : 'bg-slate-800 text-slate-400 hover:text-slate-200'
-      }`}
-    >
-      {label}
-    </button>
-  )
-
   return (
     <div className="flex flex-col gap-4">
       {/* Content type toggle */}
       <div className="flex gap-2">
-        {contentTypeBtn('shorts', 'Shorts')}
-        {contentTypeBtn('longform', 'Longform')}
+        {(['shorts', 'longform'] as const).map((type) => (
+          <button
+            key={type}
+            type="button"
+            onClick={() => set('contentType', type)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              value.contentType === type
+                ? 'bg-indigo-600 text-white'
+                : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            {type.charAt(0).toUpperCase() + type.slice(1)}
+          </button>
+        ))}
       </div>
 
       {/* Subscriber range */}
