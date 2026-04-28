@@ -29,3 +29,9 @@ export function getMaxNichesVisible(tier: UserTier): number {
   if (tier === 'basic') return 20
   return 5
 }
+
+export function getSaveLimit(tier: UserTier): number {
+  if (tier === 'premium') return Infinity
+  if (tier === 'basic') return 10
+  return 0
+}
