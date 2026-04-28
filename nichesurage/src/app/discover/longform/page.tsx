@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { SearchFilters } from '@/components/search/SearchFilters'
 import { NicheCard } from '@/components/niche/NicheCard'
 import { NicheCardSkeleton } from '@/components/niche/NicheCardSkeleton'
-import type { SearchFilters as SearchFiltersType, LongformNicheCardData } from '@/lib/types'
+import { fetchNiches } from '@/lib/supabase/queries'
+import type { SearchFilters as SearchFiltersType, NicheCardData } from '@/lib/types'
 
 const DEFAULT_FILTERS: SearchFiltersType = {
   contentType: 'longform',
@@ -14,42 +15,21 @@ const DEFAULT_FILTERS: SearchFiltersType = {
   onlyRecentlyViral: false,
 }
 
-// Placeholder cards shown until real data fetching is wired up
-const MOCK_RESULTS: LongformNicheCardData[] = [
-  {
-    id: 'mock-1',
-    contentType: 'longform',
-    channelCreatedAt: '2023-06-01',
-    videoCount: 34,
-    subscriberRange: '10K–50K',
-    spikeMultiplier: 3.1,
-    opportunityScore: 74,
-    viralityRating: 'good',
-    language: 'en',
-    channelName: 'Example Longform Channel',
-    nicheLabel: 'Personal Finance',
-    channelUrl: 'https://youtube.com',
-    engagementRate: 6.1,
-    searchVolume: 62000,
-    competitionScore: 28,
-    avgViewsPerVideo: 18500,
-  },
-]
-
 export default function LongformDiscoverPage() {
   const [filters, setFilters] = useState<SearchFiltersType>(DEFAULT_FILTERS)
-  const [results, setResults] = useState<LongformNicheCardData[]>([])
+  const [results, setResults] = useState<NicheCardData[]>([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function handleSearch() {
+  async function handleSearch() {
     setLoading(true)
     setSearched(true)
-    // TODO: replace with real Supabase fetch using filters
-    setTimeout(() => {
-      setResults(MOCK_RESULTS)
-      setLoading(false)
-    }, 800)
+    setError(null)
+    const { data, error: fetchError } = await fetchNiches(filters)
+    setResults(data)
+    setError(fetchError)
+    setLoading(false)
   }
 
   return (
@@ -62,7 +42,6 @@ export default function LongformDiscoverPage() {
       </p>
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">
-        {/* TODO: contentType toggle — when real fetch is wired, either hide this toggle or navigate to /discover/shorts on switch */}
         <SearchFilters value={filters} onChange={setFilters} />
         <button
           type="button"
@@ -72,6 +51,9 @@ export default function LongformDiscoverPage() {
         >
           {loading ? 'Searching…' : 'Search Niches'}
         </button>
+        {error && (
+          <p className="mt-3 text-red-400 text-sm text-center">{error}</p>
+        )}
       </div>
 
       {loading && (
@@ -80,14 +62,13 @@ export default function LongformDiscoverPage() {
         </div>
       )}
 
-      {!loading && searched && results.length === 0 && (
+      {!loading && searched && results.length === 0 && !error && (
         <p className="text-slate-500 text-center py-12">No niches found for these filters.</p>
       )}
 
       {!loading && results.length > 0 && (
         <div className="flex flex-col gap-3">
           {results.map((niche, i) => (
-            // TODO: replace "basic" with real user tier from session/context
             <NicheCard key={niche.id} data={niche} userTier="basic" rank={i + 1} />
           ))}
         </div>
