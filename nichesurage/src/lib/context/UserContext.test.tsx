@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 const mockCreateClient = createClient as jest.Mock
 
 function makeSupabaseMock({
-  user = null as { id: string; email: string } | null,
+  user = null as { id: string; email: string | undefined } | null,
   getUserError = null as object | null,
   dbTier = null as string | null,
 } = {}) {
@@ -76,5 +76,14 @@ describe('useUser', () => {
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.tier).toBe('free')
     expect(result.current.user).toBeNull()
+  })
+
+  it('returns user with null email when authUser.email is undefined', async () => {
+    mockCreateClient.mockReturnValue(
+      makeSupabaseMock({ user: { id: 'user-3', email: undefined as unknown as string }, dbTier: 'basic' })
+    )
+    const { result } = renderHook(() => useUser(), { wrapper })
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.user).toEqual({ id: 'user-3', email: null })
   })
 })

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { UserTier } from '@/lib/types/database'
 
 interface UserContextValue {
-  user: { id: string; email: string } | null
+  user: { id: string; email: string | null } | null
   tier: UserTier
   loading: boolean
 }
@@ -13,7 +13,7 @@ interface UserContextValue {
 const UserContext = createContext<UserContextValue | undefined>(undefined)
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<{ id: string; email: string } | null>(null)
+  const [user, setUser] = useState<{ id: string; email: string | null } | null>(null)
   const [tier, setTier] = useState<UserTier>('free')
   const [loading, setLoading] = useState(true)
 
@@ -24,7 +24,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       try {
         const { data: { user: authUser }, error } = await supabase.auth.getUser()
         if (error || !authUser) return
-        setUser({ id: authUser.id, email: authUser.email ?? '' })
+        setUser({ id: authUser.id, email: authUser.email ?? null })
         const { data, error: dbError } = await supabase
           .from('users')
           .select('tier')
