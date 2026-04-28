@@ -2,11 +2,15 @@ import type { NicheCardData, ShortsNicheCardData, LongformNicheCardData, UserTie
 import { LockedField } from './LockedField'
 import { SpikeIndicator } from './SpikeIndicator'
 import { ScoreBar } from './ScoreBar'
+import { BookmarkButton } from './BookmarkButton'
 
 interface NicheCardProps {
   data: NicheCardData
   userTier: UserTier
   rank: number
+  isSaved?: boolean
+  savedCount?: number
+  onBookmarkToggle?: (id: string, saved: boolean) => void
 }
 
 const LANG_FLAG: Record<ContentLanguage, string> = { en: '🇬🇧', de: '🇩🇪' }
@@ -67,7 +71,7 @@ function LongformMetrics({ data, locked }: { data: LongformNicheCardData; locked
   )
 }
 
-export function NicheCard({ data, userTier, rank }: NicheCardProps) {
+export function NicheCard({ data, userTier, rank, isSaved, savedCount, onBookmarkToggle }: NicheCardProps) {
   const locked = userTier === 'free'
 
   return (
@@ -99,7 +103,18 @@ export function NicheCard({ data, userTier, rank }: NicheCardProps) {
             <div className="text-indigo-400 text-xs mt-0.5">{data.nicheLabel}</div>
           )}
         </div>
-        <SpikeIndicator multiplier={data.spikeMultiplier} />
+        <div className="flex items-center gap-1">
+          {onBookmarkToggle && (
+            <BookmarkButton
+              nicheId={data.id}
+              isSaved={isSaved ?? false}
+              userTier={userTier}
+              savedCount={savedCount ?? 0}
+              onToggle={onBookmarkToggle}
+            />
+          )}
+          <SpikeIndicator multiplier={data.spikeMultiplier} />
+        </div>
       </div>
 
       {/* Badge row */}
