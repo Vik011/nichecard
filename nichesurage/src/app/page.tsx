@@ -31,11 +31,11 @@ export default function LandingPage() {
               </button>
             ))}
           </div>
-          <Link href="/discover/shorts" className="text-slate-400 hover:text-white text-sm transition-colors">
+          <Link href="/discover" className="text-slate-400 hover:text-white text-sm transition-colors">
             Discover
           </Link>
           <Link
-            href="/discover/shorts"
+            href="/discover"
             className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
           >
             Start Free
@@ -68,7 +68,7 @@ export default function LandingPage() {
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link
-            href="/discover/shorts"
+            href="/discover"
             className="group relative inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-8 py-4 rounded-xl text-base transition-all shadow-2xl shadow-indigo-900/50 hover:shadow-indigo-700/40 hover:-translate-y-0.5"
           >
             Start Discovering — Free
@@ -174,7 +174,7 @@ export default function LandingPage() {
                 ))}
               </ul>
               <Link
-                href="/discover/shorts"
+                href="/discover"
                 className="w-full text-center border border-slate-700 hover:border-indigo-500 hover:text-indigo-300 text-slate-400 font-semibold py-3 rounded-xl transition-colors text-sm"
               >
                 Get Started Free
@@ -205,7 +205,7 @@ export default function LandingPage() {
                 ))}
               </ul>
               <Link
-                href="/discover/shorts"
+                href="/login"
                 className="w-full text-center bg-slate-800 hover:bg-slate-700 text-white font-semibold py-3 rounded-xl transition-colors text-sm"
               >
                 Get Basic
@@ -244,7 +244,7 @@ export default function LandingPage() {
                 ))}
               </ul>
               <Link
-                href="/discover/shorts"
+                href="/login"
                 className="w-full text-center bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-900/50 text-sm"
               >
                 Get Premium
@@ -266,7 +266,7 @@ export default function LandingPage() {
           Join creators who discover viral opportunities before everyone else.
         </p>
         <Link
-          href="/discover/shorts"
+          href="/discover"
           className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-10 py-4 rounded-xl text-base transition-all shadow-2xl shadow-indigo-900/50 hover:-translate-y-0.5"
         >
           Start Discovering — Free
@@ -282,8 +282,8 @@ export default function LandingPage() {
             © 2026 Niche<span className="text-indigo-500">Surge</span>. All rights reserved.
           </span>
           <div className="flex gap-6 text-slate-500 text-sm">
-            <Link href="/discover/shorts" className="hover:text-slate-300 transition-colors">Shorts</Link>
-            <Link href="/discover/longform" className="hover:text-slate-300 transition-colors">Longform</Link>
+            <Link href="/discover?type=shorts" className="hover:text-slate-300 transition-colors">Shorts</Link>
+            <Link href="/discover?type=longform" className="hover:text-slate-300 transition-colors">Longform</Link>
             <a href="#pricing" className="hover:text-slate-300 transition-colors">Pricing</a>
           </div>
         </div>
