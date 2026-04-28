@@ -27,6 +27,7 @@ export function mapRow(row: DbScanResult): NicheCardData {
     nicheLabel: row.niche_label,
     channelUrl: row.channel_url,
     engagementRate: row.engagement_rate,
+    views48h: row.views_48h,
   }
 
   if (row.content_type === 'shorts') {
@@ -84,6 +85,6 @@ export async function fetchNiches(
 
   const { data, error } = await query
 
-  if (error) return { data: [], error: error.message }
+  if (error) return { data: [], error: 'Search failed. Please try again.' }
   return { data: (data ?? []).map(mapRow), error: null }
 }
