@@ -6,6 +6,7 @@ import { SearchFilters } from '@/components/search/SearchFilters'
 import { NicheCard } from '@/components/niche/NicheCard'
 import { NicheCardSkeleton } from '@/components/niche/NicheCardSkeleton'
 import { fetchNiches } from '@/lib/supabase/queries'
+import { fetchSavedNicheIds } from '@/lib/supabase/savedNiches'
 import { filtersToParams, paramsToFilters } from '@/lib/supabase/filterParams'
 import { useUser } from '@/lib/context/UserContext'
 import type { SearchFilters as SearchFiltersType, NicheCardData } from '@/lib/types'
@@ -24,6 +25,8 @@ export default function LongformDiscoverPage() {
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
+  const [savedCount, setSavedCount] = useState(0)
 
   async function handleSearch(filtersOverride?: SearchFiltersType) {
     const f = filtersOverride ?? filters
@@ -44,9 +47,25 @@ export default function LongformDiscoverPage() {
     setFilters(updated)
   }
 
+  function handleBookmarkToggle(id: string, saved: boolean) {
+    setSavedIds(prev => {
+      const next = new Set(prev)
+      if (saved) next.add(id)
+      else next.delete(id)
+      return next
+    })
+    setSavedCount(prev => saved ? prev + 1 : prev - 1)
+  }
+
   useEffect(() => {
-    if (!userLoading && searchParams.size > 0) {
-      handleSearch(paramsToFilters(searchParams, 'longform', LONGFORM_DEFAULTS))
+    if (!userLoading) {
+      fetchSavedNicheIds().then(ids => {
+        setSavedIds(ids)
+        setSavedCount(ids.size)
+      })
+      if (searchParams.size > 0) {
+        handleSearch(paramsToFilters(searchParams, 'longform', LONGFORM_DEFAULTS))
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userLoading])
@@ -88,7 +107,15 @@ export default function LongformDiscoverPage() {
       {!userLoading && !loading && results.length > 0 && (
         <div className="flex flex-col gap-3">
           {results.map((niche, i) => (
-            <NicheCard key={niche.id} data={niche} userTier={userTier} rank={i + 1} />
+            <NicheCard
+              key={niche.id}
+              data={niche}
+              userTier={userTier}
+              rank={i + 1}
+              isSaved={savedIds.has(niche.id)}
+              savedCount={savedCount}
+              onBookmarkToggle={handleBookmarkToggle}
+            />
           ))}
         </div>
       )}
