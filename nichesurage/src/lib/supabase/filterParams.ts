@@ -2,12 +2,12 @@ import type { SearchFilters, ChannelAge, ContentType } from '@/lib/types'
 
 const VALID_CHANNEL_AGES: ChannelAge[] = ['1month', '3months', '6months', '1year', 'any']
 
-interface ReadableParams {
+export interface ReadableParams {
   get(name: string): string | null
   has(name: string): boolean
 }
 
-interface FilterDefaults {
+export interface FilterDefaults {
   subscriberMin: number
   subscriberMax: number
 }
