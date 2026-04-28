@@ -23,11 +23,12 @@ export default function ShortsDiscoverPage() {
   const [searched, setSearched] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function handleSearch() {
+  async function handleSearch(filtersOverride?: SearchFiltersType) {
+    const f = filtersOverride ?? filters
     setLoading(true)
     setSearched(true)
     setError(null)
-    const { data, error: fetchError } = await fetchNiches(filters)
+    const { data, error: fetchError } = await fetchNiches(f)
     setResults(data)
     setError(fetchError)
     setLoading(false)
@@ -43,7 +44,7 @@ export default function ShortsDiscoverPage() {
 
   useEffect(() => {
     if (searchParams.size > 0) {
-      handleSearch()
+      handleSearch(paramsToFilters(searchParams, 'shorts', SHORTS_DEFAULTS))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
