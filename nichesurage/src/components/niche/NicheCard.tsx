@@ -1,12 +1,16 @@
-import { NicheCardData, UserTier, ViralityRating, ContentLanguage } from '@/lib/types'
+import type { NicheCardData, ShortsNicheCardData, LongformNicheCardData, UserTier, ViralityRating, ContentLanguage } from '@/lib/types'
 import { LockedField } from './LockedField'
 import { SpikeIndicator } from './SpikeIndicator'
 import { ScoreBar } from './ScoreBar'
+import { BookmarkButton } from './BookmarkButton'
 
 interface NicheCardProps {
   data: NicheCardData
   userTier: UserTier
   rank: number
+  isSaved?: boolean
+  savedCount?: number
+  onBookmarkToggle?: (id: string, saved: boolean) => void
 }
 
 const LANG_FLAG: Record<ContentLanguage, string> = { en: '🇬🇧', de: '🇩🇪' }
@@ -23,7 +27,51 @@ const VIRALITY_LABEL: Record<ViralityRating, string> = {
   average: '~ Average',
 }
 
-export function NicheCard({ data, userTier, rank }: NicheCardProps) {
+function formatK(n: number): string {
+  if (n >= 1000) return `${parseFloat((n / 1000).toFixed(1))}k`
+  return String(n)
+}
+
+function ShortsMetrics({ data, locked }: { data: ShortsNicheCardData; locked: boolean }) {
+  return (
+    <>
+      {!locked && data.avgViewDurationPct !== undefined && (
+        <span className="bg-slate-800 text-indigo-400 px-2 py-0.5 rounded-full text-xs">
+          ⏱ {data.avgViewDurationPct}% duration
+        </span>
+      )}
+      {!locked && data.hookScore !== undefined && (
+        <span className="bg-slate-800 text-purple-400 px-2 py-0.5 rounded-full text-xs">
+          🎣 hook {data.hookScore}
+        </span>
+      )}
+    </>
+  )
+}
+
+function LongformMetrics({ data, locked }: { data: LongformNicheCardData; locked: boolean }) {
+  return (
+    <>
+      {!locked && data.searchVolume !== undefined && (
+        <span className="bg-slate-800 text-blue-400 px-2 py-0.5 rounded-full text-xs">
+          🔍 {formatK(data.searchVolume)} searches
+        </span>
+      )}
+      {!locked && data.competitionScore !== undefined && (
+        <span className="bg-slate-800 text-orange-400 px-2 py-0.5 rounded-full text-xs">
+          ⚔️ {data.competitionScore}% comp
+        </span>
+      )}
+      {!locked && data.avgViewsPerVideo !== undefined && (
+        <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">
+          👁 {formatK(data.avgViewsPerVideo)} views/video
+        </span>
+      )}
+    </>
+  )
+}
+
+export function NicheCard({ data, userTier, rank, isSaved, savedCount, onBookmarkToggle }: NicheCardProps) {
   const locked = userTier === 'free'
 
   return (
@@ -55,7 +103,18 @@ export function NicheCard({ data, userTier, rank }: NicheCardProps) {
             <div className="text-indigo-400 text-xs mt-0.5">{data.nicheLabel}</div>
           )}
         </div>
-        <SpikeIndicator multiplier={data.spikeMultiplier} />
+        <div className="flex items-center gap-1">
+          {onBookmarkToggle && (
+            <BookmarkButton
+              nicheId={data.id}
+              isSaved={isSaved ?? false}
+              userTier={userTier}
+              savedCount={savedCount ?? 0}
+              onToggle={onBookmarkToggle}
+            />
+          )}
+          <SpikeIndicator multiplier={data.spikeMultiplier} />
+        </div>
       </div>
 
       {/* Badge row */}
@@ -71,14 +130,18 @@ export function NicheCard({ data, userTier, rank }: NicheCardProps) {
             {VIRALITY_LABEL[data.viralityRating]}
           </span>
         </LockedField>
+        <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">
+          {LANG_FLAG[data.language]} {data.language.toUpperCase()}
+        </span>
         {!locked && data.engagementRate !== undefined && (
           <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">
             📈 {data.engagementRate}% eng
           </span>
         )}
-        <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">
-          {LANG_FLAG[data.language]} {data.language.toUpperCase()}
-        </span>
+        {data.contentType === 'shorts'
+          ? <ShortsMetrics data={data} locked={locked} />
+          : <LongformMetrics data={data} locked={locked} />
+        }
       </div>
 
       {/* Score bar */}
