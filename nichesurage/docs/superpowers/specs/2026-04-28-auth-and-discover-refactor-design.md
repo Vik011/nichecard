@@ -22,7 +22,9 @@ Jedina metoda prijave je Google OAuth. Nema email/password opcije — Google nal
 Landing page → /login → Google OAuth (Supabase) → /auth/callback → /discover
 ```
 
-1. Korisnik klikne bilo koji CTA na landing page-u → ide na `/login`
+1. CTA ponašanje na landing page-u:
+   - "Start Free" / "Start Discovering" → `/discover` direktno (bez prijave — FOMO pattern, free tier vidi zamagljeni sadržaj)
+   - "Get Basic" / "Get Premium" → `/login`
 2. `/login` prikazuje NicheSurge logo + "Continue with Google" dugme
 3. Klik → `supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: /auth/callback })`
 4. Google auth → redirect na `/auth/callback`
@@ -35,13 +37,19 @@ Landing page → /login → Google OAuth (Supabase) → /auth/callback → /disc
 
 ### Novi user pri prvom loginu
 
-```sql
-INSERT INTO public.users (id, email, tier)
-VALUES (auth.uid(), auth.email(), 'free')
-ON CONFLICT (id) DO NOTHING
+```typescript
+// U /auth/callback route.ts, nakon exchangeCodeForSession:
+const { data: { user } } = await supabase.auth.getUser()
+if (user) {
+  await supabase.from('users').insert({
+    id: user.id,
+    email: user.email,
+    tier: 'free',
+  }).onConflict('id').ignore()
+}
 ```
 
-Upsert sa `ON CONFLICT DO NOTHING` — bezbjedno ako se callback pozove više puta.
+`onConflict('id').ignore()` — bezbjedno ako se callback pozove više puta (idempotentno).
 
 ---
 
@@ -114,8 +122,8 @@ Trenutni middleware radi ispravno ali redirectuje na `/dashboard` (koji ne posto
 | Kreirati | `src/app/login/page.tsx` |
 | Kreirati | `src/app/auth/callback/route.ts` |
 | Kreirati | `src/app/discover/page.tsx` |
-| Kreirati | `src/app/discover/shorts/page.tsx` → server redirect |
-| Kreirati | `src/app/discover/longform/page.tsx` → server redirect |
+| Zamijeniti | `src/app/discover/shorts/page.tsx` → server redirect |
+| Zamijeniti | `src/app/discover/longform/page.tsx` → server redirect |
 | Modificirati | `src/middleware.ts` — redirect na `/discover` |
 | Modificirati | `src/app/page.tsx` — svi CTA linkovi na `/login` ili `/discover` |
 | Modificirati | `src/lib/context/UserContext.tsx` — dodati `user` u context |
