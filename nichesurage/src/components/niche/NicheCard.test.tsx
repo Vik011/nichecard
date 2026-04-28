@@ -1,10 +1,11 @@
 import { render, screen } from '@testing-library/react'
 import { NicheCard } from './NicheCard'
 import { NicheCardSkeleton } from './NicheCardSkeleton'
-import type { NicheCardData } from '@/lib/types'
+import type { ShortsNicheCardData, LongformNicheCardData } from '@/lib/types'
 
-const baseData: NicheCardData = {
+const shortsBase: ShortsNicheCardData = {
   id: '1',
+  contentType: 'shorts',
   channelCreatedAt: '2024-01-01',
   videoCount: 47,
   subscriberRange: '1K–10K',
@@ -14,48 +15,72 @@ const baseData: NicheCardData = {
   language: 'de',
 }
 
-const basicData: NicheCardData = {
-  ...baseData,
+const shortsBasic: ShortsNicheCardData = {
+  ...shortsBase,
   channelName: 'Tech Tutorials DE',
   nicheLabel: 'YouTube Shorts · Tech',
   channelUrl: 'https://youtube.com/@techde',
   engagementRate: 4.2,
+  avgViewDurationPct: 62,
+  hookScore: 85,
+}
+
+const longformBasic: LongformNicheCardData = {
+  id: '2',
+  contentType: 'longform',
+  channelCreatedAt: '2024-01-01',
+  videoCount: 23,
+  subscriberRange: '10K–100K',
+  spikeMultiplier: 2.1,
+  opportunityScore: 65,
+  viralityRating: 'good',
+  language: 'en',
+  channelName: 'Finance Explained',
+  nicheLabel: 'Personal Finance',
+  channelUrl: 'https://youtube.com/@financeexp',
+  engagementRate: 5.1,
+  searchVolume: 48000,
+  competitionScore: 34,
+  avgViewsPerVideo: 12400,
 }
 
 describe('NicheCard', () => {
   it('free tier: blurred elements present, no channel link, no engagement badge, lock icon shown', () => {
-    render(<NicheCard data={baseData} userTier="free" rank={1} />)
+    render(<NicheCard data={shortsBase} userTier="free" rank={1} />)
 
-    // No <a> tag — channel name is blurred text, not a link
     expect(screen.queryByRole('link')).toBeNull()
-
-    // Channel name placeholder is inside a blur wrapper
     expect(document.querySelector('[style*="blur"] span')).not.toBeNull()
 
-    // Virality badge is also inside a blur wrapper
     const viralityEl = screen.getByText(/Excellent/i)
     expect(viralityEl.closest('[style*="blur"]')).not.toBeNull()
 
-    // No engagement rate badge (undefined for free tier)
     expect(screen.queryByText(/eng/)).toBeNull()
-
-    // Lock icon present next to channel name
     expect(screen.getByText('🔒')).toBeTruthy()
   })
 
-  it('basic tier: channel name is a link, virality badge unblurred, engagement badge present', () => {
-    render(<NicheCard data={basicData} userTier="basic" rank={1} />)
+  it('basic tier shorts: channel link, engagement, avg duration, hook score visible', () => {
+    render(<NicheCard data={shortsBasic} userTier="basic" rank={1} />)
 
-    // Channel name is an <a> link pointing to channelUrl
     const link = screen.getByRole('link', { name: /Tech Tutorials DE/i })
     expect(link).toHaveAttribute('href', 'https://youtube.com/@techde')
 
-    // Virality badge visible and not blurred (checks no blur wrapper exists in ancestry)
     const viralityEl = screen.getByText(/Excellent/i)
     expect(viralityEl.closest('[style*="blur"]')).toBeNull()
 
-    // Engagement rate badge present
-    expect(screen.getByText(/eng/)).toBeTruthy()
+    expect(screen.getByText(/4\.2% eng/i)).toBeTruthy()
+    expect(screen.getByText(/62% duration/i)).toBeTruthy()
+    expect(screen.getByText(/hook 85/i)).toBeTruthy()
+  })
+
+  it('basic tier longform: search volume, competition score, avg views/video visible', () => {
+    render(<NicheCard data={longformBasic} userTier="basic" rank={2} />)
+
+    expect(screen.getByText(/5\.1% eng/i)).toBeTruthy()
+    const link = screen.getByRole('link', { name: /Finance Explained/i })
+    expect(link).toHaveAttribute('href', 'https://youtube.com/@financeexp')
+    expect(screen.getByText(/48k searches/i)).toBeTruthy()
+    expect(screen.getByText(/34% comp/i)).toBeTruthy()
+    expect(screen.getByText(/12\.4k views\/video/i)).toBeTruthy()
   })
 
   it('skeleton: renders without errors, contains animate-pulse elements', () => {
