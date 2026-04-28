@@ -9,7 +9,7 @@ interface UserContextValue {
   loading: boolean
 }
 
-const UserContext = createContext<UserContextValue>({ tier: 'free', loading: true })
+const UserContext = createContext<UserContextValue | undefined>(undefined)
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [tier, setTier] = useState<UserTier>('free')
@@ -22,11 +22,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
       try {
         const { data: { user }, error } = await supabase.auth.getUser()
         if (error || !user) return
-        const { data } = await supabase
+        const { data, error: dbError } = await supabase
           .from('users')
           .select('tier')
           .eq('id', user.id)
           .single()
+        if (dbError && process.env.NODE_ENV !== 'production') {
+          console.error('[UserContext] DB error fetching tier:', dbError)
+        }
         if (data?.tier) {
           setTier(data.tier as UserTier)
         }
@@ -45,6 +48,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export function useUser() {
-  return useContext(UserContext)
+export function useUser(): UserContextValue {
+  const ctx = useContext(UserContext)
+  if (process.env.NODE_ENV !== 'production' && ctx === undefined) {
+    throw new Error('useUser must be used within a UserProvider')
+  }
+  return ctx as UserContextValue
 }
