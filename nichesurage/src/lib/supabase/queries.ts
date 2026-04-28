@@ -1,3 +1,5 @@
+import { createClient } from './client'
+import type { SearchFilters, ChannelAge } from '@/lib/types'
 import type { NicheCardData, ShortsNicheCardData, LongformNicheCardData } from '@/lib/types'
 import type { DbScanResult } from '@/lib/types/database'
 
@@ -43,4 +45,45 @@ export function mapRow(row: DbScanResult): NicheCardData {
     competitionScore: row.competition_score ?? undefined,
     avgViewsPerVideo: row.views_avg,
   } satisfies LongformNicheCardData
+}
+
+function channelAgeCutoff(age: Exclude<ChannelAge, 'any'>): string {
+  const days: Record<Exclude<ChannelAge, 'any'>, number> = {
+    '1month': 30,
+    '3months': 90,
+    '6months': 180,
+    '1year': 365,
+  }
+  const d = new Date()
+  d.setDate(d.getDate() - days[age])
+  return d.toISOString().split('T')[0]
+}
+
+export async function fetchNiches(
+  filters: SearchFilters,
+): Promise<{ data: NicheCardData[]; error: string | null }> {
+  const supabase = createClient()
+
+  let query = supabase
+    .from('scan_results')
+    .select('*')
+    .eq('content_type', filters.contentType)
+    .gte('subscriber_count', filters.subscriberMin)
+    .lte('subscriber_count', filters.subscriberMax)
+    .order('opportunity_score', { ascending: false })
+    .limit(20)
+
+  if (filters.channelAge !== 'any') {
+    query = query.gte('channel_created_at', channelAgeCutoff(filters.channelAge))
+  }
+
+  if (filters.onlyRecentlyViral) {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    query = query.gte('spike_multiplier', 3).gte('scanned_at', sevenDaysAgo)
+  }
+
+  const { data, error } = await query
+
+  if (error) return { data: [], error: error.message }
+  return { data: (data ?? []).map(mapRow), error: null }
 }
