@@ -1,22 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { SearchFilters } from '@/components/search/SearchFilters'
 import { NicheCard } from '@/components/niche/NicheCard'
 import { NicheCardSkeleton } from '@/components/niche/NicheCardSkeleton'
 import { fetchNiches } from '@/lib/supabase/queries'
+import { filtersToParams, paramsToFilters } from '@/lib/supabase/filterParams'
 import type { SearchFilters as SearchFiltersType, NicheCardData } from '@/lib/types'
 
-const DEFAULT_FILTERS: SearchFiltersType = {
-  contentType: 'shorts',
-  subscriberMin: 1000,
-  subscriberMax: 100000,
-  channelAge: 'any',
-  onlyRecentlyViral: false,
-}
+const SHORTS_DEFAULTS = { subscriberMin: 1000, subscriberMax: 100000 }
 
 export default function ShortsDiscoverPage() {
-  const [filters, setFilters] = useState<SearchFiltersType>(DEFAULT_FILTERS)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const [filters, setFilters] = useState<SearchFiltersType>(() =>
+    paramsToFilters(searchParams, 'shorts', SHORTS_DEFAULTS)
+  )
   const [results, setResults] = useState<NicheCardData[]>([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
@@ -32,6 +33,21 @@ export default function ShortsDiscoverPage() {
     setLoading(false)
   }
 
+  function handleFiltersChange(updated: SearchFiltersType) {
+    if (updated.contentType !== 'shorts') {
+      router.push(`/discover/longform?${filtersToParams(updated)}`)
+      return
+    }
+    setFilters(updated)
+  }
+
+  useEffect(() => {
+    if (searchParams.size > 0) {
+      handleSearch()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-1">
@@ -42,7 +58,7 @@ export default function ShortsDiscoverPage() {
       </p>
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">
-        <SearchFilters value={filters} onChange={setFilters} />
+        <SearchFilters value={filters} onChange={handleFiltersChange} />
         <button
           type="button"
           onClick={handleSearch}
