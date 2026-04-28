@@ -3,6 +3,11 @@ import { NicheCard } from './NicheCard'
 import { NicheCardSkeleton } from './NicheCardSkeleton'
 import type { ShortsNicheCardData, LongformNicheCardData } from '@/lib/types'
 
+jest.mock('@/lib/supabase/savedNiches', () => ({
+  saveNiche: jest.fn(),
+  unsaveNiche: jest.fn(),
+}))
+
 const shortsBase: ShortsNicheCardData = {
   id: '1',
   contentType: 'shorts',
@@ -87,5 +92,24 @@ describe('NicheCard', () => {
     render(<NicheCardSkeleton />)
     const pulseEls = document.querySelectorAll('.animate-pulse')
     expect(pulseEls.length).toBeGreaterThan(0)
+  })
+
+  it('renders BookmarkButton when onBookmarkToggle is provided', () => {
+    render(
+      <NicheCard
+        data={shortsBasic}
+        userTier="basic"
+        rank={1}
+        isSaved={false}
+        savedCount={2}
+        onBookmarkToggle={() => {}}
+      />
+    )
+    expect(screen.getByRole('button', { name: /save niche/i })).toBeInTheDocument()
+  })
+
+  it('does not render BookmarkButton when onBookmarkToggle is not provided', () => {
+    render(<NicheCard data={shortsBasic} userTier="basic" rank={1} />)
+    expect(screen.queryByRole('button', { name: /save niche/i })).not.toBeInTheDocument()
   })
 })
