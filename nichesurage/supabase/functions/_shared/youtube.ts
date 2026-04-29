@@ -79,7 +79,7 @@ export async function getRecentVideos(
   playlistUrl.searchParams.set('maxResults', String(maxResults))
 
   const playlistRes = await fetch(playlistUrl.toString())
-  if (!playlistRes.ok) throw new Error(`playlistItems.list failed ${playlistRes.status}`)
+  if (!playlistRes.ok) throw new Error(`playlistItems.list failed ${playlistRes.status}: ${await playlistRes.text()}`)
   const playlistData = await playlistRes.json()
 
   const videoIds: string[] = (playlistData.items ?? [])
@@ -94,7 +94,7 @@ export async function getRecentVideos(
   videosUrl.searchParams.set('id', videoIds.join(','))
 
   const videosRes = await fetch(videosUrl.toString())
-  if (!videosRes.ok) throw new Error(`videos.list failed ${videosRes.status}`)
+  if (!videosRes.ok) throw new Error(`videos.list failed ${videosRes.status}: ${await videosRes.text()}`)
   const videosData = await videosRes.json()
 
   return (videosData.items ?? []).map((item: {
