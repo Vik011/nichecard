@@ -96,6 +96,21 @@ describe('fetchTopNiches', () => {
     expect(niches[0].trending).toBe(false)
   })
 
+  it('sets trending=true when spikeMultiplier === 5 (boundary)', async () => {
+    const boundaryRows = [{ ...mockRows[0], spike_multiplier: 5 }]
+    const mockQuery = {
+      select: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      gte: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockResolvedValue({ data: boundaryRows, error: null }),
+    }
+    mockCreateStaticClient.mockReturnValue({
+      from: jest.fn().mockReturnValue(mockQuery),
+    } as unknown as ReturnType<typeof createStaticClient>)
+    const niches = await fetchTopNiches()
+    expect(niches[0].trending).toBe(true)
+  })
+
   it('returns empty array on Supabase error', async () => {
     const mockQuery = {
       select: jest.fn().mockReturnThis(),

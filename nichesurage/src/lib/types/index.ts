@@ -35,6 +35,8 @@ interface BaseNicheCardData {
   channelUrl?: string
   views48h?: number
   engagementRate?: number
+  // landing page only
+  trending?: boolean
 }
 
 export interface ShortsNicheCardData extends BaseNicheCardData {

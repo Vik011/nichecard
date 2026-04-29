@@ -1,6 +1,7 @@
 import { createStaticClient } from '@/lib/supabase/staticClient'
 import { mapRow } from '@/lib/supabase/queries'
 import type { NicheCardData } from '@/lib/types'
+import type { DbScanResult } from '@/lib/types'
 
 export function deterministicChannelNum(channelId: string): string {
   let h = 0
@@ -21,15 +22,18 @@ export async function fetchTopNiches(): Promise<NicheCardData[]> {
     .order('opportunity_score', { ascending: false })
     .limit(6)
 
-  if (error || !data) return []
+  if (error || !data) {
+    console.error('[fetchTopNiches]', error?.message ?? 'no data returned')
+    return []
+  }
 
-  return data.map((row) => {
+  return (data as DbScanResult[]).map((row) => {
     const mapped = mapRow(row)
     return {
       ...mapped,
       channelName: `Hidden Channel #${deterministicChannelNum(row.youtube_channel_id)}`,
       channelUrl: undefined,
       trending: row.spike_multiplier >= 5,
-    } as NicheCardData
+    }
   })
 }
