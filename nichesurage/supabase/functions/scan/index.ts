@@ -82,7 +82,7 @@ Deno.serve(async (_req: Request) => {
           channel_created_at: channelCreatedDate,
           video_count: stats.videoCount,
           subscriber_count: stats.subscriberCount,
-          views_48h,
+          views_48h: views48h,
           views_avg: Math.round(viewsAvg),
           spike_multiplier: parseFloat(spikeMultiplier.toFixed(2)),
           engagement_rate: parseFloat(engagementRate.toFixed(4)),

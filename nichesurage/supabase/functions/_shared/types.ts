@@ -6,6 +6,8 @@ export interface WatchlistChannel {
   content_type: 'shorts' | 'longform'
   language: 'en' | 'de'
   is_active: boolean
+  first_discovered_at: string
+  last_scanned_at: string | null
 }
 
 export interface YouTubeChannelData {

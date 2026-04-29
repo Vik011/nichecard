@@ -108,5 +108,5 @@ export async function getRecentVideos(
     likeCount: parseInt(item.statistics.likeCount ?? '0', 10),
     commentCount: parseInt(item.statistics.commentCount ?? '0', 10),
     publishedAt: item.snippet.publishedAt,
-  }))
+  })).sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
 }
