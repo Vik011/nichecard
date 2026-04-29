@@ -98,6 +98,7 @@ Deno.serve(async (_req: Request) => {
 
         if (insertError) {
           console.error(`scan_results insert failed for ${channel.youtube_channel_id}:`, insertError)
+          continue
         }
 
         await supabase
