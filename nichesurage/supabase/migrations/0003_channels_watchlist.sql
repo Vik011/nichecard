@@ -15,3 +15,9 @@ alter table public.channels_watchlist enable row level security;
 
 create policy "Authenticated users can read watchlist" on public.channels_watchlist
   for select using (auth.role() = 'authenticated');
+
+create policy "Service role can insert watchlist" on public.channels_watchlist
+  for insert with check (true);
+
+create policy "Service role can update watchlist" on public.channels_watchlist
+  for update using (true);
