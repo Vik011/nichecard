@@ -31,5 +31,8 @@ Respond with only the niche label, nothing else.`
 
   if (!res.ok) throw new Error(`Anthropic API failed ${res.status}: ${await res.text()}`)
   const data = await res.json()
+  if (!data.content?.[0]?.text) {
+    throw new Error(`Unexpected Anthropic response: ${JSON.stringify(data)}`)
+  }
   return (data.content[0].text as string).trim()
 }
