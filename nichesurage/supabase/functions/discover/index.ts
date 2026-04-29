@@ -22,16 +22,21 @@ const COMBINATIONS: Combination[] = [
 
 Deno.serve(async (_req: Request) => {
   try {
-    const youtubeKey = Deno.env.get('YOUTUBE_API_KEY')!
-    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')!
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const youtubeKey = Deno.env.get('YOUTUBE_API_KEY')
+    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (!youtubeKey) throw new Error('YOUTUBE_API_KEY not set')
+    if (!anthropicKey) throw new Error('ANTHROPIC_API_KEY not set')
+    if (!supabaseUrl) throw new Error('SUPABASE_URL not set')
+    if (!serviceRoleKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY not set')
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
-    const { data: existing } = await supabase
+    const { data: existing, error: watchlistError } = await supabase
       .from('channels_watchlist')
       .select('youtube_channel_id')
+    if (watchlistError) throw watchlistError
     const existingIds = new Set<string>((existing ?? []).map((c: { youtube_channel_id: string }) => c.youtube_channel_id))
 
     let totalAdded = 0
