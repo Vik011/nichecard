@@ -107,3 +107,7 @@ Deno.test('computeCompetitionScore is 100 for max_subs', () => {
 Deno.test('computeCompetitionScore is 0 for 0 subs', () => {
   assertEquals(computeCompetitionScore(0, 100000), 0)
 })
+
+Deno.test('computeCompetitionScore returns 0 when maxSubs is 0', () => {
+  assertEquals(computeCompetitionScore(5000, 0), 0)
+})

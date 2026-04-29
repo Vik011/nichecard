@@ -42,7 +42,7 @@ export function computeOpportunityScore(
   const sizeScore = Math.max(0, 1 - subscriberCount / maxSubs) * 30
   const ageScore = Math.max(0, 1 - channelAgeDays / 365) * 30
 
-  return Math.round(spikeScore + sizeScore + ageScore)
+  return Math.min(100, Math.max(0, Math.round(spikeScore + sizeScore + ageScore)))
 }
 
 export function computeHookScore(video: VideoData): number | null {
@@ -51,5 +51,6 @@ export function computeHookScore(video: VideoData): number | null {
 }
 
 export function computeCompetitionScore(subscriberCount: number, maxSubs: number): number {
+  if (maxSubs === 0) return 0
   return Math.round((subscriberCount / maxSubs) * 100)
 }
