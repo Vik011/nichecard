@@ -66,7 +66,7 @@ export async function fetchNiches(
   const supabase = createClient()
 
   let query = supabase
-    .from('scan_results')
+    .from('scan_results_latest')
     .select('*')
     .eq('content_type', filters.contentType)
     .gte('subscriber_count', filters.subscriberMin)
