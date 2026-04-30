@@ -11,6 +11,7 @@ export function LanguageToggle({ lang, onChange }: LanguageToggleProps) {
     <div className="flex items-center gap-1 text-sm">
       <button
         onClick={() => onChange('en')}
+        aria-pressed={lang === 'en'}
         className={`px-2 py-0.5 rounded transition-colors ${
           lang === 'en'
             ? 'text-slate-100 font-semibold'
@@ -22,6 +23,7 @@ export function LanguageToggle({ lang, onChange }: LanguageToggleProps) {
       <span className="text-slate-700">|</span>
       <button
         onClick={() => onChange('de')}
+        aria-pressed={lang === 'de'}
         className={`px-2 py-0.5 rounded transition-colors ${
           lang === 'de'
             ? 'text-slate-100 font-semibold'

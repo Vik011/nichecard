@@ -5,7 +5,8 @@ import type { Lang } from './copy'
 import { COPY } from './copy'
 
 // Section components — created in Tasks 4–9
-// Using inline stubs until those tasks complete
+// Using inline stubs until those tasks complete.
+// LandingNav and LandingFooter receive lang+onLangChange so they can render <LanguageToggle> from ./LanguageToggle.
 function LandingNav(_props: { copy: Record<string, unknown>; lang: Lang; onLangChange: (l: Lang) => void }) { return null }
 function HeroSection(_props: { copy: Record<string, unknown> }) { return null }
 function SocialProofBar(_props: { copy: Record<string, unknown> }) { return null }
