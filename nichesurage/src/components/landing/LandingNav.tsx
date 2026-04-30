@@ -26,7 +26,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
         scrolled
-          ? 'backdrop-blur-md bg-slate-950/80 border-b border-slate-800'
+          ? 'backdrop-blur-xl bg-charcoal-900/60 border-b border-white/[0.06]'
           : 'bg-transparent'
       }`}
     >

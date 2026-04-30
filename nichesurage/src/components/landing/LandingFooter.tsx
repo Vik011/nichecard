@@ -10,7 +10,7 @@ interface LandingFooterProps {
 
 export function LandingFooter({ copy, lang, onLangChange }: LandingFooterProps) {
   return (
-    <footer className="border-t border-slate-800 py-12 px-6">
+    <footer className="relative border-t border-white/[0.05] py-12 px-6">
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
           <div className="flex flex-col gap-2">
@@ -46,7 +46,7 @@ export function LandingFooter({ copy, lang, onLangChange }: LandingFooterProps) 
             </a>
           </div>
         </div>
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t border-slate-800">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-8 border-t border-white/[0.05]">
           <p className="text-slate-600 text-sm">{copy.footerCopyright}</p>
           <LanguageToggle lang={lang} onChange={onLangChange} />
         </div>
