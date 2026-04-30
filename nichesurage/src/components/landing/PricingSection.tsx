@@ -19,6 +19,7 @@ export function PricingSection({ copy }: PricingSectionProps) {
       cta: copy.pricingCtaFree,
       plan: 'free',
       highlight: false,
+      isPremium: false,
     },
     {
       name: copy.pricingBasic,
@@ -27,6 +28,7 @@ export function PricingSection({ copy }: PricingSectionProps) {
       cta: copy.pricingCtaBasic,
       plan: 'basic',
       highlight: true,
+      isPremium: false,
     },
     {
       name: copy.pricingPremium,
@@ -35,6 +37,7 @@ export function PricingSection({ copy }: PricingSectionProps) {
       cta: copy.pricingCtaPremium,
       plan: 'premium',
       highlight: false,
+      isPremium: true,
     },
   ]
 
@@ -50,7 +53,9 @@ export function PricingSection({ copy }: PricingSectionProps) {
               key={tier.plan}
               className={
                 tier.highlight
-                  ? 'relative bg-indigo-950 border-2 border-indigo-500 rounded-2xl p-8 shadow-xl shadow-indigo-900/30'
+                  ? 'relative bg-indigo-950 border-2 border-indigo-500 ring-2 ring-indigo-500/30 rounded-2xl p-8 shadow-xl shadow-indigo-900/20'
+                  : tier.isPremium
+                  ? 'bg-slate-900 border border-violet-500 rounded-2xl p-8'
                   : 'bg-slate-900 border border-slate-800 rounded-2xl p-8'
               }
             >

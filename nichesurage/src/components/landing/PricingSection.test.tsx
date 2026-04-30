@@ -58,4 +58,16 @@ describe('PricingSection', () => {
       expect(screen.getAllByText(f).length).toBeGreaterThan(0)
     })
   })
+
+  it('Premium tier card has violet border class', () => {
+    const { container } = render(<PricingSection copy={copy} />)
+    const cards = container.querySelectorAll('[class*="border-violet-500"]')
+    expect(cards.length).toBeGreaterThan(0)
+  })
+
+  it('Basic tier card has indigo ring class', () => {
+    const { container } = render(<PricingSection copy={copy} />)
+    const cards = container.querySelectorAll('[class*="ring-indigo-500"]')
+    expect(cards.length).toBeGreaterThan(0)
+  })
 })
