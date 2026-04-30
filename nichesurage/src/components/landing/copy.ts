@@ -158,4 +158,4 @@ export const COPY = {
   },
 } as const
 
-export type CopyKeys = typeof COPY.en
+export type CopyKeys = typeof COPY[keyof typeof COPY]
