@@ -6,11 +6,11 @@ import { COPY } from './copy'
 import { LandingNav } from './LandingNav'
 import { HeroSection } from './HeroSection'
 import { SocialProofBar } from './SocialProofBar'
+import { AppPreviewSection } from './AppPreviewSection'
 
-// Section components — created in Tasks 4–9
+// Section components — created in Tasks 7–9
 // Using inline stubs until those tasks complete.
 // LandingNav and LandingFooter receive lang+onLangChange so they can render <LanguageToggle> from ./LanguageToggle.
-function AppPreviewSection(_props: { niches: NicheCardData[]; copy: Record<string, unknown> }) { return null }
 function PainSolutionSection(_props: { copy: Record<string, unknown> }) { return null }
 function FeaturesSection(_props: { copy: Record<string, unknown> }) { return null }
 function PricingSection(_props: { copy: Record<string, unknown> }) { return null }
