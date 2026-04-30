@@ -3,6 +3,7 @@ import { LockedField } from './LockedField'
 import { SpikeIndicator } from './SpikeIndicator'
 import { ScoreBar } from './ScoreBar'
 import { BookmarkButton } from './BookmarkButton'
+import { HealthCheckButton } from './HealthCheckButton'
 
 interface NicheCardProps {
   data: NicheCardData
@@ -104,15 +105,22 @@ export function NicheCard({ data, userTier, rank, isSaved, savedCount, onBookmar
           )}
         </div>
         <div className="flex flex-col items-end gap-1">
-          {onBookmarkToggle && (
-            <BookmarkButton
-              nicheId={data.id}
-              isSaved={isSaved ?? false}
+          <div className="flex items-center gap-0.5">
+            <HealthCheckButton
+              scanResultId={data.id}
+              nicheLabel={data.nicheLabel ?? 'this niche'}
               userTier={userTier}
-              savedCount={savedCount ?? 0}
-              onToggle={onBookmarkToggle}
             />
-          )}
+            {onBookmarkToggle && (
+              <BookmarkButton
+                nicheId={data.id}
+                isSaved={isSaved ?? false}
+                userTier={userTier}
+                savedCount={savedCount ?? 0}
+                onToggle={onBookmarkToggle}
+              />
+            )}
+          </div>
           <SpikeIndicator multiplier={data.spikeMultiplier} />
           {data.trending && (
             <span className="flex items-center gap-0.5 text-orange-400 text-xs font-medium">
