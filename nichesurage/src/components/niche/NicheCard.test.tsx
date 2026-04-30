@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { NicheCard } from './NicheCard'
 import { NicheCardSkeleton } from './NicheCardSkeleton'
-import type { ShortsNicheCardData, LongformNicheCardData } from '@/lib/types'
+import type { ShortsNicheCardData, LongformNicheCardData, NicheCardData } from '@/lib/types'
 
 jest.mock('@/lib/supabase/savedNiches', () => ({
   saveNiche: jest.fn(),
@@ -111,5 +111,22 @@ describe('NicheCard', () => {
   it('does not render BookmarkButton when onBookmarkToggle is not provided', () => {
     render(<NicheCard data={shortsBasic} userTier="basic" rank={1} />)
     expect(screen.queryByRole('button', { name: /save niche/i })).not.toBeInTheDocument()
+  })
+})
+
+describe('trending badge', () => {
+  it('renders fire badge when trending=true and spike >= 5', () => {
+    const trendingData: NicheCardData = {
+      ...shortsBase,
+      trending: true,
+      spikeMultiplier: 6,
+    }
+    render(<NicheCard data={trendingData} userTier="free" rank={1} />)
+    expect(screen.getByText(/Trending/i)).toBeInTheDocument()
+  })
+
+  it('does not render fire badge when trending is undefined', () => {
+    render(<NicheCard data={shortsBase} userTier="free" rank={1} />)
+    expect(screen.queryByText(/Trending/i)).not.toBeInTheDocument()
   })
 })

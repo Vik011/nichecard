@@ -103,7 +103,7 @@ export function NicheCard({ data, userTier, rank, isSaved, savedCount, onBookmar
             <div className="text-indigo-400 text-xs mt-0.5">{data.nicheLabel}</div>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-col items-end gap-1">
           {onBookmarkToggle && (
             <BookmarkButton
               nicheId={data.id}
@@ -114,6 +114,11 @@ export function NicheCard({ data, userTier, rank, isSaved, savedCount, onBookmar
             />
           )}
           <SpikeIndicator multiplier={data.spikeMultiplier} />
+          {data.trending && (
+            <span className="flex items-center gap-0.5 text-orange-400 text-xs font-medium">
+              🔥 Trending
+            </span>
+          )}
         </div>
       </div>
 
