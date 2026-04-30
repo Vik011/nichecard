@@ -70,6 +70,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
+          aria-controls="mobile-nav-drawer"
         >
           {menuOpen ? '✕' : '☰'}
         </button>
@@ -77,14 +78,21 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
 
       {/* Mobile drawer */}
       {menuOpen && (
-        <div className="md:hidden bg-slate-900 border-t border-slate-800 px-6 py-4 flex flex-col gap-4">
-          <Link href="/discover/shorts" className="text-slate-300 hover:text-white" onClick={() => setMenuOpen(false)}>
+        <div id="mobile-nav-drawer" className="md:hidden bg-slate-900 border-t border-slate-800 px-6 py-4 flex flex-col gap-4">
+          <Link href="/discover/shorts" className="text-slate-300 hover:text-white transition-colors" onClick={() => setMenuOpen(false)}>
             {copy.navDiscover}
           </Link>
-          <a href="#pricing" className="text-slate-300 hover:text-white" onClick={() => setMenuOpen(false)}>
+          <a href="#pricing" className="text-slate-300 hover:text-white transition-colors" onClick={() => setMenuOpen(false)}>
             {copy.navPricing}
           </a>
           <LanguageToggle lang={lang} onChange={onLangChange} />
+          <Link
+            href="/login"
+            className="text-slate-300 hover:text-white transition-colors text-sm"
+            onClick={() => setMenuOpen(false)}
+          >
+            {copy.navLogin}
+          </Link>
           <Link
             href="/login"
             className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white"
