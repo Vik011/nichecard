@@ -7,6 +7,7 @@ import type { UserTier } from '@/lib/types/database'
 interface UserContextValue {
   tier: UserTier
   loading: boolean
+  isLoggedIn: boolean
 }
 
 const UserContext = createContext<UserContextValue | undefined>(undefined)
@@ -14,6 +15,7 @@ const UserContext = createContext<UserContextValue | undefined>(undefined)
 export function UserProvider({ children }: { children: ReactNode }) {
   const [tier, setTier] = useState<UserTier>('free')
   const [loading, setLoading] = useState(true)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -22,6 +24,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       try {
         const { data: { user }, error } = await supabase.auth.getUser()
         if (error || !user) return
+        setIsLoggedIn(true)
         const { data, error: dbError } = await supabase
           .from('users')
           .select('tier')
@@ -42,7 +45,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <UserContext.Provider value={{ tier, loading }}>
+    <UserContext.Provider value={{ tier, loading, isLoggedIn }}>
       {children}
     </UserContext.Provider>
   )
