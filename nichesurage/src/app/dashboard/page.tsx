@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { mapRow } from '@/lib/supabase/queries'
 import { SavedNichesList } from './SavedNichesList'
+import { ManageSubscriptionButton } from './ManageSubscriptionButton'
 import type { DbScanResult, UserTier } from '@/lib/types'
 
 export default async function DashboardPage() {
@@ -12,7 +13,7 @@ export default async function DashboardPage() {
   const [profileResult, savedResult] = await Promise.all([
     supabase
       .from('users')
-      .select('email, tier')
+      .select('email, tier, stripe_subscription_id')
       .eq('id', user.id)
       .single(),
     supabase
@@ -25,6 +26,7 @@ export default async function DashboardPage() {
   const profile = profileResult.data
   const tier = (profile?.tier ?? 'free') as UserTier
   const email = profile?.email ?? user.email ?? ''
+  const hasSubscription = Boolean(profile?.stripe_subscription_id)
 
   const savedNiches = (savedResult.data ?? []).map(item =>
     mapRow(item.scan_results as unknown as DbScanResult)
@@ -50,11 +52,14 @@ export default async function DashboardPage() {
           </span>
           {tier !== 'premium' && (
             <a
-              href="/login"
+              href="/#pricing"
               className="block text-xs text-indigo-400 hover:text-indigo-300 mt-1.5"
             >
               Upgrade →
             </a>
+          )}
+          {hasSubscription && (
+            <ManageSubscriptionButton />
           )}
         </div>
       </div>
