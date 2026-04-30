@@ -11,9 +11,9 @@ export function PainSolutionSection({ copy }: PainSolutionSectionProps) {
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-slate-100">
           {copy.painHeadline}
         </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-0">
           {/* Left: The old way */}
-          <div className="bg-slate-900 border border-red-900/40 rounded-xl p-8">
+          <div className="bg-slate-900 border border-red-900/40 rounded-xl p-8 lg:rounded-r-none lg:border-r lg:border-r-indigo-800/60">
             <h3 className="text-lg font-semibold text-red-400 mb-6">{copy.painTitle}</h3>
             <ul className="space-y-4">
               {copy.painItems.map((item, i) => (
@@ -25,7 +25,7 @@ export function PainSolutionSection({ copy }: PainSolutionSectionProps) {
             </ul>
           </div>
           {/* Right: With NicheSurge */}
-          <div className="bg-slate-900 border border-indigo-800/50 rounded-xl p-8">
+          <div className="bg-slate-900 border border-indigo-800/50 rounded-xl p-8 lg:rounded-l-none lg:border-l-0">
             <h3 className="text-lg font-semibold text-indigo-400 mb-6">{copy.solutionTitle}</h3>
             <ul className="space-y-4">
               {copy.solutionItems.map((item, i) => (

@@ -33,4 +33,10 @@ describe('PainSolutionSection', () => {
       expect(screen.getByText(item)).toBeInTheDocument()
     })
   })
+
+  it('has an element with indigo-800 border class (separator)', () => {
+    const { container } = render(<PainSolutionSection copy={copy} />)
+    const el = container.querySelector('[class*="border-indigo-800"]')
+    expect(el).toBeInTheDocument()
+  })
 })
