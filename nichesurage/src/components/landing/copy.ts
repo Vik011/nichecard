@@ -38,13 +38,16 @@ export const COPY = {
 
     featuresTitle: 'Everything you need to dominate a niche',
     featuresPremiumBadge: 'PREMIUM',
+    featuresStatusLive: 'Live now',
+    featuresStatusSoon: 'Rolling out next week',
     features: [
       { icon: 'bot', tier: 'all', title: 'AI Opportunity Score', desc: 'Composite score weighing spike, engagement, competition and search volume.' },
       { icon: 'clock', tier: 'all', title: 'Hourly Scans', desc: '230+ channels re-analysed every hour so you never miss a spike window.' },
       { icon: 'flame', tier: 'all', title: 'Viral Spike Detection', desc: 'Flags channels with 3× or higher 48-hour view jumps the moment they appear.' },
-      { icon: 'trend-up', tier: 'premium', title: 'AI Clone & Twist', desc: 'Claude shows you exactly how to replicate a viral format with your unique spin.' },
+      { icon: 'heartbeat', tier: 'premium', status: 'live', title: 'AI Niche Health Check', desc: 'One-click verdict on whether a niche is worth entering this week — score plus a strategist-grade paragraph on the risks and the opening.' },
+      { icon: 'trend-up', tier: 'premium', status: 'soon', title: 'AI Clone & Twist', desc: 'Claude shows you exactly how to replicate a viral format with your unique spin.' },
       { icon: 'lightbulb', tier: 'premium', title: '5 AI Shorts Ideas', desc: 'Get five ready-to-shoot Shorts ideas, hooks and titles tailored to each spiking niche.' },
-      { icon: 'bell', tier: 'premium', title: 'Early Warning Alerts', desc: 'Email + in-app alert the moment a niche you track starts spiking — before everyone else.' },
+      { icon: 'bell', tier: 'premium', status: 'soon', title: 'Early Warning Alerts', desc: 'Email + in-app alert the moment a niche you track starts spiking — before everyone else.' },
     ],
 
     pricingTitle: 'Pick the plan that fits your week.',
@@ -157,13 +160,16 @@ export const COPY = {
 
     featuresTitle: 'Alles, was du brauchst, um eine Nische zu dominieren',
     featuresPremiumBadge: 'PREMIUM',
+    featuresStatusLive: 'Jetzt verfügbar',
+    featuresStatusSoon: 'Nächste Woche verfügbar',
     features: [
       { icon: 'bot', tier: 'all', title: 'KI-Opportunity-Score', desc: 'Kombinierter Score aus Spike, Engagement, Wettbewerb und Suchvolumen.' },
       { icon: 'clock', tier: 'all', title: 'Stündliche Scans', desc: '230+ Kanäle werden jede Stunde neu analysiert, damit du kein Spike-Fenster verpasst.' },
       { icon: 'flame', tier: 'all', title: 'Viral-Spike-Erkennung', desc: 'Markiert Kanäle mit einem 3-fachen oder höheren 48-Stunden-View-Sprung.' },
-      { icon: 'trend-up', tier: 'premium', title: 'KI Clone & Twist', desc: 'Claude zeigt dir, wie du ein virales Format mit deinem eigenen Twist replizierst.' },
+      { icon: 'heartbeat', tier: 'premium', status: 'live', title: 'KI Niche Health Check', desc: 'Ein Klick und du weißt, ob die Nische diese Woche den Sprung wert ist — Score plus ein strategisch geschriebener Absatz zu Risiken und Chancen.' },
+      { icon: 'trend-up', tier: 'premium', status: 'soon', title: 'KI Clone & Twist', desc: 'Claude zeigt dir, wie du ein virales Format mit deinem eigenen Twist replizierst.' },
       { icon: 'lightbulb', tier: 'premium', title: '5 KI Shorts-Ideen', desc: 'Fünf produktionsbereite Shorts-Ideen, Hooks und Titel pro Nische — sofort umsetzbar.' },
-      { icon: 'bell', tier: 'premium', title: 'Frühwarnungen', desc: 'E-Mail- + In-App-Alerts in dem Moment, in dem deine Nische zu steigen beginnt.' },
+      { icon: 'bell', tier: 'premium', status: 'soon', title: 'Frühwarnungen', desc: 'E-Mail- + In-App-Alerts in dem Moment, in dem deine Nische zu steigen beginnt.' },
     ],
 
     pricingTitle: 'Wähle den Plan, der zu deiner Woche passt.',

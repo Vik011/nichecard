@@ -1,5 +1,5 @@
 import type { Icon as PhosphorIcon } from '@phosphor-icons/react'
-import { Robot, Clock, Flame, TrendUp, Lightbulb, BellSimple } from '@phosphor-icons/react/dist/ssr'
+import { Robot, Clock, Flame, TrendUp, Lightbulb, BellSimple, Heartbeat } from '@phosphor-icons/react/dist/ssr'
 import type { CopyKeys } from './copy'
 
 interface FeaturesSectionProps {
@@ -13,6 +13,7 @@ const ICON_MAP: Record<string, PhosphorIcon> = {
   'trend-up': TrendUp,
   lightbulb: Lightbulb,
   bell: BellSimple,
+  heartbeat: Heartbeat,
 }
 
 export function FeaturesSection({ copy }: FeaturesSectionProps) {
@@ -26,6 +27,7 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
           {copy.features.map((feature) => {
             const Icon = ICON_MAP[feature.icon]
             const isPremium = feature.tier === 'premium'
+            const status = 'status' in feature ? feature.status : undefined
             return (
               <div
                 key={feature.title}
@@ -49,6 +51,18 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
                   />
                 )}
                 <h3 className="text-slate-100 font-semibold mb-2 text-[15px]">{feature.title}</h3>
+                {status && (
+                  <span
+                    data-testid={`feature-status-${feature.icon}`}
+                    className={
+                      status === 'live'
+                        ? 'inline-block mb-3 text-[10px] font-semibold tracking-[0.18em] text-emerald-300 uppercase'
+                        : 'inline-block mb-3 text-[10px] font-semibold tracking-[0.18em] text-slate-500 uppercase'
+                    }
+                  >
+                    {status === 'live' ? copy.featuresStatusLive : copy.featuresStatusSoon}
+                  </span>
+                )}
                 <p className="text-slate-400 text-sm leading-relaxed">{feature.desc}</p>
               </div>
             )
