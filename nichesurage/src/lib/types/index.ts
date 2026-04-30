@@ -4,8 +4,10 @@ export type {
   ContentLanguage,
   ContentType,
   BillingInterval,
+  SubscriptionStatus,
   DbUser,
   DbScanResult,
+  DbNicheHealthCheck,
 } from './database'
 import type { ViralityRating, ContentLanguage, ContentType } from './database'
 
