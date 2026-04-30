@@ -8,11 +8,11 @@ export const COPY = {
     navLogin: 'Login',
     navCta: 'Start Free',
 
-    heroHeadline: 'Find YouTube Niches Before They Explode',
-    heroSub: 'AI-powered opportunity scanner. Real data, updated hourly.',
-    heroBadge: '142 niches spiking right now',
-    heroCta: 'Start Free — No Credit Card',
-    heroCta2: 'See Pricing →',
+    heroHeadline: "I built this because YouTube research was eating my weekends.",
+    heroSub: "NicheSurge scans 230+ small channels every hour and flags the ones spiking before anyone else notices. No keyword guessing, no copy-paste tactics — just the small accounts that started moving.",
+    heroBadge: '47 channels spiked in the last hour',
+    heroCta: 'Try it free',
+    heroCta2: 'How it works',
 
     socialTrust: 'Trusted by 2,400+ creators',
     socialNiches: '3,800+ niches tracked',
@@ -112,11 +112,11 @@ export const COPY = {
     navLogin: 'Anmelden',
     navCta: 'Kostenlos starten',
 
-    heroHeadline: 'YouTube-Nischen finden, bevor sie explodieren',
-    heroSub: 'KI-gestützter Opportunity-Scanner. Echte Daten, stündlich aktualisiert.',
-    heroBadge: '142 Nischen steigen gerade',
-    heroCta: 'Kostenlos starten — keine Kreditkarte',
-    heroCta2: 'Preise ansehen →',
+    heroHeadline: "Ich habe das gebaut, weil YouTube-Recherche meine Wochenenden gefressen hat.",
+    heroSub: "NicheSurge scannt stündlich 230+ kleine Kanäle und markiert die, die zu steigen beginnen — bevor es jemand anderes bemerkt. Kein Keyword-Raten, keine Copy-Paste-Taktik.",
+    heroBadge: '47 Kanäle sind in der letzten Stunde gestiegen',
+    heroCta: 'Kostenlos ausprobieren',
+    heroCta2: 'Wie es funktioniert',
 
     socialTrust: 'Vertraut von 2.400+ Creatorn',
     socialNiches: '3.800+ Nischen verfolgt',

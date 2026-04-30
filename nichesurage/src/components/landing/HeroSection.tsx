@@ -7,44 +7,43 @@ interface HeroSectionProps {
 
 export function HeroSection({ copy }: HeroSectionProps) {
   return (
-    <section className="pt-36 pb-24 px-6 text-center">
+    <section className="relative pt-36 pb-24 px-6 text-center">
       <div className="max-w-3xl mx-auto">
-        {/* Live badge */}
         <div
           role="status"
           aria-label={copy.heroBadge}
-          className="inline-flex items-center gap-2 bg-green-950/60 border border-green-800/50 rounded-full px-4 py-1.5 mb-8"
+          className="inline-flex items-center gap-2 bg-charcoal-900/70 gborder rounded-full px-4 py-1.5 mb-10"
         >
-          <span aria-hidden="true" className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+          <span aria-hidden="true" className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
           </span>
-          <span aria-hidden="true" className="text-green-400 text-sm font-medium">{copy.heroBadge}</span>
+          <span aria-hidden="true" className="text-emerald-300/90 text-[13px] font-medium tracking-tight">
+            {copy.heroBadge}
+          </span>
         </div>
 
-        {/* Headline */}
-        <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-tight mb-6">
-          <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
-            {copy.heroHeadline}
-          </span>
+        <h1 className="text-5xl md:text-[64px] font-semibold tracking-[-0.02em] leading-[1.05] mb-7 text-slate-100 text-balance">
+          {copy.heroHeadline}
         </h1>
 
-        {/* Sub */}
-        <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-[18px] text-slate-400 mb-11 max-w-2xl mx-auto leading-relaxed text-balance">
           {copy.heroSub}
         </p>
 
-        {/* CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
           <Link
             href="/login"
-            className="w-full sm:w-auto text-base font-semibold px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 transition-all text-white shadow-lg shadow-indigo-900/40"
+            className="w-full sm:w-auto text-[15px] font-semibold px-7 py-3 rounded-xl
+                       bg-gradient-to-br from-glow-indigo to-glow-violet
+                       hover:brightness-110 transition-all text-white
+                       shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
           >
             {copy.heroCta}
           </Link>
           <a
-            href="#pricing"
-            className="text-slate-400 hover:text-slate-100 transition-colors text-base"
+            href="#how"
+            className="text-slate-400 hover:text-slate-200 transition-colors text-[15px]"
           >
             {copy.heroCta2}
           </a>
