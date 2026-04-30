@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { LanguageToggle } from './LanguageToggle'
 import type { CopyKeys, Lang } from './copy'
+import { useUser } from '@/lib/context/UserContext'
 
 interface LandingNavProps {
   copy: CopyKeys
@@ -13,6 +14,7 @@ interface LandingNavProps {
 export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const { isLoggedIn } = useUser()
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 60)
@@ -45,6 +47,11 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
           <a href="#pricing" className="hover:text-slate-100 transition-colors">
             {copy.navPricing}
           </a>
+          {isLoggedIn && (
+            <Link href="/dashboard" className="hover:text-slate-100 transition-colors">
+              {copy.navDashboard}
+            </Link>
+          )}
           <LanguageToggle lang={lang} onChange={onLangChange} />
         </nav>
 
@@ -85,6 +92,11 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
           <a href="#pricing" className="text-slate-300 hover:text-white transition-colors" onClick={() => setMenuOpen(false)}>
             {copy.navPricing}
           </a>
+          {isLoggedIn && (
+            <Link href="/dashboard" className="text-slate-300 hover:text-white transition-colors" onClick={() => setMenuOpen(false)}>
+              {copy.navDashboard}
+            </Link>
+          )}
           <LanguageToggle lang={lang} onChange={onLangChange} />
           <Link
             href="/login"

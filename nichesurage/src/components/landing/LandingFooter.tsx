@@ -27,6 +27,12 @@ export function LandingFooter({ copy, lang, onLangChange }: LandingFooterProps) 
             <a href="#pricing" className="text-slate-400 hover:text-slate-200 text-sm transition-colors">
               {copy.navPricing}
             </a>
+            <a href="/dashboard" className="text-slate-400 hover:text-slate-200 text-sm transition-colors">
+              {copy.navDashboard}
+            </a>
+            <a href="/login" className="text-slate-400 hover:text-slate-200 text-sm transition-colors">
+              {copy.navLogin}
+            </a>
           </div>
           <div className="flex flex-col gap-2">
             <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">

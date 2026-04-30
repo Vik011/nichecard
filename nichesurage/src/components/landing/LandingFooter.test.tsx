@@ -21,6 +21,18 @@ describe('LandingFooter', () => {
     expect(screen.getByText(copy.footerTerms)).toBeInTheDocument()
   })
 
+  it('renders Dashboard link in footer', () => {
+    render(<LandingFooter copy={copy} lang="en" onLangChange={() => {}} />)
+    const link = screen.getByRole('link', { name: copy.navDashboard })
+    expect(link).toHaveAttribute('href', '/dashboard')
+  })
+
+  it('renders Login link in footer', () => {
+    render(<LandingFooter copy={copy} lang="en" onLangChange={() => {}} />)
+    const link = screen.getByRole('link', { name: copy.navLogin })
+    expect(link).toHaveAttribute('href', '/login')
+  })
+
   it('calls onLangChange when language toggle is used', () => {
     const onLangChange = jest.fn()
     render(<LandingFooter copy={copy} lang="en" onLangChange={onLangChange} />)
