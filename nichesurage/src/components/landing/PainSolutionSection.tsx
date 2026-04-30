@@ -16,8 +16,8 @@ export function PainSolutionSection({ copy }: PainSolutionSectionProps) {
           <div className="bg-slate-900 border border-red-900/40 rounded-xl p-8">
             <h3 className="text-lg font-semibold text-red-400 mb-6">{copy.painTitle}</h3>
             <ul className="space-y-4">
-              {copy.painItems.map((item) => (
-                <li key={item} className="flex items-start gap-3 text-slate-400">
+              {copy.painItems.map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-slate-400">
                   <span aria-hidden="true" className="text-red-500 mt-0.5 shrink-0">✕</span>
                   <span>{item}</span>
                 </li>
@@ -28,8 +28,8 @@ export function PainSolutionSection({ copy }: PainSolutionSectionProps) {
           <div className="bg-slate-900 border border-indigo-800/50 rounded-xl p-8">
             <h3 className="text-lg font-semibold text-indigo-400 mb-6">{copy.solutionTitle}</h3>
             <ul className="space-y-4">
-              {copy.solutionItems.map((item) => (
-                <li key={item} className="flex items-start gap-3 text-slate-100">
+              {copy.solutionItems.map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-slate-100">
                   <span aria-hidden="true" className="text-green-400 mt-0.5 shrink-0">✓</span>
                   <span>{item}</span>
                 </li>
