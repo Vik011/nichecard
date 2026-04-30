@@ -30,4 +30,22 @@ describe('FeaturesSection', () => {
       expect(screen.getByTestId(`feature-icon-${f.icon}`)).toBeInTheDocument()
     })
   })
+
+  it('renders PREMIUM badge only on premium-tier features', () => {
+    render(<FeaturesSection copy={copy} />)
+    copy.features.forEach(f => {
+      const badge = screen.queryByTestId(`feature-premium-badge-${f.icon}`)
+      if (f.tier === 'premium') {
+        expect(badge).toBeInTheDocument()
+      } else {
+        expect(badge).not.toBeInTheDocument()
+      }
+    })
+  })
+
+  it('renders featuresPremiumBadge text for each premium feature', () => {
+    render(<FeaturesSection copy={copy} />)
+    const premiumCount = copy.features.filter(f => f.tier === 'premium').length
+    expect(screen.getAllByText(copy.featuresPremiumBadge).length).toBe(premiumCount)
+  })
 })
