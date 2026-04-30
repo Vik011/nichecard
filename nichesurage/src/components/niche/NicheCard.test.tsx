@@ -115,7 +115,7 @@ describe('NicheCard', () => {
 })
 
 describe('trending badge', () => {
-  it('renders fire badge when trending=true and spike >= 5', () => {
+  it('renders fire badge when trending=true', () => {
     const trendingData: NicheCardData = {
       ...shortsBase,
       trending: true,
