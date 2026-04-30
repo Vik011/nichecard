@@ -9,9 +9,9 @@ import { SocialProofBar } from './SocialProofBar'
 import { AppPreviewSection } from './AppPreviewSection'
 import { PainSolutionSection } from './PainSolutionSection'
 import { FeaturesSection } from './FeaturesSection'
+import { PricingSection } from './PricingSection'
 
-// Section components — created in Tasks 8–9
-function PricingSection(_props: { copy: Record<string, unknown> }) { return null }
+// Section components — created in Task 9
 function TestimonialsSection(_props: { copy: Record<string, unknown> }) { return null }
 function FinalCTASection(_props: { copy: Record<string, unknown> }) { return null }
 function LandingFooter(_props: { copy: Record<string, unknown>; lang: Lang; onLangChange: (l: Lang) => void }) { return null }
