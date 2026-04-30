@@ -6,14 +6,18 @@ interface FinalCTASectionProps {
 
 export function FinalCTASection({ copy }: FinalCTASectionProps) {
   return (
-    <section className="py-24 px-6 bg-gradient-to-br from-indigo-900/40 to-violet-900/40">
-      <div className="max-w-2xl mx-auto text-center">
-        <h2 className="text-3xl md:text-4xl font-bold mb-8 text-slate-100">
+    <section className="relative py-28 px-6 overflow-hidden">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(124,131,240,0.10),_transparent_60%)]"
+      />
+      <div className="relative max-w-3xl mx-auto text-center">
+        <h2 className="text-3xl md:text-5xl font-semibold tracking-tight text-slate-100 mb-8 text-balance">
           {copy.ctaHeadline}
         </h2>
         <a
           href="/login"
-          className="inline-block py-4 px-8 rounded-xl font-semibold text-lg bg-gradient-to-r from-indigo-500 to-violet-500 text-white hover:from-indigo-400 hover:to-violet-400 transition-all shadow-lg shadow-indigo-900/40"
+          className="inline-block px-8 py-3.5 rounded-xl bg-gradient-to-br from-glow-indigo to-glow-violet text-white font-semibold shadow-[0_10px_30px_-8px_rgba(124,131,240,0.5)] hover:brightness-110 transition-all"
         >
           {copy.ctaButton}
         </a>

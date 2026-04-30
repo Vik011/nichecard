@@ -14,10 +14,10 @@ export function AppPreviewSection({ niches, copy }: AppPreviewSectionProps) {
       <div className="max-w-6xl mx-auto">
         {/* Heading */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3 text-slate-100">
+          <h2 className="text-3xl md:text-4xl font-semibold mb-3 text-slate-100 tracking-tight text-balance">
             {copy.previewTitle}
           </h2>
-          <p className="text-slate-400 text-lg">{copy.previewSub}</p>
+          <p className="text-slate-400 text-[17px]">{copy.previewSub}</p>
         </div>
 
         {/* Card grid with fade overlay */}
@@ -31,15 +31,15 @@ export function AppPreviewSection({ niches, copy }: AppPreviewSectionProps) {
           {/* Bottom fade — obscures last row to tease content */}
           <div
             aria-hidden="true"
-            className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-slate-950 to-transparent pointer-events-none"
+            className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#060910] via-[#060910]/60 to-transparent pointer-events-none"
           />
         </div>
 
         {/* CTA below the grid */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-10">
           <Link
             href="/login"
-            className="inline-block text-base font-semibold px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 transition-all text-white shadow-lg shadow-indigo-900/40"
+            className="inline-block text-[15px] font-semibold px-7 py-3 rounded-xl bg-gradient-to-br from-glow-indigo to-glow-violet hover:brightness-110 transition-all text-white shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
           >
             {copy.previewCta}
           </Link>

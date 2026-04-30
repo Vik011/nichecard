@@ -27,7 +27,7 @@ describe('TestimonialsSection', () => {
   it('renders all testimonial quotes', () => {
     render(<TestimonialsSection copy={copy} />)
     copy.testimonials.forEach(t => {
-      expect(screen.getByText(`"${t.quote}"`)).toBeInTheDocument()
+      expect(screen.getByText(t.quote)).toBeInTheDocument()
     })
   })
 
@@ -36,6 +36,13 @@ describe('TestimonialsSection', () => {
     copy.testimonials.forEach(t => {
       const initial = t.name.charAt(0).toUpperCase()
       expect(screen.getByText(initial)).toBeInTheDocument()
+    })
+  })
+
+  it('renders detail line for each testimonial', () => {
+    render(<TestimonialsSection copy={copy} />)
+    copy.testimonials.forEach(t => {
+      if (t.detail) expect(screen.getByText(t.detail)).toBeInTheDocument()
     })
   })
 })

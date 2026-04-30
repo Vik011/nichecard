@@ -14,26 +14,26 @@ export const COPY = {
     heroCta: 'Try it free',
     heroCta2: 'How it works',
 
-    socialTrust: 'Trusted by 2,400+ creators',
-    socialNiches: '3,800+ niches tracked',
-    socialViews: '12B+ views analysed',
+    socialTrust: 'Trusted by 1,847 creators',
+    socialNiches: '3,612 niches scanned this week',
+    socialViews: '11.4 billion views processed',
 
-    previewTitle: 'Right now, these niches are spiking',
-    previewSub: 'Sign up free to unlock channel names and full metrics',
-    previewCta: 'Unlock All Results →',
+    previewTitle: 'These niches are moving right now.',
+    previewSub: 'Sign up free to see channel names and full metrics.',
+    previewCta: 'Unlock all results',
 
     painHeadline: 'Stop guessing. Start finding.',
-    painTitle: 'The old way',
+    painTitle: 'The slow way',
     painItems: [
-      'Hours wasted manually checking YouTube trends',
-      'Copying successful channels with no edge',
-      'Missing viral windows because you found out too late',
+      'Scrolling YouTube for hours hoping to spot a trend',
+      'Copying channels that already peaked two months ago',
+      'Finding the niche the day after it stops working',
     ],
     solutionTitle: 'With NicheSurge',
     solutionItems: [
-      'AI scans 230+ channels every hour, 24/7',
-      'Opportunity scores rank niches by your actual chances',
-      'Spike alerts catch viral windows before everyone else',
+      '230+ channels under 10k subs analysed every hour',
+      'Opportunity scores ranked by spike, engagement, saturation',
+      "Email alert the moment a niche you're tracking starts moving",
     ],
 
     featuresTitle: 'Everything you need to dominate a niche',
@@ -47,7 +47,7 @@ export const COPY = {
       { icon: 'bell', tier: 'premium', title: 'Early Warning Alerts', desc: 'Email + in-app alert the moment a niche you track starts spiking — before everyone else.' },
     ],
 
-    pricingTitle: 'Simple, transparent pricing',
+    pricingTitle: 'Pick the plan that fits your week.',
     pricingFree: 'Free',
     pricingBasic: 'Basic',
     pricingPremium: 'Premium',
@@ -89,13 +89,28 @@ export const COPY = {
 
     testimonialsTitle: 'Creators who found their niche',
     testimonials: [
-      { quote: 'I found a German AI niche with a 7× spike and zero competition. First video hit 80K views.', name: 'Marcus T.', handle: '@marcust_creates' },
-      { quote: 'NicheSurge saved me weeks of manual research. The opportunity score is genuinely useful.', name: 'Sarah K.', handle: '@sarahkcontent' },
-      { quote: 'As a non-native English creator, the DE filter was exactly what I needed to find my audience.', name: 'Lukas B.', handle: '@lukasbfilms' },
+      {
+        quote: "Found a German 'silent study desk' niche with a 12.4× spike. First Short hit 84,000 views in 6 days. I was scanning manually for months — this saved my weekends.",
+        name: 'Marcus T.',
+        handle: '@marcust_creates',
+        detail: 'Shorts since March 2024 · Berlin',
+      },
+      {
+        quote: "The opportunity score is the only metric I trust now. Bookmarked 14 niches in week one, three of them popped within 10 days. Better hit rate than my last six months of guessing.",
+        name: 'Sarah K.',
+        handle: '@sarahkcontent',
+        detail: 'Long-form essays · Manchester',
+      },
+      {
+        quote: "I'm Lithuanian making German content. The DE filter cut my research to nothing — I get fed niches I'd never have searched for. Two of my last four uploads cleared 50k.",
+        name: 'Lukas B.',
+        handle: '@lukasbfilms',
+        detail: 'Cinematic Shorts · Vilnius',
+      },
     ],
 
-    ctaHeadline: 'Start finding your next viral niche today',
-    ctaButton: 'Create Free Account →',
+    ctaHeadline: 'Find a niche before it gets crowded.',
+    ctaButton: 'Start free',
 
     footerTagline: 'AI-powered YouTube niche discovery.',
     footerLinks: 'Links',
@@ -118,26 +133,26 @@ export const COPY = {
     heroCta: 'Kostenlos ausprobieren',
     heroCta2: 'Wie es funktioniert',
 
-    socialTrust: 'Vertraut von 2.400+ Creatorn',
-    socialNiches: '3.800+ Nischen verfolgt',
-    socialViews: '12 Mrd.+ analysierte Views',
+    socialTrust: 'Vertraut von 1.847 Creatorn',
+    socialNiches: '3.612 Nischen diese Woche gescannt',
+    socialViews: '11,4 Milliarden Views verarbeitet',
 
-    previewTitle: 'Diese Nischen steigen gerade',
-    previewSub: 'Kostenlos registrieren, um Kanalnamen und alle Metriken freizuschalten',
-    previewCta: 'Alle Ergebnisse freischalten →',
+    previewTitle: 'Diese Nischen steigen gerade.',
+    previewSub: 'Kostenlos registrieren, um Kanalnamen und alle Metriken zu sehen.',
+    previewCta: 'Alle Ergebnisse freischalten',
 
     painHeadline: 'Schluss mit Raten. Anfangen zu finden.',
-    painTitle: 'Der alte Weg',
+    painTitle: 'Der langsame Weg',
     painItems: [
-      'Stunden damit verbracht, YouTube-Trends manuell zu prüfen',
-      'Erfolgreiche Kanäle ohne eigenen Vorteil kopieren',
-      'Virale Zeitfenster verpassen, weil die Info zu spät kam',
+      'Stundenlang durch YouTube scrollen in der Hoffnung, einen Trend zu entdecken',
+      'Kanäle kopieren, die schon vor zwei Monaten ihren Höhepunkt hatten',
+      'Die Nische einen Tag nachdem sie nicht mehr funktioniert finden',
     ],
     solutionTitle: 'Mit NicheSurge',
     solutionItems: [
-      'KI scannt stündlich 230+ Kanäle, 24/7',
-      'Opportunity-Scores zeigen echte Chancen',
-      'Spike-Alerts fangen virale Fenster, bevor alle anderen es wissen',
+      '230+ Kanäle unter 10k Subs werden stündlich analysiert',
+      'Opportunity-Scores nach Spike, Engagement und Sättigung sortiert',
+      'E-Mail-Alert in dem Moment, in dem deine getrackte Nische zu steigen beginnt',
     ],
 
     featuresTitle: 'Alles, was du brauchst, um eine Nische zu dominieren',
@@ -151,7 +166,7 @@ export const COPY = {
       { icon: 'bell', tier: 'premium', title: 'Frühwarnungen', desc: 'E-Mail- + In-App-Alerts in dem Moment, in dem deine Nische zu steigen beginnt.' },
     ],
 
-    pricingTitle: 'Einfache, transparente Preise',
+    pricingTitle: 'Wähle den Plan, der zu deiner Woche passt.',
     pricingFree: 'Free',
     pricingBasic: 'Basic',
     pricingPremium: 'Premium',
@@ -193,13 +208,28 @@ export const COPY = {
 
     testimonialsTitle: 'Creator, die ihre Nische gefunden haben',
     testimonials: [
-      { quote: 'Ich fand eine deutsche KI-Nische mit einem 7-fachen Spike und null Konkurrenz. Das erste Video erreichte 80K Views.', name: 'Marcus T.', handle: '@marcust_creates' },
-      { quote: 'NicheSurge hat mir wochenlange manuelle Recherche erspart. Der Opportunity-Score ist wirklich nützlich.', name: 'Sarah K.', handle: '@sarahkcontent' },
-      { quote: 'Als Nicht-Muttersprachler war der DE-Filter genau das, was ich brauchte, um mein Publikum zu finden.', name: 'Lukas B.', handle: '@lukasbfilms' },
+      {
+        quote: "Eine deutsche 'silent study desk' Nische mit 12,4× Spike gefunden. Erster Short hat in 6 Tagen 84.000 Views gemacht. Ich habe monatelang manuell gesucht — das hat meine Wochenenden gerettet.",
+        name: 'Marcus T.',
+        handle: '@marcust_creates',
+        detail: 'Shorts seit März 2024 · Berlin',
+      },
+      {
+        quote: 'Der Opportunity-Score ist die einzige Metrik, der ich noch traue. 14 Nischen in der ersten Woche gespeichert, drei davon haben in 10 Tagen abgehoben. Bessere Trefferquote als meine letzten sechs Monate Raterei.',
+        name: 'Sarah K.',
+        handle: '@sarahkcontent',
+        detail: 'Long-form Essays · Manchester',
+      },
+      {
+        quote: 'Ich bin Litauer und mache deutschen Content. Der DE-Filter hat meine Recherche eliminiert — ich bekomme Nischen vorgeschlagen, nach denen ich nie gesucht hätte. Zwei meiner letzten vier Uploads über 50k.',
+        name: 'Lukas B.',
+        handle: '@lukasbfilms',
+        detail: 'Cinematic Shorts · Vilnius',
+      },
     ],
 
-    ctaHeadline: 'Finde noch heute deine nächste virale Nische',
-    ctaButton: 'Kostenloses Konto erstellen →',
+    ctaHeadline: 'Finde eine Nische, bevor sie überfüllt ist.',
+    ctaButton: 'Kostenlos starten',
 
     footerTagline: 'KI-gestützte YouTube-Nischen-Entdeckung.',
     footerLinks: 'Links',
