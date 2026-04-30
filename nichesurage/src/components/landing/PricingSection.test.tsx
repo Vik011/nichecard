@@ -59,15 +59,15 @@ describe('PricingSection', () => {
     })
   })
 
-  it('Premium tier card has violet border class', () => {
+  it('Premium tier card has violet glass class', () => {
     const { container } = render(<PricingSection copy={copy} />)
-    const cards = container.querySelectorAll('[class*="border-violet-500"]')
+    const cards = container.querySelectorAll('[class*="glass-violet"]')
     expect(cards.length).toBeGreaterThan(0)
   })
 
   it('Basic tier card has indigo ring class', () => {
     const { container } = render(<PricingSection copy={copy} />)
-    const cards = container.querySelectorAll('[class*="ring-indigo-500"]')
+    const cards = container.querySelectorAll('[class*="ring-glow-indigo"]')
     expect(cards.length).toBeGreaterThan(0)
   })
 

@@ -56,20 +56,20 @@ export function PricingSection({ copy }: PricingSectionProps) {
   return (
     <section id="pricing" className="py-24 px-6">
       <div className="max-w-5xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 text-slate-100">
+        <h2 className="text-3xl md:text-4xl font-semibold text-center mb-8 text-slate-100 tracking-tight text-balance">
           {copy.pricingTitle}
         </h2>
 
         {/* Billing toggle */}
-        <div className="flex justify-center mb-10">
-          <div className="inline-flex items-center gap-1 bg-slate-800 rounded-full p-1">
+        <div className="flex justify-center mb-12">
+          <div className="inline-flex items-center gap-1 glass rounded-full p-1">
             <button
               type="button"
               aria-pressed={billing === 'monthly'}
               onClick={() => setBilling('monthly')}
               className={
                 billing === 'monthly'
-                  ? 'px-5 py-2 rounded-full text-sm font-semibold bg-slate-600 text-white transition-all'
+                  ? 'px-5 py-2 rounded-full text-sm font-semibold bg-charcoal-700 text-slate-100 transition-all'
                   : 'px-5 py-2 rounded-full text-sm font-semibold text-slate-400 hover:text-slate-200 transition-all'
               }
             >
@@ -81,19 +81,19 @@ export function PricingSection({ copy }: PricingSectionProps) {
               onClick={() => setBilling('yearly')}
               className={
                 billing === 'yearly'
-                  ? 'px-5 py-2 rounded-full text-sm font-semibold bg-indigo-600 text-white transition-all flex items-center gap-2'
+                  ? 'px-5 py-2 rounded-full text-sm font-semibold bg-gradient-to-br from-glow-indigo to-glow-violet text-white transition-all flex items-center gap-2'
                   : 'px-5 py-2 rounded-full text-sm font-semibold text-slate-400 hover:text-slate-200 transition-all flex items-center gap-2'
               }
             >
               {copy.pricingToggleYearly}
-              <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-semibold">
+              <span className="text-[11px] text-emerald-300 font-semibold tracking-tight">
                 {copy.pricingYearlySaveBadge}
               </span>
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
           {tiers.map((tier) => {
             const isYearly = billing === 'yearly'
             const price = isYearly ? tier.yearlyPrice : tier.monthlyPrice
@@ -107,36 +107,36 @@ export function PricingSection({ copy }: PricingSectionProps) {
                 key={tier.plan}
                 className={
                   tier.highlight
-                    ? 'relative bg-indigo-950 border-2 border-indigo-500 ring-2 ring-indigo-500/30 rounded-2xl p-8 shadow-xl shadow-indigo-900/20'
+                    ? 'relative glass rounded-2xl p-8 ring-1 ring-glow-indigo/40'
                     : tier.isPremium
-                    ? 'relative bg-slate-900 border border-violet-500 rounded-2xl p-8'
-                    : 'bg-slate-900 border border-slate-800 rounded-2xl p-8'
+                    ? 'relative glass glass-violet rounded-2xl p-8'
+                    : 'relative gborder bg-charcoal-900 rounded-2xl p-8'
                 }
               >
                 {tier.highlight && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold tracking-[0.22em] text-glow-indigo uppercase bg-charcoal-900 px-3">
                     Most Popular
                   </span>
                 )}
                 {tier.isPremium && (
-                  <span className="absolute -top-3 right-4 bg-violet-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                  <span className="absolute -top-3 right-6 text-[10px] font-semibold tracking-[0.22em] text-glow-violet uppercase bg-charcoal-900 px-3">
                     {copy.pricingBestValueBadge}
                   </span>
                 )}
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-slate-100 mb-2">{tier.name}</h3>
+                  <h3 className="text-[15px] font-semibold text-slate-100 mb-3 uppercase tracking-[0.18em] text-slate-300">{tier.name}</h3>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold text-slate-100">{price}</span>
+                    <span className="text-5xl font-semibold text-slate-100 tracking-tight">{price}</span>
                     <span className="text-slate-400 text-sm">{perLabel}</span>
                   </div>
                   {isYearly && tier.yearlyMonthly && (
-                    <p className="text-slate-500 text-xs mt-1">{tier.yearlyMonthly}</p>
+                    <p className="text-slate-500 text-xs mt-1.5">{tier.yearlyMonthly}</p>
                   )}
                 </div>
                 <ul className="space-y-3 mb-8">
                   {tier.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2 text-sm text-slate-300">
-                      <span className="text-green-400 mt-0.5 shrink-0">✓</span>
+                      <span className="text-emerald-400/90 mt-0.5 shrink-0">✓</span>
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -145,8 +145,8 @@ export function PricingSection({ copy }: PricingSectionProps) {
                   href={href}
                   className={
                     tier.highlight
-                      ? 'block w-full text-center py-3 px-4 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-violet-500 text-white hover:from-indigo-400 hover:to-violet-400 transition-all'
-                      : 'block w-full text-center py-3 px-4 rounded-xl font-semibold border border-slate-700 text-slate-200 hover:border-slate-500 hover:text-white transition-colors'
+                      ? 'block w-full text-center py-3 px-4 rounded-xl font-semibold bg-gradient-to-br from-glow-indigo to-glow-violet text-white hover:brightness-110 transition-all shadow-[0_8px_24px_-8px_rgba(124,131,240,0.45)]'
+                      : 'block w-full text-center py-3 px-4 rounded-xl font-semibold gborder bg-charcoal-800 text-slate-200 hover:bg-charcoal-700 transition-colors'
                   }
                 >
                   {tier.cta}
