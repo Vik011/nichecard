@@ -30,4 +30,12 @@ describe('TestimonialsSection', () => {
       expect(screen.getByText(`"${t.quote}"`)).toBeInTheDocument()
     })
   })
+
+  it('renders avatar initial for each testimonial', () => {
+    render(<TestimonialsSection copy={copy} />)
+    copy.testimonials.forEach(t => {
+      const initial = t.name.charAt(0).toUpperCase()
+      expect(screen.getByText(initial)).toBeInTheDocument()
+    })
+  })
 })

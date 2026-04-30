@@ -15,12 +15,22 @@ export function TestimonialsSection({ copy }: TestimonialsSectionProps) {
           {copy.testimonials.map((t) => (
             <div
               key={t.handle}
-              className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col gap-4"
+              className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 flex flex-col gap-4"
             >
               <p className="text-slate-300 text-sm leading-relaxed flex-1">"{t.quote}"</p>
-              <div>
-                <p className="text-slate-100 font-semibold text-sm">{t.name}</p>
-                <p className="text-slate-500 text-xs">{t.handle}</p>
+              <div className="flex items-center gap-3">
+                <div
+                  aria-hidden="true"
+                  className="w-10 h-10 rounded-full bg-indigo-800 flex items-center justify-center shrink-0"
+                >
+                  <span className="text-indigo-200 font-semibold text-sm">
+                    {t.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-slate-100 font-semibold text-sm">{t.name}</p>
+                  <p className="text-slate-500 text-xs">{t.handle}</p>
+                </div>
               </div>
             </div>
           ))}
