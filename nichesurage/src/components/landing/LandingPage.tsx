@@ -13,6 +13,7 @@ import { PricingSection } from './PricingSection'
 import { TestimonialsSection } from './TestimonialsSection'
 import { FinalCTASection } from './FinalCTASection'
 import { LandingFooter } from './LandingFooter'
+import { NoiseOverlay } from './NoiseOverlay'
 
 interface LandingPageProps {
   niches: NicheCardData[]
@@ -23,7 +24,8 @@ export function LandingPage({ niches }: LandingPageProps) {
   const copy = COPY[lang]
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="relative min-h-screen bg-slate-950 text-slate-100">
+      <NoiseOverlay />
       <LandingNav copy={copy} lang={lang} onLangChange={setLang} />
       <HeroSection copy={copy} />
       <SocialProofBar copy={copy} />
