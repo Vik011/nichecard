@@ -12,9 +12,9 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
           {copy.featuresTitle}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {copy.features.map((feature, i) => (
+          {copy.features.map((feature) => (
             <div
-              key={i}
+              key={feature.title}
               className="bg-slate-900 border border-slate-800 rounded-xl p-6"
             >
               <span className="text-3xl mb-4 block" aria-hidden="true">{feature.icon}</span>
