@@ -24,9 +24,10 @@ describe('FeaturesSection', () => {
     })
   })
 
-  it('renders a lucide svg icon for each feature', () => {
-    const { container } = render(<FeaturesSection copy={copy} />)
-    const svgs = container.querySelectorAll('svg')
-    expect(svgs.length).toBe(copy.features.length)
+  it('renders a lucide icon for each feature', () => {
+    render(<FeaturesSection copy={copy} />)
+    copy.features.forEach(f => {
+      expect(screen.getByTestId(`feature-icon-${f.icon}`)).toBeInTheDocument()
+    })
   })
 })

@@ -6,12 +6,12 @@ interface FeaturesSectionProps {
 }
 
 const ICON_MAP: Record<string, LucideIcon> = {
-  '🤖': Bot,
-  '⏱': Clock,
-  '🔥': Flame,
-  '🔖': Bookmark,
-  '📱': Smartphone,
-  '🌍': Globe,
+  bot: Bot,
+  clock: Clock,
+  flame: Flame,
+  bookmark: Bookmark,
+  smartphone: Smartphone,
+  globe: Globe,
 }
 
 export function FeaturesSection({ copy }: FeaturesSectionProps) {
@@ -34,6 +34,7 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
                     className="text-indigo-400 mb-4"
                     size={28}
                     aria-hidden="true"
+                    data-testid={`feature-icon-${feature.icon}`}
                   />
                 )}
                 <h3 className="text-slate-100 font-semibold mb-2">{feature.title}</h3>

@@ -38,12 +38,12 @@ export const COPY = {
 
     featuresTitle: 'Everything you need to dominate a niche',
     features: [
-      { icon: '🤖', title: 'AI Opportunity Score', desc: 'Composite score weighing spike, engagement, competition and search volume.' },
-      { icon: '⏱', title: 'Hourly Scans', desc: '230+ channels re-analysed every hour so you never miss a spike window.' },
-      { icon: '🔥', title: 'Viral Spike Detection', desc: 'Flags channels with 3× or higher 48-hour view jumps the moment they appear.' },
-      { icon: '🔖', title: 'Bookmark & Compare', desc: 'Save up to 10 niches on Basic, unlimited on Premium, access anytime.' },
-      { icon: '📱', title: 'Shorts + Longform', desc: "Separate discovery tracks optimised for each format's unique metrics." },
-      { icon: '🌍', title: 'EN & DE Markets', desc: 'Filter by language to find underserved opportunities in both markets.' },
+      { icon: 'bot', title: 'AI Opportunity Score', desc: 'Composite score weighing spike, engagement, competition and search volume.' },
+      { icon: 'clock', title: 'Hourly Scans', desc: '230+ channels re-analysed every hour so you never miss a spike window.' },
+      { icon: 'flame', title: 'Viral Spike Detection', desc: 'Flags channels with 3× or higher 48-hour view jumps the moment they appear.' },
+      { icon: 'bookmark', title: 'Bookmark & Compare', desc: 'Save up to 10 niches on Basic, unlimited on Premium, access anytime.' },
+      { icon: 'smartphone', title: 'Shorts + Longform', desc: "Separate discovery tracks optimised for each format's unique metrics." },
+      { icon: 'globe', title: 'EN & DE Markets', desc: 'Filter by language to find underserved opportunities in both markets.' },
     ],
 
     pricingTitle: 'Simple, transparent pricing',
@@ -116,12 +116,12 @@ export const COPY = {
 
     featuresTitle: 'Alles, was du brauchst, um eine Nische zu dominieren',
     features: [
-      { icon: '🤖', title: 'KI-Opportunity-Score', desc: 'Kombinierter Score aus Spike, Engagement, Wettbewerb und Suchvolumen.' },
-      { icon: '⏱', title: 'Stündliche Scans', desc: '230+ Kanäle werden jede Stunde neu analysiert, damit du kein Spike-Fenster verpasst.' },
-      { icon: '🔥', title: 'Viral-Spike-Erkennung', desc: 'Markiert Kanäle mit einem 3-fachen oder höheren 48-Stunden-View-Sprung.' },
-      { icon: '🔖', title: 'Bookmarks & Vergleich', desc: 'Bis zu 10 Nischen bei Basic speichern, unbegrenzt bei Premium.' },
-      { icon: '📱', title: 'Shorts + Longform', desc: 'Separate Discovery-Tracks, optimiert für die Metriken jedes Formats.' },
-      { icon: '🌍', title: 'EN & DE Märkte', desc: 'Nach Sprache filtern, um unerschlossene Chancen in beiden Märkten zu finden.' },
+      { icon: 'bot', title: 'KI-Opportunity-Score', desc: 'Kombinierter Score aus Spike, Engagement, Wettbewerb und Suchvolumen.' },
+      { icon: 'clock', title: 'Stündliche Scans', desc: '230+ Kanäle werden jede Stunde neu analysiert, damit du kein Spike-Fenster verpasst.' },
+      { icon: 'flame', title: 'Viral-Spike-Erkennung', desc: 'Markiert Kanäle mit einem 3-fachen oder höheren 48-Stunden-View-Sprung.' },
+      { icon: 'bookmark', title: 'Bookmarks & Vergleich', desc: 'Bis zu 10 Nischen bei Basic speichern, unbegrenzt bei Premium.' },
+      { icon: 'smartphone', title: 'Shorts + Longform', desc: 'Separate Discovery-Tracks, optimiert für die Metriken jedes Formats.' },
+      { icon: 'globe', title: 'EN & DE Märkte', desc: 'Nach Sprache filtern, um unerschlossene Chancen in beiden Märkten zu finden.' },
     ],
 
     pricingTitle: 'Einfache, transparente Preise',
