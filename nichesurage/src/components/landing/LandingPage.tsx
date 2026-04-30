@@ -7,12 +7,10 @@ import { LandingNav } from './LandingNav'
 import { HeroSection } from './HeroSection'
 import { SocialProofBar } from './SocialProofBar'
 import { AppPreviewSection } from './AppPreviewSection'
+import { PainSolutionSection } from './PainSolutionSection'
+import { FeaturesSection } from './FeaturesSection'
 
-// Section components — created in Tasks 7–9
-// Using inline stubs until those tasks complete.
-// LandingNav and LandingFooter receive lang+onLangChange so they can render <LanguageToggle> from ./LanguageToggle.
-function PainSolutionSection(_props: { copy: Record<string, unknown> }) { return null }
-function FeaturesSection(_props: { copy: Record<string, unknown> }) { return null }
+// Section components — created in Tasks 8–9
 function PricingSection(_props: { copy: Record<string, unknown> }) { return null }
 function TestimonialsSection(_props: { copy: Record<string, unknown> }) { return null }
 function FinalCTASection(_props: { copy: Record<string, unknown> }) { return null }
