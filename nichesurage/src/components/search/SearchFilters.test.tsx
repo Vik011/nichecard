@@ -14,22 +14,22 @@ const defaultFilters: SearchFiltersType = {
 describe('SearchFilters', () => {
   it('renders content type toggle with both options', () => {
     render(<SearchFilters value={defaultFilters} onChange={() => {}} />)
-    expect(screen.getByRole('button', { name: /shorts/i })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /longform/i })).toBeTruthy()
+    expect(screen.getByRole('radio', { name: /shorts/i })).toBeTruthy()
+    expect(screen.getByRole('radio', { name: /longform/i })).toBeTruthy()
   })
 
   it('active content type button is visually distinguished', () => {
     render(<SearchFilters value={defaultFilters} onChange={() => {}} />)
-    const shortsBtn = screen.getByRole('button', { name: /shorts/i })
-    expect(shortsBtn.className).toMatch(/indigo|active|selected|bg-/)
-    const longformBtn = screen.getByRole('button', { name: /longform/i })
-    expect(longformBtn.className).not.toMatch(shortsBtn.className.split(' ').find(c => c.includes('indigo')) ?? 'NOMATCH')
+    const shortsBtn = screen.getByRole('radio', { name: /shorts/i })
+    expect(shortsBtn.getAttribute('aria-checked')).toBe('true')
+    const longformBtn = screen.getByRole('radio', { name: /longform/i })
+    expect(longformBtn.getAttribute('aria-checked')).toBe('false')
   })
 
   it('clicking longform calls onChange with contentType longform', () => {
     const onChange = jest.fn()
     render(<SearchFilters value={defaultFilters} onChange={onChange} />)
-    fireEvent.click(screen.getByRole('button', { name: /longform/i }))
+    fireEvent.click(screen.getByRole('radio', { name: /longform/i }))
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ contentType: 'longform' })
     )
@@ -37,24 +37,24 @@ describe('SearchFilters', () => {
 
   it('renders subscriber min/max inputs', () => {
     render(<SearchFilters value={defaultFilters} onChange={() => {}} />)
-    expect(screen.getByLabelText(/min/i)).toBeTruthy()
-    expect(screen.getByLabelText(/max/i)).toBeTruthy()
+    expect(screen.getByLabelText(/min subscribers/i)).toBeTruthy()
+    expect(screen.getByLabelText(/max subscribers/i)).toBeTruthy()
   })
 
   it('changing subscriber min calls onChange with updated value', () => {
     const onChange = jest.fn()
     render(<SearchFilters value={defaultFilters} onChange={onChange} />)
-    fireEvent.change(screen.getByLabelText(/min/i), { target: { value: '5000' } })
+    fireEvent.change(screen.getByLabelText(/min subscribers/i), { target: { value: '5000' } })
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ subscriberMin: 5000 })
     )
   })
 
-  it('renders channel age select with all options', () => {
+  it('renders channel age radio group with all options', () => {
     render(<SearchFilters value={defaultFilters} onChange={() => {}} />)
-    const select = screen.getByLabelText(/channel age/i)
-    const options = Array.from((select as HTMLSelectElement).options).map(o => o.value)
-    expect(options).toEqual(expect.arrayContaining(['1month', '3months', '6months', '1year', 'any']))
+    const group = screen.getByRole('radiogroup', { name: /channel age/i })
+    const labels = Array.from(group.querySelectorAll('button[role="radio"]')).map(b => b.textContent)
+    expect(labels).toEqual(expect.arrayContaining(['1 mo', '3 mo', '6 mo', '1 yr', 'Any']))
   })
 
   it('renders viral-only toggle and clicking it calls onChange', () => {
