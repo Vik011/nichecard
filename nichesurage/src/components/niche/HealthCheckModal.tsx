@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from '@phosphor-icons/react/dist/ssr'
 
 interface HealthCheckModalProps {
@@ -44,6 +45,8 @@ function scoreColor(score: number): string {
 
 export function HealthCheckModal({ scanResultId, nicheLabel, onClose }: HealthCheckModalProps) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -75,7 +78,9 @@ export function HealthCheckModal({ scanResultId, nicheLabel, onClose }: HealthCh
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  return (
+  if (!mounted) return null
+
+  const overlay = (
     <div
       role="dialog"
       aria-modal="true"
@@ -108,6 +113,8 @@ export function HealthCheckModal({ scanResultId, nicheLabel, onClose }: HealthCh
       </div>
     </div>
   )
+
+  return createPortal(overlay, document.body)
 }
 
 function LoadingBody() {
