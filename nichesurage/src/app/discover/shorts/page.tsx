@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { MagnifyingGlass } from '@phosphor-icons/react/dist/ssr'
 import { SearchFilters } from '@/components/search/SearchFilters'
 import { NicheCard } from '@/components/niche/NicheCard'
 import { NicheCardSkeleton } from '@/components/niche/NicheCardSkeleton'
@@ -13,6 +14,15 @@ import type { SearchFilters as SearchFiltersType, NicheCardData } from '@/lib/ty
 
 const SHORTS_DEFAULTS = { subscriberMin: 1000, subscriberMax: 100000 }
 const VISIBLE_STEP = 5
+
+const SHORTS_DEFAULT_FILTERS: SearchFiltersType = {
+  contentType: 'shorts',
+  subscriberMin: SHORTS_DEFAULTS.subscriberMin,
+  subscriberMax: SHORTS_DEFAULTS.subscriberMax,
+  channelAge: 'any',
+  onlyRecentlyViral: false,
+  sortBy: 'score',
+}
 
 export default function ShortsDiscoverPage() {
   const router = useRouter()
@@ -48,6 +58,11 @@ export default function ShortsDiscoverPage() {
       return
     }
     setFilters(updated)
+  }
+
+  function handleResetFilters() {
+    setFilters(SHORTS_DEFAULT_FILTERS)
+    handleSearch(SHORTS_DEFAULT_FILTERS)
   }
 
   function handleBookmarkToggle(id: string, saved: boolean) {
@@ -107,9 +122,23 @@ export default function ShortsDiscoverPage() {
       )}
 
       {!userLoading && !loading && searched && results.length === 0 && !error && (
-        <div className="text-center py-12 max-w-2xl mx-auto">
-          <p className="text-slate-300 text-sm font-medium mb-2">No niches found for these filters.</p>
-          <p className="text-slate-500 text-xs">Try widening the subscriber range or relaxing the channel age filter.</p>
+        <div className="max-w-md mx-auto py-6">
+          <div className="glass glass-violet rounded-2xl p-8 text-center">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-glow-violet/10 ring-1 ring-glow-violet/30 mb-4">
+              <MagnifyingGlass weight="duotone" size={28} className="text-glow-violet" aria-hidden />
+            </div>
+            <h3 className="text-slate-100 text-base font-semibold mb-1.5">No niches match these filters</h3>
+            <p className="text-slate-500 text-sm leading-relaxed mb-5">
+              Try widening the subscriber range or relaxing the channel age filter.
+            </p>
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-charcoal-800/60 text-slate-200 hover:bg-charcoal-700/60 transition-colors"
+            >
+              Reset filters
+            </button>
+          </div>
         </div>
       )}
 
