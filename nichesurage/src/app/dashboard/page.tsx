@@ -39,9 +39,9 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-2xl mx-auto">
+    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 max-w-2xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold">My Saved Niches</h1>
           <p className="text-slate-500 text-sm mt-0.5">{email}</p>
@@ -65,7 +65,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Saved count */}
-      <p className="text-slate-500 text-sm mb-5">
+      <p className="text-slate-500 text-sm mb-5 max-w-2xl mx-auto">
         {savedNiches.length === 0
           ? 'No saved niches'
           : `${savedNiches.length} saved niche${savedNiches.length === 1 ? '' : 's'}`}
