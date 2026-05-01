@@ -66,21 +66,24 @@ export default function ShortsDiscoverPage() {
         setSavedIds(ids)
         setSavedCount(ids.size)
       })
-      if (searchParams.size > 0) {
-        handleSearch(paramsToFilters(searchParams, 'shorts', SHORTS_DEFAULTS))
-      }
+      handleSearch(paramsToFilters(searchParams, 'shorts', SHORTS_DEFAULTS))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userLoading])
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-1">
-        🎬 Shorts Niche Discovery
-      </h1>
-      <p className="text-slate-400 text-sm mb-6">
-        Find viral Shorts niches. Set your filters and search.
-      </p>
+      <div className="text-center mb-8">
+        <div className="inline-block text-[10px] font-semibold tracking-[0.22em] text-glow-violet uppercase mb-2">
+          Shorts Niche Discovery
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-100 mb-2">
+          Today&apos;s top viral Shorts opportunities
+        </h1>
+        <p className="text-slate-500 text-sm">
+          Refreshed daily · Ranked by opportunity score
+        </p>
+      </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 max-w-2xl mx-auto">
         <SearchFilters value={filters} onChange={handleFiltersChange} />
