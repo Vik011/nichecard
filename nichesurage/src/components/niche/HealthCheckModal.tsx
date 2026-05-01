@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X } from '@phosphor-icons/react/dist/ssr'
+import { X, Heartbeat } from '@phosphor-icons/react/dist/ssr'
 
 interface HealthCheckModalProps {
   scanResultId: string
@@ -36,11 +36,25 @@ const COMPONENT_LABELS: Array<{ key: keyof HealthCheckResponse['components']; la
   { key: 'saturation', label: 'Room to grow', max: 15 },
 ]
 
-function scoreColor(score: number): string {
-  if (score >= 75) return 'text-emerald-300'
-  if (score >= 50) return 'text-glow-violet'
-  if (score >= 30) return 'text-amber-300'
-  return 'text-red-400'
+const LOADING_STAGES = [
+  'Reading scan signals…',
+  'Computing health score…',
+  'Generating strategist verdict…',
+  'Polishing the verdict…',
+]
+
+const STAGE_INTERVAL_MS = 5000
+
+interface ScoreTier {
+  textClass: string
+  label: string
+}
+
+function scoreTier(score: number): ScoreTier {
+  if (score >= 70) return { textClass: 'text-emerald-300', label: 'EXCELLENT' }
+  if (score >= 50) return { textClass: 'text-glow-violet', label: 'STRONG' }
+  if (score >= 30) return { textClass: 'text-amber-300', label: 'AVERAGE' }
+  return { textClass: 'text-red-400', label: 'WEAK' }
 }
 
 export function HealthCheckModal({ scanResultId, nicheLabel, onClose }: HealthCheckModalProps) {
@@ -118,13 +132,43 @@ export function HealthCheckModal({ scanResultId, nicheLabel, onClose }: HealthCh
 }
 
 function LoadingBody() {
+  const [stage, setStage] = useState(0)
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setStage(s => Math.min(s + 1, LOADING_STAGES.length - 1))
+    }, STAGE_INTERVAL_MS)
+    return () => clearInterval(id)
+  }, [])
+
   return (
-    <div data-testid="health-check-loading" className="flex flex-col gap-4">
-      <div className="h-16 rounded-xl bg-charcoal-800 animate-pulse" />
-      <div className="h-3 rounded bg-charcoal-800 animate-pulse" />
-      <div className="h-3 rounded bg-charcoal-800 animate-pulse w-5/6" />
-      <div className="h-3 rounded bg-charcoal-800 animate-pulse w-4/6" />
-      <p className="text-slate-500 text-xs mt-2">Reading the signals…</p>
+    <div data-testid="health-check-loading" className="flex flex-col items-center gap-5 py-4">
+      <div className="relative w-20 h-20">
+        <div className="absolute inset-0 rounded-full border-2 border-glow-violet/15" />
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-glow-violet animate-spin" style={{ animationDuration: '1.6s' }} />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Heartbeat weight="duotone" size={36} className="text-glow-violet animate-pulse" aria-hidden />
+        </div>
+      </div>
+
+      <p className="text-slate-200 text-sm font-medium text-center min-h-[1.25rem] transition-opacity duration-300">
+        {LOADING_STAGES[stage]}
+      </p>
+
+      <div className="flex items-center gap-1.5" aria-hidden>
+        {LOADING_STAGES.map((_, i) => (
+          <div
+            key={i}
+            className={`h-1 w-10 rounded-full transition-colors duration-300 ${
+              i <= stage ? 'bg-glow-violet' : 'bg-charcoal-700'
+            }`}
+          />
+        ))}
+      </div>
+
+      <p className="text-slate-600 text-[10px] uppercase tracking-[0.18em] mt-1">
+        First load takes ~20–30s · cached for 7 days after
+      </p>
     </div>
   )
 }
@@ -145,13 +189,19 @@ function ErrorBody({ message, onRetry }: { message: string; onRetry: () => void 
 }
 
 function ReadyBody({ data }: { data: HealthCheckResponse }) {
+  const tier = scoreTier(data.score)
   return (
     <div data-testid="health-check-ready" className="flex flex-col gap-6">
       <div className="flex items-baseline gap-3">
-        <span className={`text-6xl font-semibold tracking-tight ${scoreColor(data.score)}`}>
+        <span className={`text-6xl font-semibold tracking-tight ${tier.textClass}`}>
           {data.score}
         </span>
-        <span className="text-slate-500 text-sm">/100</span>
+        <div className="flex flex-col">
+          <span className="text-slate-500 text-sm">/100</span>
+          <span className={`text-[10px] font-semibold tracking-[0.22em] uppercase ${tier.textClass} mt-0.5`}>
+            {tier.label}
+          </span>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
