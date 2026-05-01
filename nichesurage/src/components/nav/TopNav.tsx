@@ -6,17 +6,20 @@ import { useEffect, useRef, useState } from 'react'
 import { CaretDown, SignOut } from '@phosphor-icons/react/dist/ssr'
 import { createClient } from '@/lib/supabase/client'
 import { useUser } from '@/lib/context/UserContext'
-
-const TABS: Array<{ href: string; label: string }> = [
-  { href: '/discover/shorts', label: 'Shorts' },
-  { href: '/discover/longform', label: 'Longform' },
-  { href: '/dashboard', label: 'Saved' },
-]
+import { useLang } from '@/lib/i18n/useLang'
+import { COPY } from '@/components/landing/copy'
 
 export function TopNav() {
   const pathname = usePathname()
   const router = useRouter()
   const { email, tier, loading } = useUser()
+  const [lang] = useLang()
+  const copy = COPY[lang]
+  const TABS: Array<{ href: string; label: string }> = [
+    { href: '/discover/shorts', label: copy.topNavShorts },
+    { href: '/discover/longform', label: copy.topNavLongform },
+    { href: '/dashboard', label: copy.topNavSaved },
+  ]
   const [menuOpen, setMenuOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -79,7 +82,7 @@ export function TopNav() {
             className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-slate-100 px-2 py-1 rounded-lg transition-colors"
           >
             <span className="hidden sm:inline truncate max-w-[160px]">
-              {loading ? '…' : (email ?? 'Account')}
+              {loading ? '…' : (email ?? copy.topNavAccount)}
             </span>
             <CaretDown weight="bold" size={12} aria-hidden />
           </button>
@@ -91,7 +94,7 @@ export function TopNav() {
               <div className="px-3 py-2 border-b border-slate-800/60 mb-1">
                 <div className="text-slate-200 text-xs font-medium truncate">{email ?? '—'}</div>
                 <div className="text-slate-500 text-[10px] uppercase tracking-[0.18em] mt-0.5">
-                  {tier === 'free' ? 'Free' : tier === 'basic' ? 'Basic' : 'Premium ✦'}
+                  {tier === 'free' ? copy.topNavTierFree : tier === 'basic' ? copy.topNavTierBasic : copy.topNavTierPremium}
                 </div>
               </div>
               <button
@@ -102,7 +105,7 @@ export function TopNav() {
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-lg transition-colors disabled:opacity-60"
               >
                 <SignOut weight="bold" size={14} aria-hidden />
-                {signingOut ? 'Signing out…' : 'Sign out'}
+                {signingOut ? copy.topNavSigningOut : copy.topNavSignOut}
               </button>
             </div>
           )}

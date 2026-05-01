@@ -10,6 +10,8 @@ import { fetchNiches } from '@/lib/supabase/queries'
 import { fetchSavedNicheIds } from '@/lib/supabase/savedNiches'
 import { filtersToParams, paramsToFilters } from '@/lib/supabase/filterParams'
 import { useUser } from '@/lib/context/UserContext'
+import { useLang } from '@/lib/i18n/useLang'
+import { COPY } from '@/components/landing/copy'
 import type { SearchFilters as SearchFiltersType, NicheCardData } from '@/lib/types'
 
 const LONGFORM_DEFAULTS = { subscriberMin: 0, subscriberMax: 10_000_000 }
@@ -28,6 +30,8 @@ export default function LongformDiscoverPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { tier: userTier, loading: userLoading } = useUser()
+  const [lang] = useLang()
+  const copy = COPY[lang]
 
   const [filters, setFilters] = useState<SearchFiltersType>(() =>
     paramsToFilters(searchParams, 'longform', LONGFORM_DEFAULTS)
@@ -90,25 +94,25 @@ export default function LongformDiscoverPage() {
     <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto">
       <div className="text-center mb-8">
         <div className="inline-block text-[10px] font-semibold tracking-[0.22em] text-glow-violet uppercase mb-2">
-          Longform Niche Discovery
+          {copy.discoverLongformEyebrow}
         </div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-100 mb-2">
-          Today&apos;s high-potential Longform opportunities
+          {copy.discoverLongformHeadline}
         </h1>
         <p className="text-slate-500 text-sm">
-          Refreshed daily · Ranked by opportunity score
+          {copy.discoverSubline}
         </p>
       </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 max-w-2xl mx-auto">
-        <SearchFilters value={filters} onChange={handleFiltersChange} />
+        <SearchFilters value={filters} onChange={handleFiltersChange} copy={copy} />
         <button
           type="button"
           onClick={() => handleSearch()}
           disabled={loading || userLoading}
           className="mt-5 w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition-colors"
         >
-          {loading ? 'Searching…' : 'Search Niches'}
+          {loading ? copy.discoverSearchingBtn : copy.discoverSearchBtn}
         </button>
         {error && (
           <p className="mt-3 text-red-400 text-sm text-center">{error}</p>
@@ -127,16 +131,16 @@ export default function LongformDiscoverPage() {
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-glow-violet/10 ring-1 ring-glow-violet/30 mb-4">
               <MagnifyingGlass weight="duotone" size={28} className="text-glow-violet" aria-hidden />
             </div>
-            <h3 className="text-slate-100 text-base font-semibold mb-1.5">No niches match these filters</h3>
+            <h3 className="text-slate-100 text-base font-semibold mb-1.5">{copy.discoverEmptyTitle}</h3>
             <p className="text-slate-500 text-sm leading-relaxed mb-5">
-              Try widening the subscriber range or relaxing the channel age filter.
+              {copy.discoverEmptyBody}
             </p>
             <button
               type="button"
               onClick={handleResetFilters}
               className="text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-charcoal-800/60 text-slate-200 hover:bg-charcoal-700/60 transition-colors"
             >
-              Reset filters
+              {copy.discoverResetBtn}
             </button>
           </div>
         </div>
@@ -164,7 +168,7 @@ export default function LongformDiscoverPage() {
                 onClick={() => setVisibleCount(c => Math.min(c + VISIBLE_STEP, results.length))}
                 className="bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 text-slate-200 hover:text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
               >
-                Show more ({results.length - visibleCount} remaining)
+                {copy.discoverShowMore(results.length - visibleCount)}
               </button>
             </div>
           )}

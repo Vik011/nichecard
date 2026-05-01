@@ -1,8 +1,7 @@
 'use client'
-import { useState } from 'react'
 import type { NicheCardData } from '@/lib/types'
-import type { Lang } from './copy'
 import { COPY } from './copy'
+import { useLang } from '@/lib/i18n/useLang'
 import { LandingNav } from './LandingNav'
 import { HeroSection } from './HeroSection'
 import { SocialProofBar } from './SocialProofBar'
@@ -20,7 +19,7 @@ interface LandingPageProps {
 }
 
 export function LandingPage({ niches }: LandingPageProps) {
-  const [lang, setLang] = useState<Lang>('en')
+  const [lang, setLang] = useLang()
   const copy = COPY[lang]
 
   return (

@@ -2,23 +2,29 @@
 
 import type { SearchFilters as SearchFiltersType, ChannelAge, SortBy } from '@/lib/types'
 import { Check } from '@phosphor-icons/react/dist/ssr'
+import { COPY, type CopyKeys } from '@/components/landing/copy'
 
 interface SearchFiltersProps {
   value: SearchFiltersType
   onChange: (updated: SearchFiltersType) => void
+  copy?: CopyKeys
 }
 
-const CHANNEL_AGE_LABELS: Record<ChannelAge, string> = {
-  '1month': '1 mo',
-  '3months': '3 mo',
-  '6months': '6 mo',
-  '1year': '1 yr',
-  any: 'Any',
+function channelAgeLabels(c: CopyKeys): Record<ChannelAge, string> {
+  return {
+    '1month': c.filterAge1mo,
+    '3months': c.filterAge3mo,
+    '6months': c.filterAge6mo,
+    '1year': c.filterAge1yr,
+    any: c.filterAgeAny,
+  }
 }
 
-const SORT_LABELS: Record<SortBy, string> = {
-  score: 'Best score',
-  newest: 'Newest',
+function sortLabels(c: CopyKeys): Record<SortBy, string> {
+  return {
+    score: c.filterSortScore,
+    newest: c.filterSortNewest,
+  }
 }
 
 const SUBSCRIBER_BUCKETS: Array<{ key: string; min: number; max: number; label: string }> = [
@@ -42,16 +48,19 @@ function pillClass(active: boolean): string {
   ].join(' ')
 }
 
-export function SearchFilters({ value, onChange }: SearchFiltersProps) {
+export function SearchFilters({ value, onChange, copy = COPY.en }: SearchFiltersProps) {
   const set = <K extends keyof SearchFiltersType>(key: K, val: SearchFiltersType[K]) =>
     onChange({ ...value, [key]: val })
+
+  const ageLabels = channelAgeLabels(copy)
+  const sortLabelsLocal = sortLabels(copy)
 
   return (
     <div className="flex flex-col gap-5">
       {/* Content type */}
       <div className="flex flex-col gap-2">
-        <span className={eyebrow}>Format</span>
-        <div className="flex gap-2" role="radiogroup" aria-label="Format">
+        <span className={eyebrow}>{copy.filterFormat}</span>
+        <div className="flex gap-2" role="radiogroup" aria-label={copy.filterFormat}>
           {(['shorts', 'longform'] as const).map((type) => (
             <button
               key={type}
@@ -69,8 +78,8 @@ export function SearchFilters({ value, onChange }: SearchFiltersProps) {
 
       {/* Subscriber range */}
       <div className="flex flex-col gap-2">
-        <span className={eyebrow}>Subscriber range</span>
-        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Subscriber range">
+        <span className={eyebrow}>{copy.filterSubscriberRange}</span>
+        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={copy.filterSubscriberRange}>
           {SUBSCRIBER_BUCKETS.map((bucket) => {
             const active = value.subscriberMin === bucket.min && value.subscriberMax === bucket.max
             return (
@@ -93,9 +102,9 @@ export function SearchFilters({ value, onChange }: SearchFiltersProps) {
 
       {/* Channel age */}
       <div className="flex flex-col gap-2">
-        <span className={eyebrow}>Channel age</span>
-        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Channel age">
-          {(Object.entries(CHANNEL_AGE_LABELS) as [ChannelAge, string][]).map(([val, label]) => (
+        <span className={eyebrow}>{copy.filterChannelAge}</span>
+        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={copy.filterChannelAge}>
+          {(Object.entries(ageLabels) as [ChannelAge, string][]).map(([val, label]) => (
             <button
               key={val}
               type="button"
@@ -112,9 +121,9 @@ export function SearchFilters({ value, onChange }: SearchFiltersProps) {
 
       {/* Sort */}
       <div className="flex flex-col gap-2">
-        <span className={eyebrow}>Sort by</span>
-        <div className="flex gap-2" role="radiogroup" aria-label="Sort by">
-          {(Object.entries(SORT_LABELS) as [SortBy, string][]).map(([val, label]) => (
+        <span className={eyebrow}>{copy.filterSortBy}</span>
+        <div className="flex gap-2" role="radiogroup" aria-label={copy.filterSortBy}>
+          {(Object.entries(sortLabelsLocal) as [SortBy, string][]).map(([val, label]) => (
             <button
               key={val}
               type="button"
@@ -134,7 +143,7 @@ export function SearchFilters({ value, onChange }: SearchFiltersProps) {
         type="button"
         role="checkbox"
         aria-checked={value.onlyRecentlyViral}
-        aria-label="Only viral in last 7 days"
+        aria-label={copy.filterViralTitle}
         onClick={() => set('onlyRecentlyViral', !value.onlyRecentlyViral)}
         className={[
           'flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-left transition-all',
@@ -144,8 +153,8 @@ export function SearchFilters({ value, onChange }: SearchFiltersProps) {
         ].join(' ')}
       >
         <div className="flex flex-col">
-          <span className="text-slate-100 text-sm font-medium">Only viral channels</span>
-          <span className="text-slate-500 text-xs mt-0.5">spike ≥3× · last 7 days</span>
+          <span className="text-slate-100 text-sm font-medium">{copy.filterViralTitle}</span>
+          <span className="text-slate-500 text-xs mt-0.5">{copy.filterViralSub}</span>
         </div>
         <span
           className={[
