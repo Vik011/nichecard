@@ -2,6 +2,7 @@
 import type { NicheCardData } from '@/lib/types'
 import { COPY } from './copy'
 import { useLang } from '@/lib/i18n/useLang'
+import { useUser } from '@/lib/context/UserContext'
 import { LandingNav } from './LandingNav'
 import { HeroSection } from './HeroSection'
 import { SocialProofBar } from './SocialProofBar'
@@ -21,19 +22,20 @@ interface LandingPageProps {
 export function LandingPage({ niches }: LandingPageProps) {
   const [lang, setLang] = useLang()
   const copy = COPY[lang]
+  const { isLoggedIn } = useUser()
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100">
       <NoiseOverlay />
       <LandingNav copy={copy} lang={lang} onLangChange={setLang} />
-      <HeroSection copy={copy} />
+      <HeroSection copy={copy} isLoggedIn={isLoggedIn} />
       <SocialProofBar copy={copy} />
-      <AppPreviewSection niches={niches} copy={copy} />
+      <AppPreviewSection niches={niches} copy={copy} isLoggedIn={isLoggedIn} />
       <PainSolutionSection copy={copy} />
       <FeaturesSection copy={copy} />
       <PricingSection copy={copy} />
       <TestimonialsSection copy={copy} />
-      <FinalCTASection copy={copy} />
+      <FinalCTASection copy={copy} isLoggedIn={isLoggedIn} />
       <LandingFooter copy={copy} lang={lang} onLangChange={setLang} />
     </div>
   )

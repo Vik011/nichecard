@@ -18,7 +18,7 @@ const ICON_MAP: Record<string, PhosphorIcon> = {
 
 export function FeaturesSection({ copy }: FeaturesSectionProps) {
   return (
-    <section className="py-24 px-6">
+    <section id="how" className="py-24 px-6 scroll-mt-20">
       <div className="max-w-6xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-semibold text-center mb-14 text-slate-100 tracking-tight">
           {copy.featuresTitle}

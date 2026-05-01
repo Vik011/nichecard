@@ -6,9 +6,10 @@ import type { CopyKeys } from './copy'
 interface AppPreviewSectionProps {
   niches: NicheCardData[]
   copy: CopyKeys
+  isLoggedIn?: boolean
 }
 
-export function AppPreviewSection({ niches, copy }: AppPreviewSectionProps) {
+export function AppPreviewSection({ niches, copy, isLoggedIn = false }: AppPreviewSectionProps) {
   return (
     <section className="py-24 px-6">
       <div className="max-w-6xl mx-auto">
@@ -38,10 +39,10 @@ export function AppPreviewSection({ niches, copy }: AppPreviewSectionProps) {
         {/* CTA below the grid */}
         <div className="text-center mt-10">
           <Link
-            href="/login"
+            href={isLoggedIn ? '/discover/shorts' : '/login'}
             className="inline-block text-[15px] font-semibold px-7 py-3 rounded-xl bg-gradient-to-br from-glow-indigo to-glow-violet hover:brightness-110 transition-all text-white shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
           >
-            {copy.previewCta}
+            {isLoggedIn ? copy.navOpenApp : copy.previewCta}
           </Link>
         </div>
       </div>

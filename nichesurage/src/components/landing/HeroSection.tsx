@@ -3,9 +3,10 @@ import type { CopyKeys } from './copy'
 
 interface HeroSectionProps {
   copy: CopyKeys
+  isLoggedIn?: boolean
 }
 
-export function HeroSection({ copy }: HeroSectionProps) {
+export function HeroSection({ copy, isLoggedIn = false }: HeroSectionProps) {
   return (
     <section className="relative pt-36 pb-24 px-6 text-center">
       <div className="max-w-3xl mx-auto">
@@ -33,13 +34,13 @@ export function HeroSection({ copy }: HeroSectionProps) {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
           <Link
-            href="/login"
+            href={isLoggedIn ? '/discover/shorts' : '/login'}
             className="w-full sm:w-auto text-[15px] font-semibold px-7 py-3 rounded-xl
                        bg-gradient-to-br from-glow-indigo to-glow-violet
                        hover:brightness-110 transition-all text-white
                        shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
           >
-            {copy.heroCta}
+            {isLoggedIn ? copy.navOpenApp : copy.heroCta}
           </Link>
           <a
             href="#how"
