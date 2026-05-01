@@ -28,6 +28,8 @@ export async function POST(req: Request) {
 
   const supabase = createServiceClient()
 
+  console.log('[stripe/webhook] received event:', event.type, event.id)
+
   switch (event.type) {
     case 'customer.subscription.created':
     case 'customer.subscription.updated': {
@@ -36,15 +38,22 @@ export async function POST(req: Request) {
       const priceId = item?.price.id
       const mapped = priceId ? tierFromPriceId(priceId) : null
       const userId = sub.metadata?.supabase_user_id
-      if (userId && mapped) {
+      console.log('[stripe/webhook] sub update:', { subId: sub.id, userId, priceId, mapped })
+      if (!userId) {
+        console.error('[stripe/webhook] no supabase_user_id in metadata')
+      } else if (!mapped) {
+        console.error('[stripe/webhook] could not map priceId', priceId)
+      } else {
         const periodEnd = item?.current_period_end
-        await supabase.from('users').update({
+        const { error } = await supabase.from('users').update({
           tier: mapped.tier,
           billing_interval: mapped.interval,
           subscription_status: normalizeStatus(sub.status) ?? 'active',
           stripe_subscription_id: sub.id,
           subscription_current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
         }).eq('id', userId)
+        if (error) console.error('[stripe/webhook] users update failed:', error)
+        else console.log('[stripe/webhook] users updated to', mapped.tier, 'for user', userId)
       }
       break
     }
@@ -52,12 +61,13 @@ export async function POST(req: Request) {
       const sub = event.data.object as Stripe.Subscription
       const userId = sub.metadata?.supabase_user_id
       if (userId) {
-        await supabase.from('users').update({
+        const { error } = await supabase.from('users').update({
           tier: 'free',
           billing_interval: null,
           subscription_status: 'canceled',
           stripe_subscription_id: null,
         }).eq('id', userId)
+        if (error) console.error('[stripe/webhook] users downgrade failed:', error)
       }
       break
     }

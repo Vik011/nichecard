@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 const VALID_PLANS = new Set(['basic', 'premium'])
@@ -9,8 +9,11 @@ const VALID_INTERVALS = new Set(['monthly', 'yearly'])
 
 export function LoginForm() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [email, setEmail] = useState('')
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [password, setPassword] = useState('')
+  const [mode, setMode] = useState<'magic' | 'password'>('password')
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error' | 'redirecting'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const rawPlan = searchParams.get('plan')
@@ -18,12 +21,63 @@ export function LoginForm() {
   const plan = rawPlan && VALID_PLANS.has(rawPlan) ? rawPlan : null
   const billing = rawBilling && VALID_INTERVALS.has(rawBilling) ? rawBilling : null
 
+  async function postLoginRedirect() {
+    if (plan && billing) {
+      setStatus('redirecting')
+      try {
+        const res = await fetch('/api/stripe/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tier: plan, interval: billing }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (res.ok && data.url) {
+          window.location.href = data.url
+          return
+        }
+        setStatus('error')
+        setErrorMessage(data.error ?? `Checkout failed (${res.status})`)
+        return
+      } catch (e) {
+        setStatus('error')
+        setErrorMessage((e as Error).message)
+        return
+      }
+    }
+    router.push('/dashboard')
+  }
+
+  useEffect(() => {
+    if (!plan || !billing) return
+    const supabase = createClient()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      postLoginRedirect()
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan, billing])
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     setStatus('sending')
     setErrorMessage(null)
 
     const supabase = createClient()
+
+    if (mode === 'password') {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      })
+      if (error) {
+        setStatus('error')
+        setErrorMessage(error.message)
+        return
+      }
+      await postLoginRedirect()
+      return
+    }
+
     const callback = new URL('/auth/callback', window.location.origin)
     if (plan) callback.searchParams.set('plan', plan)
     if (billing) callback.searchParams.set('billing', billing)
@@ -54,7 +108,9 @@ export function LoginForm() {
         </div>
       )}
 
-      {status === 'sent' ? (
+      {status === 'redirecting' ? (
+        <div className="text-slate-400 text-sm">Redirecting to checkout…</div>
+      ) : status === 'sent' ? (
         <div className="text-emerald-300 text-sm">
           Check your inbox at <span className="text-slate-100 font-medium">{email}</span>. Click the link to sign in.
         </div>
@@ -72,12 +128,40 @@ export function LoginForm() {
               placeholder="you@example.com"
             />
           </label>
+          {mode === 'password' && (
+            <label className="flex flex-col gap-1.5">
+              <span className="text-slate-400 text-xs uppercase tracking-[0.18em]">Password</span>
+              <input
+                type="password"
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="bg-charcoal-900 gborder rounded-lg px-4 py-2.5 text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-glow-indigo"
+                placeholder="••••••••"
+              />
+            </label>
+          )}
           <button
             type="submit"
-            disabled={status === 'sending' || !email}
+            disabled={status === 'sending' || !email || (mode === 'password' && !password)}
             className="text-[15px] font-semibold px-5 py-2.5 rounded-xl bg-gradient-to-br from-glow-indigo to-glow-violet hover:brightness-110 transition-all text-white disabled:opacity-50"
           >
-            {status === 'sending' ? 'Sending…' : 'Send magic link'}
+            {status === 'sending'
+              ? 'Signing in…'
+              : mode === 'password'
+              ? 'Sign in'
+              : 'Send magic link'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode(mode === 'password' ? 'magic' : 'password')
+              setErrorMessage(null)
+            }}
+            className="text-slate-400 hover:text-slate-200 text-xs underline-offset-4 hover:underline self-start"
+          >
+            {mode === 'password' ? 'Use magic link instead' : 'Use password instead'}
           </button>
           {errorMessage && (
             <div className="text-red-400 text-xs">{errorMessage}</div>

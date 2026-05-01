@@ -32,7 +32,14 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && isAuthRoute) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    const plan = request.nextUrl.searchParams.get('plan')
+    const billing = request.nextUrl.searchParams.get('billing')
+    const hasCheckoutIntent =
+      (plan === 'basic' || plan === 'premium') &&
+      (billing === 'monthly' || billing === 'yearly')
+    if (!hasCheckoutIntent) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
   }
 
   return supabaseResponse

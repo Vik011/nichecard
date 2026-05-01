@@ -100,7 +100,7 @@ export function SearchFilters({ value, onChange }: SearchFiltersProps) {
           aria-label="Only viral in last 5 days"
         />
         <span className="text-slate-300 text-sm">
-          Only viral channels <span className="text-slate-500 text-xs">(last 5 days)</span>
+          Only viral channels <span className="text-slate-500 text-xs">(last 7 days)</span>
         </span>
       </label>
     </div>

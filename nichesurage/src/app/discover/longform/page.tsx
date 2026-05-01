@@ -101,7 +101,10 @@ export default function LongformDiscoverPage() {
       )}
 
       {!userLoading && !loading && searched && results.length === 0 && !error && (
-        <p className="text-slate-500 text-center py-12">No niches found for these filters.</p>
+        <div className="text-center py-12">
+          <p className="text-slate-300 text-sm font-medium mb-2">No niches found for these filters.</p>
+          <p className="text-slate-500 text-xs">Try widening the subscriber range or relaxing the channel age filter.</p>
+        </div>
       )}
 
       {!userLoading && !loading && results.length > 0 && (

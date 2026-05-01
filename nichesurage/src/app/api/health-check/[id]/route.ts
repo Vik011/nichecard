@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { canUseAIFeatures } from '@/lib/tier'
 import { computeHealthScore } from '@/lib/health-check/score'
 import { generateVerdict } from '@/lib/health-check/verdict'
@@ -54,13 +55,15 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const verdict = await generateVerdict({ ...scan, score })
   const expiresAt = new Date(Date.now() + CACHE_DAYS * 24 * 60 * 60 * 1000).toISOString()
 
-  await supabase.from('niche_health_checks').upsert({
+  const serviceClient = createServiceClient()
+  const { error: cacheErr } = await serviceClient.from('niche_health_checks').upsert({
     scan_result_id: scan.id,
     health_score: score.score,
     components: score.components,
     verdict_text: verdict,
     expires_at: expiresAt,
   }, { onConflict: 'scan_result_id' })
+  if (cacheErr) console.error('[health-check] cache write failed:', cacheErr)
 
   return NextResponse.json({
     score: score.score,
