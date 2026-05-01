@@ -5,7 +5,7 @@ import type { SearchFilters as SearchFiltersType } from '@/lib/types'
 const defaultFilters: SearchFiltersType = {
   contentType: 'shorts',
   subscriberMin: 1000,
-  subscriberMax: 100000,
+  subscriberMax: 5000,
   channelAge: 'any',
   onlyRecentlyViral: false,
   sortBy: 'score',
@@ -35,18 +35,31 @@ describe('SearchFilters', () => {
     )
   })
 
-  it('renders subscriber min/max inputs', () => {
+  it('renders subscriber range bucket pills', () => {
     render(<SearchFilters value={defaultFilters} onChange={() => {}} />)
-    expect(screen.getByLabelText(/min subscribers/i)).toBeTruthy()
-    expect(screen.getByLabelText(/max subscribers/i)).toBeTruthy()
+    const group = screen.getByRole('radiogroup', { name: /subscriber range/i })
+    const labels = Array.from(group.querySelectorAll('button[role="radio"]')).map(b => b.textContent)
+    expect(labels).toEqual(
+      expect.arrayContaining(['Any', '< 1K', '1K – 5K', '5K – 10K', '10K – 50K', '50K – 100K', '100K+'])
+    )
   })
 
-  it('changing subscriber min calls onChange with updated value', () => {
+  it('active subscriber bucket reflects current min/max', () => {
+    render(<SearchFilters value={defaultFilters} onChange={() => {}} />)
+    const group = screen.getByRole('radiogroup', { name: /subscriber range/i })
+    const active = group.querySelector('button[role="radio"][aria-checked="true"]')
+    expect(active?.textContent).toBe('1K – 5K')
+  })
+
+  it('clicking a subscriber bucket calls onChange with bucket min/max', () => {
     const onChange = jest.fn()
     render(<SearchFilters value={defaultFilters} onChange={onChange} />)
-    fireEvent.change(screen.getByLabelText(/min subscribers/i), { target: { value: '5000' } })
+    const group = screen.getByRole('radiogroup', { name: /subscriber range/i })
+    const tenToFifty = Array.from(group.querySelectorAll('button[role="radio"]'))
+      .find(b => b.textContent === '10K – 50K')!
+    fireEvent.click(tenToFifty)
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ subscriberMin: 5000 })
+      expect.objectContaining({ subscriberMin: 10_000, subscriberMax: 50_000 })
     )
   })
 

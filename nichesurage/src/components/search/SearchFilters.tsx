@@ -21,6 +21,16 @@ const SORT_LABELS: Record<SortBy, string> = {
   newest: 'Newest',
 }
 
+const SUBSCRIBER_BUCKETS: Array<{ key: string; min: number; max: number; label: string }> = [
+  { key: 'any',        min: 0,      max: 10_000_000, label: 'Any' },
+  { key: 'under-1k',   min: 0,      max: 1_000,      label: '< 1K' },
+  { key: '1k-5k',      min: 1_000,  max: 5_000,      label: '1K – 5K' },
+  { key: '5k-10k',     min: 5_000,  max: 10_000,     label: '5K – 10K' },
+  { key: '10k-50k',    min: 10_000, max: 50_000,     label: '10K – 50K' },
+  { key: '50k-100k',   min: 50_000, max: 100_000,    label: '50K – 100K' },
+  { key: 'over-100k',  min: 100_000, max: 10_000_000, label: '100K+' },
+]
+
 const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-violet'
 
 function pillClass(active: boolean): string {
@@ -29,14 +39,6 @@ function pillClass(active: boolean): string {
     active
       ? 'bg-glow-violet/15 text-violet-100 ring-1 ring-glow-violet/40 shadow-[0_0_12px_-2px_rgba(157,128,232,0.35)]'
       : 'bg-charcoal-800/60 text-slate-400 hover:text-slate-100 hover:bg-charcoal-700/60',
-  ].join(' ')
-}
-
-function inputClass(): string {
-  return [
-    'w-full bg-charcoal-800/60 gborder rounded-lg px-3 py-2 text-slate-100 text-sm tabular-nums',
-    'focus:outline-none focus:ring-1 focus:ring-glow-violet/50 focus:bg-charcoal-800',
-    'transition-all',
   ].join(' ')
 }
 
@@ -68,28 +70,24 @@ export function SearchFilters({ value, onChange }: SearchFiltersProps) {
       {/* Subscriber range */}
       <div className="flex flex-col gap-2">
         <span className={eyebrow}>Subscriber range</span>
-        <div className="flex items-center gap-2">
-          <input
-            id="sub-min"
-            aria-label="Min subscribers"
-            type="number"
-            min={0}
-            value={value.subscriberMin}
-            onChange={e => set('subscriberMin', Number(e.target.value))}
-            className={inputClass()}
-            placeholder="1 000"
-          />
-          <span className="text-slate-600">–</span>
-          <input
-            id="sub-max"
-            aria-label="Max subscribers"
-            type="number"
-            min={0}
-            value={value.subscriberMax}
-            onChange={e => set('subscriberMax', Number(e.target.value))}
-            className={inputClass()}
-            placeholder="100 000"
-          />
+        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Subscriber range">
+          {SUBSCRIBER_BUCKETS.map((bucket) => {
+            const active = value.subscriberMin === bucket.min && value.subscriberMax === bucket.max
+            return (
+              <button
+                key={bucket.key}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() =>
+                  onChange({ ...value, subscriberMin: bucket.min, subscriberMax: bucket.max })
+                }
+                className={pillClass(active)}
+              >
+                {bucket.label}
+              </button>
+            )
+          })}
         </div>
       </div>
 

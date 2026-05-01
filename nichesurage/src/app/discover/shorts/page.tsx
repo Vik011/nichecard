@@ -12,7 +12,7 @@ import { filtersToParams, paramsToFilters } from '@/lib/supabase/filterParams'
 import { useUser } from '@/lib/context/UserContext'
 import type { SearchFilters as SearchFiltersType, NicheCardData } from '@/lib/types'
 
-const SHORTS_DEFAULTS = { subscriberMin: 1000, subscriberMax: 100000 }
+const SHORTS_DEFAULTS = { subscriberMin: 0, subscriberMax: 10_000_000 }
 const VISIBLE_STEP = 5
 
 const SHORTS_DEFAULT_FILTERS: SearchFiltersType = {
