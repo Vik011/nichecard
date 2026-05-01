@@ -12,6 +12,7 @@ export type {
 import type { ViralityRating, ContentLanguage, ContentType } from './database'
 
 export type ChannelAge = '1month' | '3months' | '6months' | '1year' | 'any'
+export type SortBy = 'score' | 'newest'
 
 export interface SearchFilters {
   contentType: ContentType
@@ -19,6 +20,7 @@ export interface SearchFilters {
   subscriberMax: number
   channelAge: ChannelAge
   onlyRecentlyViral: boolean
+  sortBy: SortBy
 }
 
 interface BaseNicheCardData {

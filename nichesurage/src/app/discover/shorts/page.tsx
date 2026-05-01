@@ -12,6 +12,7 @@ import { useUser } from '@/lib/context/UserContext'
 import type { SearchFilters as SearchFiltersType, NicheCardData } from '@/lib/types'
 
 const SHORTS_DEFAULTS = { subscriberMin: 1000, subscriberMax: 100000 }
+const VISIBLE_STEP = 5
 
 export default function ShortsDiscoverPage() {
   const router = useRouter()
@@ -27,9 +28,11 @@ export default function ShortsDiscoverPage() {
   const [error, setError] = useState<string | null>(null)
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [savedCount, setSavedCount] = useState(0)
+  const [visibleCount, setVisibleCount] = useState(VISIBLE_STEP)
 
   async function handleSearch(filtersOverride?: SearchFiltersType) {
     const f = filtersOverride ?? filters
+    setVisibleCount(VISIBLE_STEP)
     setLoading(true)
     setSearched(true)
     setError(null)
@@ -71,7 +74,7 @@ export default function ShortsDiscoverPage() {
   }, [userLoading])
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-2xl mx-auto">
+    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-1">
         🎬 Shorts Niche Discovery
       </h1>
@@ -79,7 +82,7 @@ export default function ShortsDiscoverPage() {
         Find viral Shorts niches. Set your filters and search.
       </p>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 max-w-2xl mx-auto">
         <SearchFilters value={filters} onChange={handleFiltersChange} />
         <button
           type="button"
@@ -95,32 +98,45 @@ export default function ShortsDiscoverPage() {
       </div>
 
       {(userLoading || loading) && (
-        <div className="flex flex-col gap-3">
-          {[1, 2, 3].map(i => <NicheCardSkeleton key={i} />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5].map(i => <NicheCardSkeleton key={i} />)}
         </div>
       )}
 
       {!userLoading && !loading && searched && results.length === 0 && !error && (
-        <div className="text-center py-12">
+        <div className="text-center py-12 max-w-2xl mx-auto">
           <p className="text-slate-300 text-sm font-medium mb-2">No niches found for these filters.</p>
           <p className="text-slate-500 text-xs">Try widening the subscriber range or relaxing the channel age filter.</p>
         </div>
       )}
 
       {!userLoading && !loading && results.length > 0 && (
-        <div className="flex flex-col gap-3">
-          {results.map((niche, i) => (
-            <NicheCard
-              key={niche.id}
-              data={niche}
-              userTier={userTier}
-              rank={i + 1}
-              isSaved={savedIds.has(niche.id)}
-              savedCount={savedCount}
-              onBookmarkToggle={handleBookmarkToggle}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {results.slice(0, visibleCount).map((niche, i) => (
+              <NicheCard
+                key={niche.id}
+                data={niche}
+                userTier={userTier}
+                rank={i + 1}
+                isSaved={savedIds.has(niche.id)}
+                savedCount={savedCount}
+                onBookmarkToggle={handleBookmarkToggle}
+              />
+            ))}
+          </div>
+          {visibleCount < results.length && (
+            <div className="flex justify-center mt-6">
+              <button
+                type="button"
+                onClick={() => setVisibleCount(c => Math.min(c + VISIBLE_STEP, results.length))}
+                className="bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 text-slate-200 hover:text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
+              >
+                Show more ({results.length - visibleCount} remaining)
+              </button>
+            </div>
+          )}
+        </>
       )}
     </main>
   )

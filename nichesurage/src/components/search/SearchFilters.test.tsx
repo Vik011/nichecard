@@ -8,6 +8,7 @@ const defaultFilters: SearchFiltersType = {
   subscriberMax: 100000,
   channelAge: 'any',
   onlyRecentlyViral: false,
+  sortBy: 'score',
 }
 
 describe('SearchFilters', () => {
@@ -62,6 +63,23 @@ describe('SearchFilters', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /viral/i }))
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ onlyRecentlyViral: true })
+    )
+  })
+
+  it('renders sort toggle with Best score active by default', () => {
+    render(<SearchFilters value={defaultFilters} onChange={() => {}} />)
+    const scoreBtn = screen.getByRole('radio', { name: /best score/i })
+    const newestBtn = screen.getByRole('radio', { name: /newest/i })
+    expect(scoreBtn.getAttribute('aria-checked')).toBe('true')
+    expect(newestBtn.getAttribute('aria-checked')).toBe('false')
+  })
+
+  it('clicking Newest calls onChange with sortBy=newest', () => {
+    const onChange = jest.fn()
+    render(<SearchFilters value={defaultFilters} onChange={onChange} />)
+    fireEvent.click(screen.getByRole('radio', { name: /newest/i }))
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ sortBy: 'newest' })
     )
   })
 })

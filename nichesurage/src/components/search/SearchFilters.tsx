@@ -1,6 +1,6 @@
 'use client'
 
-import type { SearchFilters as SearchFiltersType, ChannelAge } from '@/lib/types'
+import type { SearchFilters as SearchFiltersType, ChannelAge, SortBy } from '@/lib/types'
 
 interface SearchFiltersProps {
   value: SearchFiltersType
@@ -13,6 +13,11 @@ const CHANNEL_AGE_LABELS: Record<ChannelAge, string> = {
   '6months': '~6 months',
   '1year': '~1 year',
   any: "Doesn't matter",
+}
+
+const SORT_LABELS: Record<SortBy, string> = {
+  score: 'Best score',
+  newest: 'Newest',
 }
 
 export function SearchFilters({ value, onChange }: SearchFiltersProps) {
@@ -88,6 +93,29 @@ export function SearchFilters({ value, onChange }: SearchFiltersProps) {
             <option key={val} value={val}>{label}</option>
           ))}
         </select>
+      </div>
+
+      {/* Sort toggle */}
+      <div className="flex flex-col gap-1.5">
+        <span className="text-slate-400 text-xs uppercase tracking-wide">Sort by</span>
+        <div className="flex gap-2" role="radiogroup" aria-label="Sort by">
+          {(Object.entries(SORT_LABELS) as [SortBy, string][]).map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              role="radio"
+              aria-checked={value.sortBy === val}
+              onClick={() => set('sortBy', val)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                value.sortBy === val
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Viral-only toggle */}

@@ -65,13 +65,14 @@ export async function fetchNiches(
 ): Promise<{ data: NicheCardData[]; error: string | null }> {
   const supabase = createClient()
 
+  const orderColumn = filters.sortBy === 'newest' ? 'channel_created_at' : 'opportunity_score'
   let query = supabase
     .from('scan_results_latest')
     .select('*')
     .eq('content_type', filters.contentType)
     .gte('subscriber_count', filters.subscriberMin)
     .lte('subscriber_count', filters.subscriberMax)
-    .order('opportunity_score', { ascending: false })
+    .order(orderColumn, { ascending: false })
     .limit(20)
 
   if (filters.channelAge !== 'any') {
