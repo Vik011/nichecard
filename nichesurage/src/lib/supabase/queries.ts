@@ -1,5 +1,5 @@
 import { createClient } from './client'
-import type { SearchFilters, ChannelAge } from '@/lib/types'
+import type { SearchFilters, ChannelAge, SpikePoint } from '@/lib/types'
 import type { NicheCardData, ShortsNicheCardData, LongformNicheCardData } from '@/lib/types'
 import type { DbScanResult } from '@/lib/types/database'
 
@@ -16,8 +16,10 @@ export function toSubscriberRange(count: number): string {
 export function mapRow(row: DbScanResult): NicheCardData {
   const base = {
     id: row.id,
+    youtubeChannelId: row.youtube_channel_id,
     channelCreatedAt: row.channel_created_at,
     videoCount: row.video_count,
+    subscriberCount: row.subscriber_count,
     subscriberRange: toSubscriberRange(row.subscriber_count),
     spikeMultiplier: row.spike_multiplier,
     opportunityScore: row.opportunity_score,
@@ -88,4 +90,15 @@ export async function fetchNiches(
 
   if (error) return { data: [], error: 'Search failed. Please try again.' }
   return { data: (data ?? []).map(mapRow), error: null }
+}
+
+export async function fetchSpikeHistory(youtubeChannelId: string): Promise<SpikePoint[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('channel_spike_history_30d')
+    .select('day, spike_x')
+    .eq('youtube_channel_id', youtubeChannelId)
+    .order('day', { ascending: true })
+  if (error || !data) return []
+  return data.map(row => ({ day: row.day as string, spikeX: Number(row.spike_x) }))
 }

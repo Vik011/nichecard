@@ -1,8 +1,9 @@
-import type { NicheCardData, ShortsNicheCardData, LongformNicheCardData, UserTier, ViralityRating, ContentLanguage } from '@/lib/types'
+import type { NicheCardData, ShortsNicheCardData, LongformNicheCardData, UserTier, ViralityRating, ContentLanguage, SpikePoint } from '@/lib/types'
 import { LockSimple } from '@phosphor-icons/react/dist/ssr'
 import { LockedField } from './LockedField'
 import { BookmarkButton } from './BookmarkButton'
 import { HealthCheckButton } from './HealthCheckButton'
+import { Sparkline } from './Sparkline'
 
 interface NicheCardProps {
   data: NicheCardData
@@ -10,6 +11,7 @@ interface NicheCardProps {
   rank: number
   isSaved?: boolean
   savedCount?: number
+  spikeHistory?: SpikePoint[]
   onBookmarkToggle?: (id: string, saved: boolean) => void
 }
 
@@ -95,7 +97,7 @@ function LongformMetrics({ data, locked }: { data: LongformNicheCardData; locked
   )
 }
 
-export function NicheCard({ data, userTier, rank, isSaved, savedCount, onBookmarkToggle }: NicheCardProps) {
+export function NicheCard({ data, userTier, rank, isSaved, savedCount, spikeHistory, onBookmarkToggle }: NicheCardProps) {
   const locked = userTier === 'free'
   const tier = scoreTier(data.opportunityScore)
   const isHero = rank <= 3
@@ -164,6 +166,9 @@ export function NicheCard({ data, userTier, rank, isSaved, savedCount, onBookmar
           </div>
           <div className="text-slate-500 text-[9px] uppercase tracking-[0.18em] font-semibold mt-1">
             {tier.label}
+          </div>
+          <div className="mt-2 flex justify-end">
+            <Sparkline data={spikeHistory ?? []} variant="card" />
           </div>
         </div>
       </div>

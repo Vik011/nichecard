@@ -14,6 +14,11 @@ import type { ViralityRating, ContentLanguage, ContentType } from './database'
 export type ChannelAge = '1month' | '3months' | '6months' | '1year' | 'any'
 export type SortBy = 'score' | 'newest'
 
+export interface SpikePoint {
+  day: string
+  spikeX: number
+}
+
 export interface SearchFilters {
   contentType: ContentType
   subscriberMin: number
@@ -25,9 +30,11 @@ export interface SearchFilters {
 
 interface BaseNicheCardData {
   id: string
+  youtubeChannelId: string
   contentType: ContentType
   channelCreatedAt: string
   videoCount: number
+  subscriberCount: number
   subscriberRange: string
   spikeMultiplier: number
   opportunityScore: number

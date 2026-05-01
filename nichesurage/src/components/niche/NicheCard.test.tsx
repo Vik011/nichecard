@@ -10,9 +10,11 @@ jest.mock('@/lib/supabase/savedNiches', () => ({
 
 const shortsBase: ShortsNicheCardData = {
   id: '1',
+  youtubeChannelId: 'UC_shorts_1',
   contentType: 'shorts',
   channelCreatedAt: '2024-01-01',
   videoCount: 47,
+  subscriberCount: 5000,
   subscriberRange: '1K–10K',
   spikeMultiplier: 6.2,
   opportunityScore: 78,
@@ -32,9 +34,11 @@ const shortsBasic: ShortsNicheCardData = {
 
 const longformBasic: LongformNicheCardData = {
   id: '2',
+  youtubeChannelId: 'UC_longform_2',
   contentType: 'longform',
   channelCreatedAt: '2024-01-01',
   videoCount: 23,
+  subscriberCount: 50000,
   subscriberRange: '10K–100K',
   spikeMultiplier: 2.1,
   opportunityScore: 65,

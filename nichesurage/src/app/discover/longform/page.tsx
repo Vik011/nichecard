@@ -6,13 +6,13 @@ import { MagnifyingGlass } from '@phosphor-icons/react/dist/ssr'
 import { SearchFilters } from '@/components/search/SearchFilters'
 import { NicheCard } from '@/components/niche/NicheCard'
 import { NicheCardSkeleton } from '@/components/niche/NicheCardSkeleton'
-import { fetchNiches } from '@/lib/supabase/queries'
+import { fetchNiches, fetchSpikeHistory } from '@/lib/supabase/queries'
 import { fetchSavedNicheIds } from '@/lib/supabase/savedNiches'
 import { filtersToParams, paramsToFilters } from '@/lib/supabase/filterParams'
 import { useUser } from '@/lib/context/UserContext'
 import { useLang } from '@/lib/i18n/useLang'
 import { COPY } from '@/components/landing/copy'
-import type { SearchFilters as SearchFiltersType, NicheCardData } from '@/lib/types'
+import type { SearchFilters as SearchFiltersType, NicheCardData, SpikePoint } from '@/lib/types'
 
 const LONGFORM_DEFAULTS = { subscriberMin: 0, subscriberMax: 10_000_000 }
 const VISIBLE_STEP = 5
@@ -37,6 +37,7 @@ export default function LongformDiscoverPage() {
     paramsToFilters(searchParams, 'longform', LONGFORM_DEFAULTS)
   )
   const [results, setResults] = useState<NicheCardData[]>([])
+  const [histories, setHistories] = useState<Map<string, SpikePoint[]>>(new Map())
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -54,6 +55,14 @@ export default function LongformDiscoverPage() {
     setResults(data)
     setError(fetchError)
     setLoading(false)
+    if (data.length > 0) {
+      const points = await Promise.all(data.map(n => fetchSpikeHistory(n.youtubeChannelId)))
+      const map = new Map<string, SpikePoint[]>()
+      data.forEach((n, i) => map.set(n.id, points[i]))
+      setHistories(map)
+    } else {
+      setHistories(new Map())
+    }
   }
 
   function handleFiltersChange(updated: SearchFiltersType) {
@@ -157,6 +166,7 @@ export default function LongformDiscoverPage() {
                 rank={i + 1}
                 isSaved={savedIds.has(niche.id)}
                 savedCount={savedCount}
+                spikeHistory={histories.get(niche.id)}
                 onBookmarkToggle={handleBookmarkToggle}
               />
             ))}
