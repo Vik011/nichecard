@@ -14,7 +14,7 @@ interface LandingNavProps {
 export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const { isLoggedIn } = useUser()
+  const { isLoggedIn, tier, email, loading: userLoading } = useUser()
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 60)
@@ -57,18 +57,45 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-3">
-          <Link
-            href="/login"
-            className="text-sm text-slate-400 hover:text-slate-100 transition-colors px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-500"
-          >
-            {copy.navLogin}
-          </Link>
-          <Link
-            href="/login"
-            className="text-sm font-semibold px-4 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 transition-all text-white"
-          >
-            {copy.navCta}
-          </Link>
+          {userLoading ? null : isLoggedIn ? (
+            <>
+              <span
+                className={
+                  tier === 'premium'
+                    ? 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-glow-violet/15 text-violet-200 ring-1 ring-glow-violet/40'
+                    : 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-slate-800 text-slate-400 ring-1 ring-slate-700'
+                }
+              >
+                {tier === 'premium' ? copy.tierPremium : copy.tierFree}
+              </span>
+              {email && (
+                <span className="text-sm text-slate-400 max-w-[180px] truncate" title={email}>
+                  {email}
+                </span>
+              )}
+              <Link
+                href="/discover/shorts"
+                className="text-sm font-semibold px-4 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 transition-all text-white"
+              >
+                {copy.navOpenApp}
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-sm text-slate-400 hover:text-slate-100 transition-colors px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-500"
+              >
+                {copy.navLogin}
+              </Link>
+              <Link
+                href="/login"
+                className="text-sm font-semibold px-4 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 transition-all text-white"
+              >
+                {copy.navCta}
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -98,20 +125,50 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
             </Link>
           )}
           <LanguageToggle lang={lang} onChange={onLangChange} />
-          <Link
-            href="/login"
-            className="text-slate-300 hover:text-white transition-colors text-sm"
-            onClick={() => setMenuOpen(false)}
-          >
-            {copy.navLogin}
-          </Link>
-          <Link
-            href="/login"
-            className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white"
-            onClick={() => setMenuOpen(false)}
-          >
-            {copy.navCta}
-          </Link>
+          {userLoading ? null : isLoggedIn ? (
+            <>
+              <div className="flex items-center gap-2 pt-1">
+                <span
+                  className={
+                    tier === 'premium'
+                      ? 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-glow-violet/15 text-violet-200 ring-1 ring-glow-violet/40'
+                      : 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-slate-800 text-slate-400 ring-1 ring-slate-700'
+                  }
+                >
+                  {tier === 'premium' ? copy.tierPremium : copy.tierFree}
+                </span>
+                {email && (
+                  <span className="text-sm text-slate-400 truncate" title={email}>
+                    {email}
+                  </span>
+                )}
+              </div>
+              <Link
+                href="/discover/shorts"
+                className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white"
+                onClick={() => setMenuOpen(false)}
+              >
+                {copy.navOpenApp}
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-slate-300 hover:text-white transition-colors text-sm"
+                onClick={() => setMenuOpen(false)}
+              >
+                {copy.navLogin}
+              </Link>
+              <Link
+                href="/login"
+                className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white"
+                onClick={() => setMenuOpen(false)}
+              >
+                {copy.navCta}
+              </Link>
+            </>
+          )}
         </div>
       )}
     </header>

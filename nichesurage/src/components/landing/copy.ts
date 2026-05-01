@@ -7,6 +7,9 @@ export const COPY = {
     navDashboard: 'Dashboard',
     navLogin: 'Login',
     navCta: 'Start Free',
+    navOpenApp: 'Open app',
+    tierFree: 'FREE',
+    tierPremium: 'PREMIUM',
 
     heroHeadline: "I built this because YouTube research was eating my weekends.",
     heroSub: "NicheSurge scans 230+ small channels every hour and flags the ones spiking before anyone else notices. No keyword guessing, no copy-paste tactics — just the small accounts that started moving.",
@@ -129,6 +132,9 @@ export const COPY = {
     navDashboard: 'Dashboard',
     navLogin: 'Anmelden',
     navCta: 'Kostenlos starten',
+    navOpenApp: 'App öffnen',
+    tierFree: 'FREE',
+    tierPremium: 'PREMIUM',
 
     heroHeadline: "Ich habe das gebaut, weil YouTube-Recherche meine Wochenenden gefressen hat.",
     heroSub: "NicheSurge scannt stündlich 230+ kleine Kanäle und markiert die, die zu steigen beginnen — bevor es jemand anderes bemerkt. Kein Keyword-Raten, keine Copy-Paste-Taktik.",
