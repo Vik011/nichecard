@@ -10,7 +10,7 @@ export function LockedField({ locked, children, className = '' }: LockedFieldPro
   if (!locked) return <>{children}</>
   return (
     <span
-      style={{ filter: 'blur(5px)' }}
+      style={{ filter: 'blur(8px)' }}
       title="Upgrade to Basic to unlock"
       className={`cursor-help select-none ${className}`}
     >

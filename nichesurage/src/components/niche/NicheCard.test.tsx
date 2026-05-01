@@ -56,11 +56,11 @@ describe('NicheCard', () => {
     expect(screen.queryByRole('link')).toBeNull()
     expect(document.querySelector('[style*="blur"] span')).not.toBeNull()
 
-    const viralityEl = screen.getByText(/Excellent/i)
+    const viralityEl = screen.getByText('✨ Excellent')
     expect(viralityEl.closest('[style*="blur"]')).not.toBeNull()
 
     expect(screen.queryByText(/eng/)).toBeNull()
-    expect(screen.getByText('🔒')).toBeTruthy()
+    expect(screen.getByLabelText(/locked/i)).toBeTruthy()
   })
 
   it('basic tier shorts: channel link, engagement, avg duration, hook score visible', () => {
@@ -69,7 +69,7 @@ describe('NicheCard', () => {
     const link = screen.getByRole('link', { name: /Tech Tutorials DE/i })
     expect(link).toHaveAttribute('href', 'https://youtube.com/@techde')
 
-    const viralityEl = screen.getByText(/Excellent/i)
+    const viralityEl = screen.getByText('✨ Excellent')
     expect(viralityEl.closest('[style*="blur"]')).toBeNull()
 
     expect(screen.getByText(/4\.2% eng/i)).toBeTruthy()

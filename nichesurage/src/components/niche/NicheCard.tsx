@@ -1,7 +1,6 @@
 import type { NicheCardData, ShortsNicheCardData, LongformNicheCardData, UserTier, ViralityRating, ContentLanguage } from '@/lib/types'
+import { LockSimple } from '@phosphor-icons/react/dist/ssr'
 import { LockedField } from './LockedField'
-import { SpikeIndicator } from './SpikeIndicator'
-import { ScoreBar } from './ScoreBar'
 import { BookmarkButton } from './BookmarkButton'
 import { HealthCheckButton } from './HealthCheckButton'
 
@@ -33,16 +32,40 @@ function formatK(n: number): string {
   return String(n)
 }
 
+interface ScoreTier {
+  textClass: string
+  glowShadow: string
+  label: string
+}
+
+function scoreTier(score: number): ScoreTier {
+  if (score >= 70) return {
+    textClass: 'text-emerald-400',
+    glowShadow: 'drop-shadow-[0_0_18px_rgba(52,211,153,0.55)]',
+    label: 'EXCELLENT',
+  }
+  if (score >= 50) return {
+    textClass: 'text-violet-300',
+    glowShadow: 'drop-shadow-[0_0_18px_rgba(167,139,250,0.55)]',
+    label: 'STRONG',
+  }
+  return {
+    textClass: 'text-slate-300',
+    glowShadow: 'drop-shadow-[0_0_12px_rgba(148,163,184,0.30)]',
+    label: 'AVERAGE',
+  }
+}
+
 function ShortsMetrics({ data, locked }: { data: ShortsNicheCardData; locked: boolean }) {
   return (
     <>
       {!locked && data.avgViewDurationPct !== undefined && (
-        <span className="bg-slate-800 text-indigo-400 px-2 py-0.5 rounded-full text-xs">
+        <span className="bg-slate-800/70 text-indigo-300 px-2 py-0.5 rounded-full text-xs">
           ⏱ {data.avgViewDurationPct}% duration
         </span>
       )}
       {!locked && data.hookScore !== undefined && (
-        <span className="bg-slate-800 text-purple-400 px-2 py-0.5 rounded-full text-xs">
+        <span className="bg-slate-800/70 text-purple-300 px-2 py-0.5 rounded-full text-xs">
           🎣 hook {data.hookScore}
         </span>
       )}
@@ -54,17 +77,17 @@ function LongformMetrics({ data, locked }: { data: LongformNicheCardData; locked
   return (
     <>
       {!locked && data.searchVolume !== undefined && (
-        <span className="bg-slate-800 text-blue-400 px-2 py-0.5 rounded-full text-xs">
+        <span className="bg-slate-800/70 text-blue-300 px-2 py-0.5 rounded-full text-xs">
           🔍 {formatK(data.searchVolume)} searches
         </span>
       )}
       {!locked && data.competitionScore !== undefined && (
-        <span className="bg-slate-800 text-orange-400 px-2 py-0.5 rounded-full text-xs">
+        <span className="bg-slate-800/70 text-orange-300 px-2 py-0.5 rounded-full text-xs">
           ⚔️ {data.competitionScore}% comp
         </span>
       )}
       {!locked && data.avgViewsPerVideo !== undefined && (
-        <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">
+        <span className="bg-slate-800/70 text-slate-300 px-2 py-0.5 rounded-full text-xs">
           👁 {formatK(data.avgViewsPerVideo)} views/video
         </span>
       )}
@@ -74,80 +97,103 @@ function LongformMetrics({ data, locked }: { data: LongformNicheCardData; locked
 
 export function NicheCard({ data, userTier, rank, isSaved, savedCount, onBookmarkToggle }: NicheCardProps) {
   const locked = userTier === 'free'
+  const tier = scoreTier(data.opportunityScore)
+  const isHero = rank <= 3
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-      {/* Header row */}
-      <div className="flex justify-between items-start mb-2.5">
-        <div className="flex-1 min-w-0 mr-3">
-          <div className="text-slate-400 text-xs uppercase tracking-widest mb-0.5">
-            NICHE #{rank}
-          </div>
+    <div
+      className={`glass ${isHero ? 'glass-violet' : ''} rounded-xl p-4 transition-all duration-200 hover:scale-[1.02] hover:brightness-110`}
+    >
+      {/* Header: rank label + actions */}
+      <div className="flex justify-between items-start mb-1">
+        <div className="text-slate-500 text-[10px] uppercase tracking-[0.18em] font-semibold">
+          Niche #{rank}
+        </div>
+        <div className="flex items-center gap-0.5 -mt-1 -mr-1">
+          <HealthCheckButton
+            scanResultId={data.id}
+            nicheLabel={data.nicheLabel ?? 'this niche'}
+            userTier={userTier}
+          />
+          {onBookmarkToggle && (
+            <BookmarkButton
+              nicheId={data.id}
+              isSaved={isSaved ?? false}
+              userTier={userTier}
+              savedCount={savedCount ?? 0}
+              onToggle={onBookmarkToggle}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Hero row: channel name + niche label on left, big glowing score on right */}
+      <div className="flex justify-between items-start gap-3 mb-3">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <LockedField locked={locked}>
               {data.channelName && data.channelUrl ? (
                 <a
                   href={data.channelUrl}
-                  className="text-slate-200 text-sm font-semibold hover:text-indigo-300 transition-colors"
+                  className="text-slate-100 text-base font-bold hover:text-violet-300 transition-colors block truncate"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  {data.channelName} ↗
+                  {data.channelName}
                 </a>
               ) : (
-                <span className="text-slate-200 text-sm font-semibold">—</span>
+                <span className="text-slate-100 text-base font-bold">—</span>
               )}
             </LockedField>
-            {locked && <span className="text-xs text-slate-500">🔒</span>}
-          </div>
-          {data.nicheLabel && (
-            <div className="text-indigo-400 text-xs mt-0.5">{data.nicheLabel}</div>
-          )}
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-0.5">
-            <HealthCheckButton
-              scanResultId={data.id}
-              nicheLabel={data.nicheLabel ?? 'this niche'}
-              userTier={userTier}
-            />
-            {onBookmarkToggle && (
-              <BookmarkButton
-                nicheId={data.id}
-                isSaved={isSaved ?? false}
-                userTier={userTier}
-                savedCount={savedCount ?? 0}
-                onToggle={onBookmarkToggle}
+            {locked && (
+              <LockSimple
+                weight="fill"
+                size={12}
+                className="text-slate-500 shrink-0"
+                aria-label="Locked"
               />
             )}
           </div>
-          <SpikeIndicator multiplier={data.spikeMultiplier} />
-          {data.trending && (
-            <span className="flex items-center gap-0.5 text-orange-400 text-xs font-medium">
-              🔥 Trending
-            </span>
+          {data.nicheLabel && (
+            <div className="text-violet-400 text-xs mt-0.5 truncate">{data.nicheLabel}</div>
           )}
+        </div>
+        <div className="shrink-0 text-right">
+          <div className={`text-4xl font-extrabold leading-none tabular-nums ${tier.textClass} ${tier.glowShadow}`}>
+            {data.opportunityScore}
+          </div>
+          <div className="text-slate-500 text-[9px] uppercase tracking-[0.18em] font-semibold mt-1">
+            {tier.label}
+          </div>
         </div>
       </div>
 
       {/* Badge row */}
-      <div className="flex flex-wrap gap-1.5 mb-2.5">
-        <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">
+      <div className="flex flex-wrap gap-1.5">
+        <span className="bg-slate-800/70 text-slate-300 px-2 py-0.5 rounded-full text-xs">
           📺 {data.videoCount} videos
         </span>
-        <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">
+        <span className="bg-slate-800/70 text-slate-300 px-2 py-0.5 rounded-full text-xs">
           👥 {data.subscriberRange}
         </span>
         <LockedField locked={locked}>
-          <span className={`bg-slate-800 px-2 py-0.5 rounded-full text-xs ${VIRALITY_STYLE[data.viralityRating]}`}>
+          <span className={`bg-slate-800/70 px-2 py-0.5 rounded-full text-xs ${VIRALITY_STYLE[data.viralityRating]}`}>
             {VIRALITY_LABEL[data.viralityRating]}
           </span>
         </LockedField>
-        <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">
+        <span className="bg-slate-800/70 text-slate-300 px-2 py-0.5 rounded-full text-xs">
           {LANG_FLAG[data.language]} {data.language.toUpperCase()}
         </span>
+        <span className="bg-orange-950/60 text-orange-300 px-2 py-0.5 rounded-full text-xs font-semibold">
+          ⚡ {data.spikeMultiplier}×
+        </span>
+        {data.trending && (
+          <span className="bg-orange-950/60 text-orange-300 px-2 py-0.5 rounded-full text-xs font-semibold">
+            🔥 Trending
+          </span>
+        )}
         {!locked && data.engagementRate !== undefined && (
-          <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">
+          <span className="bg-slate-800/70 text-slate-300 px-2 py-0.5 rounded-full text-xs">
             📈 {data.engagementRate}% eng
           </span>
         )}
@@ -156,9 +202,6 @@ export function NicheCard({ data, userTier, rank, isSaved, savedCount, onBookmar
           : <LongformMetrics data={data} locked={locked} />
         }
       </div>
-
-      {/* Score bar */}
-      <ScoreBar score={data.opportunityScore} />
     </div>
   )
 }
