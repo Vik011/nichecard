@@ -152,7 +152,7 @@ export default function PrivacyPage() {
           <span className="text-slate-300 font-medium">
             Right to erasure
           </span>{" "}
-          — request deletion of your personal data ("right to be forgotten").
+          — request deletion of your personal data (&ldquo;right to be forgotten&rdquo;).
         </li>
         <li>
           <span className="text-slate-300 font-medium">
