@@ -79,6 +79,11 @@ export const COPY = {
     anglesLongform: 'Longform',
     anglesWhy: 'Why it works',
     anglesLoading: 'Generating ideas…',
+    anglesStage1: 'Reading niche signals…',
+    anglesStage2: 'Studying winning formats…',
+    anglesStage3: 'Drafting video angles…',
+    anglesStage4: 'Polishing hooks…',
+    anglesLoadingHint: 'First load takes ~20–30s · cached for 7 days after',
 
     heroHeadline: "I built this because YouTube research was eating my weekends.",
     heroSub: "NicheSurge scans 230+ small channels every hour and flags the ones spiking before anyone else notices. No keyword guessing, no copy-paste tactics — just the small accounts that started moving.",
@@ -273,6 +278,11 @@ export const COPY = {
     anglesLongform: 'Longform',
     anglesWhy: 'Warum es funktioniert',
     anglesLoading: 'Generiere Ideen…',
+    anglesStage1: 'Analysiere Nischen-Signale…',
+    anglesStage2: 'Erforsche erfolgreiche Formate…',
+    anglesStage3: 'Entwerfe Videoideen…',
+    anglesStage4: 'Verfeinere Hooks…',
+    anglesLoadingHint: 'Erstes Laden ~20–30s · danach 7 Tage gecacht',
 
     heroHeadline: "Ich habe das gebaut, weil YouTube-Recherche meine Wochenenden gefressen hat.",
     heroSub: "NicheSurge scannt stündlich 230+ kleine Kanäle und markiert die, die zu steigen beginnen — bevor es jemand anderes bemerkt. Kein Keyword-Raten, keine Copy-Paste-Taktik.",

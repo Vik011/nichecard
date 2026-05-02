@@ -7,6 +7,8 @@ import type { ContentAngle, UserTier } from '@/lib/types'
 import type { CopyKeys } from '@/components/landing/copy'
 import { canUseAIFeatures } from '@/lib/tier'
 
+const STAGE_INTERVAL_MS = 6500
+
 interface AIContentAnglesProps {
   scanResultId: string
   userTier: UserTier
@@ -62,7 +64,7 @@ export function AIContentAngles({ scanResultId, userTier, copy }: AIContentAngle
         {copy.anglesHeading}
       </h2>
 
-      {state.kind === 'loading' && <AnglesSkeleton />}
+      {state.kind === 'loading' && <AnglesLoading copy={copy} />}
 
       {state.kind === 'error' && (
         <div className="flex flex-col gap-3 items-start">
@@ -107,17 +109,54 @@ function AngleCard({ angle, copy }: { angle: ContentAngle; copy: CopyKeys }) {
   )
 }
 
-function AnglesSkeleton() {
+function AnglesLoading({ copy }: { copy: CopyKeys }) {
+  const stages = [copy.anglesStage1, copy.anglesStage2, copy.anglesStage3, copy.anglesStage4]
+  const [stage, setStage] = useState(0)
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setStage(s => Math.min(s + 1, stages.length - 1))
+    }, STAGE_INTERVAL_MS)
+    return () => clearInterval(id)
+  }, [stages.length])
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="glass rounded-xl p-4 flex flex-col gap-2">
-          <div className="h-4 w-16 bg-charcoal-800/80 rounded animate-pulse" />
-          <div className="h-5 w-3/4 bg-charcoal-800/60 rounded animate-pulse" />
-          <div className="h-4 w-full bg-charcoal-800/40 rounded animate-pulse" />
-          <div className="h-3 w-2/3 bg-charcoal-800/40 rounded animate-pulse mt-2" />
-        </div>
-      ))}
+    <div data-testid="angles-loading" className="flex flex-col items-center gap-5 py-6">
+      <div className="flex items-center gap-2.5">
+        <span aria-hidden className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-glow-violet opacity-75" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-glow-violet" />
+        </span>
+        <p className="text-slate-200 text-sm font-medium tabular-nums transition-opacity duration-300">
+          {stages[stage]}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-1.5" aria-hidden>
+        {stages.map((_, i) => (
+          <div
+            key={i}
+            className={`h-1 w-10 rounded-full transition-colors duration-300 ${
+              i <= stage ? 'bg-glow-violet' : 'bg-charcoal-700'
+            }`}
+          />
+        ))}
+      </div>
+
+      <p className="text-slate-600 text-[10px] uppercase tracking-[0.18em]">
+        {copy.anglesLoadingHint}
+      </p>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 w-full mt-2 opacity-40">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="glass rounded-xl p-4 flex flex-col gap-2">
+            <div className="h-4 w-16 bg-charcoal-800/80 rounded animate-pulse" />
+            <div className="h-5 w-3/4 bg-charcoal-800/60 rounded animate-pulse" />
+            <div className="h-4 w-full bg-charcoal-800/40 rounded animate-pulse" />
+            <div className="h-3 w-2/3 bg-charcoal-800/40 rounded animate-pulse mt-2" />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
