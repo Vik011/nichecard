@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { fetchTrendingClusters } from '@/lib/supabase/queries'
 import type { TrendingCluster } from '@/lib/types'
 
@@ -13,6 +14,7 @@ interface TrendingTopicsProps {
 
 export function TrendingTopics({ eyebrow, emptyHint, activeClusterId, basePath = '/discover' }: TrendingTopicsProps) {
   const [clusters, setClusters] = useState<TrendingCluster[] | null>(null)
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     let cancelled = false
@@ -21,6 +23,15 @@ export function TrendingTopics({ eyebrow, emptyHint, activeClusterId, basePath =
     })
     return () => { cancelled = true }
   }, [])
+
+  // Preserve current searchParams (e.g. ?type=longform) when applying the cluster
+  // filter. Otherwise navigating to ?cluster=X drops the format toggle and the
+  // page falls back to shorts default — so longform clusters render empty.
+  function buildClusterHref(clusterId: string): string {
+    const params = new URLSearchParams(searchParams?.toString() ?? '')
+    params.set('cluster', clusterId)
+    return `${basePath}?${params.toString()}`
+  }
 
   if (clusters !== null && clusters.length === 0) {
     if (!emptyHint) return null
@@ -54,7 +65,7 @@ export function TrendingTopics({ eyebrow, emptyHint, activeClusterId, basePath =
                 <Link
                   key={c.id}
                   role="listitem"
-                  href={`${basePath}?cluster=${c.id}`}
+                  href={buildClusterHref(c.id)}
                   className={`group glass rounded-full px-3.5 py-1.5 text-xs whitespace-nowrap transition-all shrink-0 ${
                     isActive
                       ? 'ring-1 ring-glow-indigo text-slate-100 bg-charcoal-700/60'
