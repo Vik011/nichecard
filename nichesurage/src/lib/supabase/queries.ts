@@ -92,6 +92,24 @@ export async function fetchNiches(
   return { data: (data ?? []).map(mapRow), error: null }
 }
 
+export async function fetchRelatedNiches(source: NicheCardData, limit = 3): Promise<NicheCardData[]> {
+  const supabase = createClient()
+  const lower = Math.max(0, Math.floor(source.subscriberCount * 0.3))
+  const upper = Math.max(lower + 1, Math.ceil(source.subscriberCount * 3))
+  const { data, error } = await supabase
+    .from('scan_results_latest')
+    .select('*')
+    .eq('language', source.language)
+    .eq('content_type', source.contentType)
+    .neq('id', source.id)
+    .gte('subscriber_count', lower)
+    .lte('subscriber_count', upper)
+    .order('opportunity_score', { ascending: false })
+    .limit(limit)
+  if (error || !data) return []
+  return (data as DbScanResult[]).map(mapRow)
+}
+
 export async function fetchNicheById(id: string): Promise<NicheCardData | null> {
   const supabase = createClient()
   const { data, error } = await supabase
