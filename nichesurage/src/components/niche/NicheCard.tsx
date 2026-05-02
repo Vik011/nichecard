@@ -1,4 +1,5 @@
 import type { NicheCardData, ShortsNicheCardData, LongformNicheCardData, UserTier, ViralityRating, ContentLanguage, SpikePoint } from '@/lib/types'
+import Link from 'next/link'
 import { LockSimple } from '@phosphor-icons/react/dist/ssr'
 import { LockedField } from './LockedField'
 import { BookmarkButton } from './BookmarkButton'
@@ -12,6 +13,7 @@ interface NicheCardProps {
   isSaved?: boolean
   savedCount?: number
   spikeHistory?: SpikePoint[]
+  fromUrl?: string
   onBookmarkToggle?: (id: string, saved: boolean) => void
 }
 
@@ -97,14 +99,19 @@ function LongformMetrics({ data, locked }: { data: LongformNicheCardData; locked
   )
 }
 
-export function NicheCard({ data, userTier, rank, isSaved, savedCount, spikeHistory, onBookmarkToggle }: NicheCardProps) {
+export function NicheCard({ data, userTier, rank, isSaved, savedCount, spikeHistory, fromUrl, onBookmarkToggle }: NicheCardProps) {
   const locked = userTier === 'free'
   const tier = scoreTier(data.opportunityScore)
   const isHero = rank <= 3
+  const detailHref = fromUrl
+    ? `/discover/niche/${data.id}?from=${encodeURIComponent(fromUrl)}`
+    : `/discover/niche/${data.id}`
 
   return (
-    <div
-      className={`glass ${isHero ? 'glass-violet' : ''} rounded-xl p-4 transition-all duration-200 hover:scale-[1.02] hover:brightness-110`}
+    <Link
+      href={detailHref}
+      aria-label={`Open detail page for ${data.channelName ?? 'this niche'}`}
+      className={`glass ${isHero ? 'glass-violet' : ''} rounded-xl p-4 block transition-all duration-200 hover:scale-[1.02] hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-glow-violet/60`}
     >
       {/* Header: rank label + actions */}
       <div className="flex justify-between items-start mb-1">
@@ -134,18 +141,9 @@ export function NicheCard({ data, userTier, rank, isSaved, savedCount, spikeHist
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <LockedField locked={locked}>
-              {data.channelName && data.channelUrl ? (
-                <a
-                  href={data.channelUrl}
-                  className="text-slate-100 text-base font-bold hover:text-violet-300 transition-colors block truncate"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {data.channelName}
-                </a>
-              ) : (
-                <span className="text-slate-100 text-base font-bold">—</span>
-              )}
+              <span className="text-slate-100 text-base font-bold block truncate">
+                {data.channelName ?? '—'}
+              </span>
             </LockedField>
             {locked && (
               <LockSimple
@@ -207,6 +205,6 @@ export function NicheCard({ data, userTier, rank, isSaved, savedCount, spikeHist
           : <LongformMetrics data={data} locked={locked} />
         }
       </div>
-    </div>
+    </Link>
   )
 }

@@ -167,6 +167,7 @@ export default function LongformDiscoverPage() {
                 isSaved={savedIds.has(niche.id)}
                 savedCount={savedCount}
                 spikeHistory={histories.get(niche.id)}
+                fromUrl={`/discover/longform?${filtersToParams(filters)}`}
                 onBookmarkToggle={handleBookmarkToggle}
               />
             ))}

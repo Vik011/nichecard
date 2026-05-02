@@ -167,6 +167,7 @@ export default function ShortsDiscoverPage() {
                 isSaved={savedIds.has(niche.id)}
                 savedCount={savedCount}
                 spikeHistory={histories.get(niche.id)}
+                fromUrl={`/discover/shorts?${filtersToParams(filters)}`}
                 onBookmarkToggle={handleBookmarkToggle}
               />
             ))}

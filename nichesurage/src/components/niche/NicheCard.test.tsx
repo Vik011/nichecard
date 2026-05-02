@@ -54,10 +54,9 @@ const longformBasic: LongformNicheCardData = {
 }
 
 describe('NicheCard', () => {
-  it('free tier: blurred elements present, no channel link, no engagement badge, lock icon shown', () => {
+  it('free tier: blurred elements present, no engagement badge, lock icon shown', () => {
     render(<NicheCard data={shortsBase} userTier="free" rank={1} />)
 
-    expect(screen.queryByRole('link')).toBeNull()
     expect(document.querySelector('[style*="blur"] span')).not.toBeNull()
 
     const viralityEl = screen.getByText('✨ Excellent')
@@ -67,11 +66,22 @@ describe('NicheCard', () => {
     expect(screen.getByLabelText(/locked/i)).toBeTruthy()
   })
 
-  it('basic tier shorts: channel link, engagement, avg duration, hook score visible', () => {
+  it('whole card is a link to the detail page', () => {
+    render(<NicheCard data={shortsBasic} userTier="basic" rank={1} />)
+    const link = screen.getByRole('link', { name: /detail page for Tech Tutorials DE/i })
+    expect(link.getAttribute('href')).toBe('/discover/niche/1')
+  })
+
+  it('detail link includes ?from when fromUrl prop is set', () => {
+    render(<NicheCard data={shortsBasic} userTier="basic" rank={1} fromUrl="/discover/shorts?subscriberMin=1000" />)
+    const link = screen.getByRole('link', { name: /detail page/i })
+    expect(link.getAttribute('href')).toBe('/discover/niche/1?from=%2Fdiscover%2Fshorts%3FsubscriberMin%3D1000')
+  })
+
+  it('basic tier shorts: channel name + engagement + avg duration + hook visible', () => {
     render(<NicheCard data={shortsBasic} userTier="basic" rank={1} />)
 
-    const link = screen.getByRole('link', { name: /Tech Tutorials DE/i })
-    expect(link).toHaveAttribute('href', 'https://youtube.com/@techde')
+    expect(screen.getByText('Tech Tutorials DE')).toBeTruthy()
 
     const viralityEl = screen.getByText('✨ Excellent')
     expect(viralityEl.closest('[style*="blur"]')).toBeNull()
@@ -84,9 +94,8 @@ describe('NicheCard', () => {
   it('basic tier longform: search volume, competition score, avg views/video visible', () => {
     render(<NicheCard data={longformBasic} userTier="basic" rank={2} />)
 
+    expect(screen.getByText('Finance Explained')).toBeTruthy()
     expect(screen.getByText(/5\.1% eng/i)).toBeTruthy()
-    const link = screen.getByRole('link', { name: /Finance Explained/i })
-    expect(link).toHaveAttribute('href', 'https://youtube.com/@financeexp')
     expect(screen.getByText(/48k searches/i)).toBeTruthy()
     expect(screen.getByText(/34% comp/i)).toBeTruthy()
     expect(screen.getByText(/12\.4k views\/video/i)).toBeTruthy()

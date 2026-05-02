@@ -92,6 +92,17 @@ export async function fetchNiches(
   return { data: (data ?? []).map(mapRow), error: null }
 }
 
+export async function fetchNicheById(id: string): Promise<NicheCardData | null> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('scan_results_latest')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+  if (error || !data) return null
+  return mapRow(data as DbScanResult)
+}
+
 export async function fetchSpikeHistory(youtubeChannelId: string): Promise<SpikePoint[]> {
   const supabase = createClient()
   const { data, error } = await supabase
