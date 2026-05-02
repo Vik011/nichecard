@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { SearchFilters } from '@/components/search/SearchFilters'
 import { NicheCard } from '@/components/niche/NicheCard'
@@ -57,6 +57,24 @@ function headings(copy: CopyKeys, contentType: ContentType) {
 }
 
 export default function DiscoverPage() {
+  return (
+    <Suspense fallback={<DiscoverFallback />}>
+      <DiscoverPageInner />
+    </Suspense>
+  )
+}
+
+function DiscoverFallback() {
+  return (
+    <main className="min-h-screen text-slate-100 px-4 py-8 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[1, 2, 3, 4, 5].map(i => <NicheCardSkeleton key={i} />)}
+      </div>
+    </main>
+  )
+}
+
+function DiscoverPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { tier: userTier, loading: userLoading } = useUser()
