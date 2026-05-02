@@ -10,6 +10,11 @@ const config: Config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/.next/',
+    '/supabase/', // Deno Edge Function tests — run with `deno test`, not Jest
+  ],
 }
 
 export default createJestConfig(config)
