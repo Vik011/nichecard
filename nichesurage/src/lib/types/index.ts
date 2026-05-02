@@ -19,6 +19,14 @@ export interface SpikePoint {
   spikeX: number
 }
 
+export interface ChannelVideo {
+  id: string
+  title: string
+  thumbnail: string
+  viewCount: number
+  publishedAt: string
+}
+
 export interface SearchFilters {
   contentType: ContentType
   subscriberMin: number
