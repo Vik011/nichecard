@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { NicheCard } from '@/components/niche/NicheCard'
-import { unsaveNiche } from '@/lib/supabase/savedNiches'
 import type { NicheCardData, UserTier } from '@/lib/types'
 
 interface SavedNichesListProps {
