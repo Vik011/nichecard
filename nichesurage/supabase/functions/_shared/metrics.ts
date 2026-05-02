@@ -54,3 +54,32 @@ export function computeCompetitionScore(subscriberCount: number, maxSubs: number
   if (maxSubs === 0) return 0
   return Math.round((subscriberCount / maxSubs) * 100)
 }
+
+// Sonar: find the strongest outlier video for a channel within the relevant
+// window, then compute viewCount / max(subs, 1). Returns the winning video so
+// we can persist its id/title for clustering context.
+export interface OutlierResult {
+  ratio: number
+  video: VideoData | null
+}
+
+export function findOutlier(
+  videos: VideoData[],
+  subscriberCount: number,
+  windowHours: number
+): OutlierResult {
+  if (videos.length === 0) return { ratio: 0, video: null }
+  const cutoff = new Date(Date.now() - windowHours * 60 * 60 * 1000)
+  const inWindow = videos.filter(v => new Date(v.publishedAt) >= cutoff)
+  if (inWindow.length === 0) return { ratio: 0, video: null }
+
+  const subs = Math.max(subscriberCount, 1)
+  let best: VideoData = inWindow[0]
+  let bestRatio = inWindow[0].viewCount / subs
+  for (let i = 1; i < inWindow.length; i++) {
+    const r = inWindow[i].viewCount / subs
+    if (r > bestRatio) { bestRatio = r; best = inWindow[i] }
+  }
+  return { ratio: parseFloat(bestRatio.toFixed(2)), video: best }
+}
+

@@ -28,3 +28,8 @@ create index if not exists scan_results_embedding_idx
   using ivfflat (embedding extensions.vector_cosine_ops)
   with (lists = 100)
   where embedding is not null;
+
+-- Track which seed keyword discovered a channel so /discover can offer a
+-- "seeded by AI Automation Tools" breadcrumb later.
+alter table public.channels_watchlist
+  add column if not exists seed_keyword text;

@@ -1,5 +1,5 @@
 // supabase/functions/_shared/youtube.ts
-import type { YouTubeChannelData, VideoData } from './types.ts'
+import type { YouTubeChannelData, VideoData, VideoSearchHit } from './types.ts'
 
 const BASE = 'https://www.googleapis.com/youtube/v3'
 
@@ -99,14 +99,57 @@ export async function getRecentVideos(
 
   return (videosData.items ?? []).map((item: {
     id: string
-    snippet: { title: string; publishedAt: string }
+    snippet: { title: string; description?: string; publishedAt: string }
     statistics: { viewCount?: string; likeCount?: string; commentCount?: string }
   }) => ({
     videoId: item.id,
     title: item.snippet.title,
+    description: (item.snippet.description ?? '').slice(0, 240),
     viewCount: parseInt(item.statistics.viewCount ?? '0', 10),
     likeCount: parseInt(item.statistics.likeCount ?? '0', 10),
     commentCount: parseInt(item.statistics.commentCount ?? '0', 10),
     publishedAt: item.snippet.publishedAt,
   })).sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+}
+
+// Sonar: keyword-driven search returning videos + their channelIds.
+// Used by sonar-discover to find outlier candidates by seed term.
+export async function searchVideosByKeyword(
+  apiKey: string,
+  params: {
+    q: string
+    publishedAfter: string
+    videoDuration: 'short' | 'medium' | 'long' | 'any'
+    regionCode?: 'US' | 'DE'
+    maxResults?: number
+  }
+): Promise<VideoSearchHit[]> {
+  const url = new URL(`${BASE}/search`)
+  url.searchParams.set('key', apiKey)
+  url.searchParams.set('part', 'snippet')
+  url.searchParams.set('type', 'video')
+  url.searchParams.set('q', params.q)
+  url.searchParams.set('videoDuration', params.videoDuration)
+  url.searchParams.set('publishedAfter', params.publishedAfter)
+  url.searchParams.set('order', 'viewCount')
+  if (params.regionCode) url.searchParams.set('regionCode', params.regionCode)
+  url.searchParams.set('maxResults', String(params.maxResults ?? 25))
+
+  const res = await fetch(url.toString())
+  if (!res.ok) throw new Error(`search.list (sonar) failed ${res.status}: ${await res.text()}`)
+  const data = await res.json()
+
+  return (data.items ?? [])
+    .filter((item: { id?: { videoId?: string }; snippet?: { channelId?: string } }) =>
+      item.id?.videoId && item.snippet?.channelId
+    )
+    .map((item: {
+      id: { videoId: string }
+      snippet: { channelId: string; title: string; publishedAt: string }
+    }): VideoSearchHit => ({
+      videoId: item.id.videoId,
+      channelId: item.snippet.channelId,
+      title: item.snippet.title,
+      publishedAt: item.snippet.publishedAt,
+    }))
 }

@@ -9,6 +9,7 @@ import {
   computeOpportunityScore,
   computeHookScore,
   computeCompetitionScore,
+  findOutlier,
 } from './metrics.ts'
 import type { VideoData } from './types.ts'
 
@@ -16,6 +17,7 @@ function makeVideo(overrides: Partial<VideoData> = {}): VideoData {
   return {
     videoId: 'v1',
     title: 'Test',
+    description: '',
     viewCount: 1000,
     likeCount: 50,
     commentCount: 10,
@@ -110,4 +112,33 @@ Deno.test('computeCompetitionScore is 0 for 0 subs', () => {
 
 Deno.test('computeCompetitionScore returns 0 when maxSubs is 0', () => {
   assertEquals(computeCompetitionScore(5000, 0), 0)
+})
+
+// ── Sonar findOutlier ──
+Deno.test('findOutlier returns 0 for empty videos', () => {
+  const r = findOutlier([], 1000, 48)
+  assertEquals(r.ratio, 0)
+  assertEquals(r.video, null)
+})
+
+Deno.test('findOutlier picks the highest viewCount video in window', () => {
+  const now = Date.now()
+  const inWindow = makeVideo({ videoId: 'in1', viewCount: 5000, publishedAt: new Date(now - 12 * 3600 * 1000).toISOString() })
+  const winner   = makeVideo({ videoId: 'in2', viewCount: 25000, publishedAt: new Date(now - 24 * 3600 * 1000).toISOString() })
+  const stale    = makeVideo({ videoId: 'old', viewCount: 99999, publishedAt: new Date(now - 72 * 3600 * 1000).toISOString() })
+  const r = findOutlier([inWindow, winner, stale], 5000, 48)
+  assertEquals(r.video?.videoId, 'in2')
+  assertEquals(r.ratio, 5)
+})
+
+Deno.test('findOutlier ignores videos outside the window', () => {
+  const stale = makeVideo({ viewCount: 1_000_000, publishedAt: new Date(Date.now() - 200 * 3600 * 1000).toISOString() })
+  const r = findOutlier([stale], 1000, 48)
+  assertEquals(r.ratio, 0)
+})
+
+Deno.test('findOutlier guards against zero subscribers', () => {
+  const v = makeVideo({ viewCount: 1000, publishedAt: new Date().toISOString() })
+  const r = findOutlier([v], 0, 48)
+  assertEquals(r.ratio, 1000) // (views / max(subs, 1)) → (1000/1)
 })
