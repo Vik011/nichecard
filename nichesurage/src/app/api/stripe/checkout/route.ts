@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { stripe } from '@/lib/stripe/client'
 import { resolvePriceId, isValidTier, isValidInterval } from '@/lib/stripe/prices'
+import { captureServer } from '@/lib/analytics/posthog-server'
 
 export const runtime = 'nodejs'
 
@@ -54,6 +55,12 @@ export async function POST(req: Request) {
       subscription_data: {
         metadata: { supabase_user_id: user.id, tier, interval },
       },
+    })
+
+    await captureServer({
+      distinctId: user.id,
+      event: 'checkout_session_started',
+      properties: { tier, interval },
     })
 
     return NextResponse.json({ url: session.url })

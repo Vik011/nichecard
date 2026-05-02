@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe/client'
 import { tierFromPriceId } from '@/lib/stripe/prices'
 import { createServiceClient } from '@/lib/supabase/service'
+import { captureServer } from '@/lib/analytics/posthog-server'
 import type Stripe from 'stripe'
 import type { SubscriptionStatus } from '@/lib/types/database'
 
@@ -54,6 +55,13 @@ export async function POST(req: Request) {
         }).eq('id', userId)
         if (error) console.error('[stripe/webhook] users update failed:', error)
         else console.log('[stripe/webhook] users updated to', mapped.tier, 'for user', userId)
+        if (event.type === 'customer.subscription.created') {
+          await captureServer({
+            distinctId: userId,
+            event: 'subscription_started',
+            properties: { tier: mapped.tier, interval: mapped.interval, status: sub.status },
+          })
+        }
       }
       break
     }
@@ -68,6 +76,10 @@ export async function POST(req: Request) {
           stripe_subscription_id: null,
         }).eq('id', userId)
         if (error) console.error('[stripe/webhook] users downgrade failed:', error)
+        await captureServer({
+          distinctId: userId,
+          event: 'subscription_canceled',
+        })
       }
       break
     }

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Suspense } from "react";
 import "./globals.css";
 import { UserProvider } from "@/lib/context/UserContext";
 import { AmbientBackground } from "@/components/layout/AmbientBackground";
+import { PosthogProvider } from "@/components/providers/PosthogProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -43,6 +45,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-carbon-950 text-slate-100`}
       >
         <AmbientBackground />
+        <Suspense fallback={null}>
+          <PosthogProvider />
+        </Suspense>
         <div className="relative z-10">
           <UserProvider>{children}</UserProvider>
         </div>

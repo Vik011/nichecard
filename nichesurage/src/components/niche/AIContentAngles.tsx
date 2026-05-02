@@ -6,6 +6,7 @@ import { Sparkle, LockSimple } from '@phosphor-icons/react/dist/ssr'
 import type { ContentAngle, UserTier } from '@/lib/types'
 import type { CopyKeys } from '@/components/landing/copy'
 import { canUseAIFeatures } from '@/lib/tier'
+import { captureClient } from '@/lib/analytics/posthog-client'
 
 const STAGE_INTERVAL_MS = 6500
 
@@ -51,7 +52,7 @@ export function AIContentAngles({ scanResultId, userTier, copy }: AIContentAngle
   }, [scanResultId, allowed])
 
   if (!allowed) {
-    return <LockedTeaser copy={copy} />
+    return <LockedTeaser copy={copy} userTier={userTier} />
   }
 
   return (
@@ -161,7 +162,7 @@ function AnglesLoading({ copy }: { copy: CopyKeys }) {
   )
 }
 
-function LockedTeaser({ copy }: { copy: CopyKeys }) {
+function LockedTeaser({ copy, userTier }: { copy: CopyKeys; userTier: UserTier }) {
   return (
     <section className="glass glass-glow rounded-2xl p-6 mb-6 relative overflow-hidden">
       <div className="flex items-center gap-2 mb-2">
@@ -196,6 +197,7 @@ function LockedTeaser({ copy }: { copy: CopyKeys }) {
           </p>
           <Link
             href="/pricing"
+            onClick={() => captureClient('upgrade_cta_clicked', { source: 'ai_angles_locked', tier: userTier })}
             className="inline-block w-full text-[13px] font-semibold px-4 py-2.5 rounded-lg bg-gradient-to-br from-brand-indigo to-brand-indigo-bright text-white hover:brightness-110 hover:shadow-glow-cyan transition-all shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
           >
             {copy.anglesUpgradeCta}

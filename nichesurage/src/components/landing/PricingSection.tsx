@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import type { CopyKeys } from './copy'
 import { MotionCard } from '@/components/ui/MotionCard'
+import { captureClient } from '@/lib/analytics/posthog-client'
 
 type Billing = 'monthly' | 'yearly'
 
@@ -144,6 +145,7 @@ export function PricingSection({ copy }: PricingSectionProps) {
                 </ul>
                 <a
                   href={href}
+                  onClick={() => captureClient('pricing_cta_clicked', { plan: tier.plan, billing })}
                   className={
                     tier.highlight
                       ? 'block w-full text-center py-3 px-4 rounded-xl font-semibold bg-gradient-to-br from-brand-indigo to-brand-indigo-bright text-white hover:brightness-110 hover:shadow-glow-cyan transition-all shadow-[0_8px_24px_-8px_rgba(124,131,240,0.45)]'
