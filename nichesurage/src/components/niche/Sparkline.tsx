@@ -1,8 +1,11 @@
 import type { SpikePoint } from '@/lib/types'
 
+export type SparklineTier = 'excellent' | 'strong' | 'average' | 'weak'
+
 interface SparklineProps {
   data: SpikePoint[]
   variant: 'card' | 'detail'
+  tier?: SparklineTier
 }
 
 const DIMENSIONS = {
@@ -10,7 +13,21 @@ const DIMENSIONS = {
   detail: { w: 600, h: 120, strokeW: 2 },
 } as const
 
-export function Sparkline({ data, variant }: SparklineProps) {
+const TIER_COLORS: Record<SparklineTier, { stroke: string; fill: string }> = {
+  excellent: { stroke: 'rgb(52 211 153)',  fill: 'rgb(52 211 153)'  },
+  strong:    { stroke: 'rgb(167 139 250)', fill: 'rgb(167 139 250)' },
+  average:   { stroke: 'rgb(148 163 184)', fill: 'rgb(148 163 184)' },
+  weak:      { stroke: 'rgb(248 113 113)', fill: 'rgb(248 113 113)' },
+}
+
+export function tierFromScore(score: number): SparklineTier {
+  if (score >= 70) return 'excellent'
+  if (score >= 50) return 'strong'
+  if (score >= 30) return 'average'
+  return 'weak'
+}
+
+export function Sparkline({ data, variant, tier = 'strong' }: SparklineProps) {
   if (data.length < 2) {
     return <span className="text-slate-600 text-xs tabular-nums">—</span>
   }
@@ -20,12 +37,14 @@ export function Sparkline({ data, variant }: SparklineProps) {
   const points = data
     .map((d, i) => `${(i * stepX).toFixed(2)},${(h - (d.spikeX / max) * h).toFixed(2)}`)
     .join(' ')
-  const gradId = `spark-grad-${variant}`
+  const gradId = `spark-grad-${variant}-${tier}`
+  const colors = TIER_COLORS[tier]
 
   return (
     <svg
       role="img"
       aria-label={`30-day spike trend, ${data.length} points`}
+      data-tier={tier}
       viewBox={`0 0 ${w} ${h}`}
       width={w}
       height={h}
@@ -33,8 +52,8 @@ export function Sparkline({ data, variant }: SparklineProps) {
     >
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgb(167 139 250)" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="rgb(167 139 250)" stopOpacity="0" />
+          <stop offset="0%" stopColor={colors.fill} stopOpacity="0.45" />
+          <stop offset="100%" stopColor={colors.fill} stopOpacity="0" />
         </linearGradient>
       </defs>
       <polygon
@@ -44,7 +63,7 @@ export function Sparkline({ data, variant }: SparklineProps) {
       <polyline
         points={points}
         fill="none"
-        stroke="rgb(167 139 250)"
+        stroke={colors.stroke}
         strokeWidth={strokeW}
         strokeLinecap="round"
         strokeLinejoin="round"

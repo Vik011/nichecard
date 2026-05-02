@@ -31,4 +31,37 @@ describe('Sparkline', () => {
     const svg = container.querySelector('svg')!
     expect(Number(svg.getAttribute('viewBox')!.split(' ')[2])).toBeGreaterThanOrEqual(400)
   })
+
+  it('defaults to strong tier when no tier prop is given', () => {
+    const { container } = render(<Sparkline data={data} variant="card" />)
+    const svg = container.querySelector('svg')!
+    expect(svg.getAttribute('data-tier')).toBe('strong')
+  })
+
+  it('renders the tier passed via prop on the data attribute', () => {
+    const { container } = render(<Sparkline data={data} variant="card" tier="excellent" />)
+    expect(container.querySelector('svg')!.getAttribute('data-tier')).toBe('excellent')
+  })
+
+  it('uses a distinct gradient id per tier so multiple sparklines coexist', () => {
+    const { container: a } = render(<Sparkline data={data} variant="card" tier="excellent" />)
+    const { container: b } = render(<Sparkline data={data} variant="card" tier="weak" />)
+    const idA = a.querySelector('linearGradient')!.getAttribute('id')!
+    const idB = b.querySelector('linearGradient')!.getAttribute('id')!
+    expect(idA).not.toBe(idB)
+  })
+})
+
+describe('tierFromScore', () => {
+  it('maps score bands to tiers', () => {
+    const { tierFromScore } = jest.requireActual<typeof import('./Sparkline')>('./Sparkline')
+    expect(tierFromScore(85)).toBe('excellent')
+    expect(tierFromScore(70)).toBe('excellent')
+    expect(tierFromScore(60)).toBe('strong')
+    expect(tierFromScore(50)).toBe('strong')
+    expect(tierFromScore(40)).toBe('average')
+    expect(tierFromScore(30)).toBe('average')
+    expect(tierFromScore(20)).toBe('weak')
+    expect(tierFromScore(0)).toBe('weak')
+  })
 })

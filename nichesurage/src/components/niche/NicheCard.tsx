@@ -4,7 +4,7 @@ import { LockSimple } from '@phosphor-icons/react/dist/ssr'
 import { LockedField } from './LockedField'
 import { BookmarkButton } from './BookmarkButton'
 import { HealthCheckButton } from './HealthCheckButton'
-import { Sparkline } from './Sparkline'
+import { Sparkline, tierFromScore } from './Sparkline'
 
 interface NicheCardProps {
   data: NicheCardData
@@ -166,7 +166,11 @@ export function NicheCard({ data, userTier, rank, isSaved, savedCount, spikeHist
             {tier.label}
           </div>
           <div className="mt-2 flex justify-end">
-            <Sparkline data={spikeHistory ?? []} variant="card" />
+            <Sparkline
+              data={spikeHistory ?? []}
+              variant="card"
+              tier={tierFromScore(data.opportunityScore)}
+            />
           </div>
         </div>
       </div>

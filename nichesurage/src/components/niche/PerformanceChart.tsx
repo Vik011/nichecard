@@ -1,10 +1,11 @@
 import type { SpikePoint } from '@/lib/types'
 import type { CopyKeys } from '@/components/landing/copy'
-import { Sparkline } from './Sparkline'
+import { Sparkline, type SparklineTier } from './Sparkline'
 
 interface PerformanceChartProps {
   history: SpikePoint[]
   copy: CopyKeys
+  tier?: SparklineTier
 }
 
 const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-violet'
@@ -14,7 +15,7 @@ function formatDay(iso: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-export function PerformanceChart({ history, copy }: PerformanceChartProps) {
+export function PerformanceChart({ history, copy, tier }: PerformanceChartProps) {
   if (history.length < 2) {
     return (
       <section className="glass rounded-2xl p-6 mb-6">
@@ -34,7 +35,7 @@ export function PerformanceChart({ history, copy }: PerformanceChartProps) {
     <section className="glass rounded-2xl p-6 mb-6">
       <div className={eyebrow + ' mb-4'}>{copy.chartTitle}</div>
       <div className="flex justify-center mb-4">
-        <Sparkline data={history} variant="detail" />
+        <Sparkline data={history} variant="detail" tier={tier} />
       </div>
       <div className="flex justify-between text-slate-500 text-xs tabular-nums mt-2 px-2">
         <span>{formatDay(first.day)}</span>
