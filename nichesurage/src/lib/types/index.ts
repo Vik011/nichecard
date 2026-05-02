@@ -63,6 +63,22 @@ interface BaseNicheCardData {
   engagementRate?: number
   // landing page only
   trending?: boolean
+  // Sonar
+  outlierRatio?: number
+  isSpike?: boolean
+  outlierVideoTitle?: string
+  outlierVideoViews?: number
+  clusterId?: string
+  clusterLabel?: string
+  seedKeyword?: string
+}
+
+export interface TrendingCluster {
+  id: string
+  label: string
+  memberCount: number
+  language: ContentLanguage | null
+  contentType: 'shorts' | 'longform' | 'both' | null
 }
 
 export interface ShortsNicheCardData extends BaseNicheCardData {

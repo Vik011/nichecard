@@ -5,6 +5,9 @@ import { LockedField } from './LockedField'
 import { BookmarkButton } from './BookmarkButton'
 import { HealthCheckButton } from './HealthCheckButton'
 import { Sparkline, tierFromScore } from './Sparkline'
+import { SpikingBadge } from './SpikingBadge'
+
+const SPIKING_NOW_THRESHOLD = Number(process.env.NEXT_PUBLIC_SPIKING_NOW_THRESHOLD ?? '10')
 
 interface NicheCardProps {
   data: NicheCardData
@@ -115,8 +118,11 @@ export function NicheCard({ data, userTier, rank, isSaved, savedCount, spikeHist
     >
       {/* Header: rank label + actions */}
       <div className="flex justify-between items-start mb-1">
-        <div className="text-slate-500 text-[10px] uppercase tracking-[0.18em] font-semibold">
-          Niche #{rank}
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="text-slate-500 text-[10px] uppercase tracking-[0.18em] font-semibold shrink-0">
+            Niche #{rank}
+          </div>
+          {(data.outlierRatio ?? 0) >= SPIKING_NOW_THRESHOLD && <SpikingBadge />}
         </div>
         <div className="flex items-center gap-0.5 -mt-1 -mr-1">
           <HealthCheckButton
@@ -165,6 +171,11 @@ export function NicheCard({ data, userTier, rank, isSaved, savedCount, spikeHist
           <div className="text-slate-500 text-[9px] uppercase tracking-[0.18em] font-semibold mt-1">
             {tier.label}
           </div>
+          {data.outlierRatio !== undefined && (
+            <div className="mt-1 text-glow-cyan text-xs font-semibold">
+              {data.outlierRatio.toFixed(1)}× outlier
+            </div>
+          )}
           <div className="mt-2 flex justify-end">
             <Sparkline
               data={spikeHistory ?? []}

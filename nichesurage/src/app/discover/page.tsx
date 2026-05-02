@@ -14,6 +14,8 @@ import { COPY, type CopyKeys } from '@/components/landing/copy'
 import { StaggerList } from '@/components/ui/StaggerList'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { EmptyMagnifier } from '@/components/ui/illustrations/EmptyMagnifier'
+import { SonarEmptyState } from '@/components/ui/SonarEmptyState'
+import { TrendingTopics } from '@/components/niche/TrendingTopics'
 import type {
   SearchFilters as SearchFiltersType,
   NicheCardData,
@@ -95,13 +97,17 @@ function DiscoverPageInner() {
   const [savedCount, setSavedCount] = useState(0)
   const [visibleCount, setVisibleCount] = useState(VISIBLE_STEP)
 
+  const activeClusterId = searchParams.get('cluster')
+
   async function handleSearch(filtersOverride?: SearchFiltersType) {
     const f = filtersOverride ?? filters
     setVisibleCount(VISIBLE_STEP)
     setLoading(true)
     setSearched(true)
     setError(null)
-    const { data, error: fetchError } = await fetchNiches(f)
+    const { data, error: fetchError } = await fetchNiches(f, {
+      clusterId: activeClusterId ?? undefined,
+    })
     setResults(data)
     setError(fetchError)
     setLoading(false)
@@ -164,7 +170,7 @@ function DiscoverPageInner() {
       handleSearch(f)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLoading])
+  }, [userLoading, activeClusterId])
 
   const { eyebrow, headline } = headings(copy, filters.contentType)
   const fromUrl = (() => {
@@ -186,6 +192,12 @@ function DiscoverPageInner() {
           {copy.discoverSubline}
         </p>
       </div>
+
+      <TrendingTopics
+        eyebrow={copy.discoverTrendingTopics}
+        emptyHint={copy.discoverTrendingEmpty}
+        activeClusterId={activeClusterId}
+      />
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 max-w-2xl mx-auto">
         <SearchFilters value={filters} onChange={handleFiltersChange} copy={copy} />
@@ -209,12 +221,19 @@ function DiscoverPageInner() {
       )}
 
       {!userLoading && !loading && searched && results.length === 0 && !error && (
-        <EmptyState
-          illustration={<EmptyMagnifier size={96} />}
-          title={copy.discoverEmptyTitle}
-          body={copy.discoverEmptyBody}
-          cta={{ label: copy.discoverResetBtn, onClick: handleResetFilters }}
-        />
+        activeClusterId ? (
+          <EmptyState
+            illustration={<EmptyMagnifier size={96} />}
+            title={copy.discoverEmptyTitle}
+            body={copy.discoverEmptyBody}
+            cta={{ label: copy.discoverResetBtn, onClick: handleResetFilters }}
+          />
+        ) : (
+          <SonarEmptyState
+            caption={copy.discoverScanningDeepWeb}
+            hint={copy.discoverEmptyBody}
+          />
+        )
       )}
 
       {!userLoading && !loading && results.length > 0 && (

@@ -59,6 +59,8 @@ const config: Config = {
         "orb-drift-2": "orb-drift-2 36s ease-in-out infinite",
         "orb-drift-3": "orb-drift-3 44s ease-in-out infinite",
         shimmer: "shimmer 1.8s linear infinite",
+        "sonar-sweep": "sonar-sweep 8s linear infinite",
+        "spike-pulse": "spike-pulse 1.6s ease-in-out infinite",
       },
       keyframes: {
         "orb-drift-1": {
@@ -76,6 +78,14 @@ const config: Config = {
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },
           "100%": { backgroundPosition: "200% 0" },
+        },
+        "sonar-sweep": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
+        "spike-pulse": {
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(239, 68, 68, 0.45)" },
+          "50%":      { boxShadow: "0 0 0 8px rgba(239, 68, 68, 0)" },
         },
       },
     },

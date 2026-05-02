@@ -58,4 +58,23 @@ export interface DbScanResult {
   search_volume: number | null
   competition_score: number | null
   scanned_at: string
+  // Sonar fields (added in 0012)
+  outlier_ratio: number | null
+  is_spike: boolean
+  outlier_video_id: string | null
+  outlier_video_title: string | null
+  outlier_video_views: number | null
+  window_hours: number
+  seed_keyword: string | null
+  cluster_id: string | null
+}
+
+export interface DbNicheCluster {
+  id: string
+  label: string
+  member_count: number
+  language: ContentLanguage | null
+  content_type: ContentType | 'both' | null
+  last_labeled_at: string
+  updated_at: string
 }

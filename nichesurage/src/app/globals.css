@@ -39,7 +39,10 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: "ss01", "cv11";
+  /* Sonar: tabular numerals (tnum) make scores/ratios stop "jumping" between
+     skeleton and loaded states; ss01/cv11 are stylistic-set tweaks for Geist. */
+  font-feature-settings: "ss01", "cv11", "tnum";
+  font-variant-numeric: tabular-nums;
 }
 
 @layer utilities {

@@ -22,6 +22,10 @@ export const COPY = {
     discoverEmptyBody: 'Try widening the subscriber range or relaxing the channel age filter.',
     discoverResetBtn: 'Reset filters',
     discoverShowMore: (n: number) => `Show more (${n} remaining)`,
+    discoverTrendingTopics: 'Trending topics',
+    discoverTrendingEmpty: "We're still naming the first niches — fresh AI-labeled topics will appear here within 24h.",
+    discoverScanningDeepWeb: 'Scanning the deep web…',
+    discoverSpikingNow: 'Spiking Now',
 
     filterFormat: 'Format',
     filterSubscriberRange: 'Subscriber range',
@@ -239,6 +243,10 @@ export const COPY = {
     discoverEmptyBody: 'Erweitere den Abonnenten-Bereich oder lockere den Kanal-Alter-Filter.',
     discoverResetBtn: 'Filter zurücksetzen',
     discoverShowMore: (n: number) => `Mehr anzeigen (${n} übrig)`,
+    discoverTrendingTopics: 'Trending-Themen',
+    discoverTrendingEmpty: 'Wir benennen die ersten Nischen — frische KI-Labels erscheinen hier innerhalb von 24 Stunden.',
+    discoverScanningDeepWeb: 'Durchsuche das tiefe Netz…',
+    discoverSpikingNow: 'Im Aufstieg',
 
     filterFormat: 'Format',
     filterSubscriberRange: 'Abonnenten',
