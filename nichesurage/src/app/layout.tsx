@@ -5,6 +5,7 @@ import "./globals.css";
 import { UserProvider } from "@/lib/context/UserContext";
 import { AmbientBackground } from "@/components/layout/AmbientBackground";
 import { PosthogProvider } from "@/components/providers/PosthogProvider";
+import { CookieBanner } from "@/components/ui/CookieBanner";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -50,6 +51,7 @@ export default function RootLayout({
         </Suspense>
         <div className="relative z-10">
           <UserProvider>{children}</UserProvider>
+          <CookieBanner />
         </div>
       </body>
     </html>
