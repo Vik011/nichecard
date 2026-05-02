@@ -27,6 +27,13 @@ export interface ChannelVideo {
   publishedAt: string
 }
 
+export interface ContentAngle {
+  title: string
+  hook: string
+  format: 'shorts' | 'longform'
+  why: string
+}
+
 export interface SearchFilters {
   contentType: ContentType
   subscriberMin: number
