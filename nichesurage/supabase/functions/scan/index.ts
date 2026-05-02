@@ -4,7 +4,7 @@
 // if ratio >= OUTLIER_DB_FLOOR. Legacy fields (spike_multiplier, opportunity_score)
 // kept populated for backward compat with the existing /discover UI.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { getChannelStats, getRecentVideos } from '../_shared/youtube.ts'
+import { getChannelStats, getRecentVideos, getYoutubeKeys } from '../_shared/youtube.ts'
 import {
   computeViews48h,
   computeViewsAvg,
@@ -23,10 +23,9 @@ const OUTLIER_SPIKE_THRESHOLD = parseFloat(Deno.env.get('OUTLIER_SPIKE_THRESHOLD
 
 Deno.serve(async (_req: Request) => {
   try {
-    const youtubeKey = Deno.env.get('YOUTUBE_API_KEY')
+    const youtubeKeys = getYoutubeKeys()
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    if (!youtubeKey) throw new Error('YOUTUBE_API_KEY not set')
     if (!supabaseUrl) throw new Error('SUPABASE_URL not set')
     if (!serviceRoleKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY not set')
 
@@ -45,7 +44,7 @@ Deno.serve(async (_req: Request) => {
     }
 
     const channelIds = (channels as WatchlistChannel[]).map(c => c.youtube_channel_id)
-    const statsArray = await getChannelStats(youtubeKey, channelIds)
+    const statsArray = await getChannelStats(youtubeKeys, channelIds)
     const statsMap = new Map(statsArray.map(s => [s.channelId, s]))
 
     let scanned = 0
@@ -57,7 +56,7 @@ Deno.serve(async (_req: Request) => {
         const stats = statsMap.get(channel.youtube_channel_id)
         if (!stats) continue
 
-        const videos = await getRecentVideos(youtubeKey, stats.uploadsPlaylistId, 20)
+        const videos = await getRecentVideos(youtubeKeys, stats.uploadsPlaylistId, 20)
         if (videos.length === 0) continue
         scanned++
 

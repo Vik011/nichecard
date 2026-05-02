@@ -7,6 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import {
   searchVideosByKeyword,
   getChannelStats,
+  getYoutubeKeys,
 } from '../_shared/youtube.ts'
 import type { SeedKeyword } from '../_shared/types.ts'
 
@@ -44,10 +45,9 @@ function expand(seed: SeedKeyword): SeedExpansion[] {
 
 Deno.serve(async (_req: Request) => {
   try {
-    const youtubeKey = Deno.env.get('YOUTUBE_API_KEY')
+    const youtubeKeys = getYoutubeKeys()
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    if (!youtubeKey) throw new Error('YOUTUBE_API_KEY not set')
     if (!supabaseUrl) throw new Error('SUPABASE_URL not set')
     if (!serviceRoleKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY not set')
 
@@ -83,7 +83,7 @@ Deno.serve(async (_req: Request) => {
             Date.now() - exp.publishedAfterDays * 24 * 60 * 60 * 1000
           ).toISOString()
 
-          const hits = await searchVideosByKeyword(youtubeKey, {
+          const hits = await searchVideosByKeyword(youtubeKeys, {
             q: seed.term,
             publishedAfter,
             videoDuration: exp.videoDuration,
@@ -95,7 +95,7 @@ Deno.serve(async (_req: Request) => {
             .filter(id => !existingIds.has(id))
           if (candidateIds.length === 0) continue
 
-          const stats = await getChannelStats(youtubeKey, candidateIds)
+          const stats = await getChannelStats(youtubeKeys, candidateIds)
           const maxAgeMs = exp.maxAgeMonths * 30 * 24 * 60 * 60 * 1000
 
           for (const channel of stats) {
