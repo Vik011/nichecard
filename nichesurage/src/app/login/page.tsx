@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { LoginForm } from './LoginForm'
 
-export const metadata = { title: 'Sign in — NicheSurge' }
+export const metadata = { title: 'Sign in — SurgeNiche' }
 
 export default function LoginPage() {
   return (

@@ -51,7 +51,7 @@ export function TopNav() {
           href="/"
           className="text-slate-100 font-bold tracking-tight text-base hover:text-indigo-300 transition-colors"
         >
-          NicheSurge
+          SurgeNiche
         </Link>
 
         <nav className="flex items-center gap-1" aria-label="Primary">

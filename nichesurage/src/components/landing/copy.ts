@@ -108,7 +108,7 @@ export const COPY = {
     relatedEmpty: 'No similar niches found right now.',
 
     heroHeadline: "I built this because YouTube research was eating my weekends.",
-    heroSub: "NicheSurge scans 230+ small channels every hour and flags the ones spiking before anyone else notices. No keyword guessing, no copy-paste tactics — just the small accounts that started moving.",
+    heroSub: "SurgeNiche scans 230+ small channels every hour and flags the ones spiking before anyone else notices. No keyword guessing, no copy-paste tactics — just the small accounts that started moving.",
     heroBadge: '47 channels spiked in the last hour',
     heroCta: 'Try it free',
     heroCta2: 'How it works',
@@ -128,7 +128,7 @@ export const COPY = {
       'Copying channels that already peaked two months ago',
       'Finding the niche the day after it stops working',
     ],
-    solutionTitle: 'With NicheSurge',
+    solutionTitle: 'With SurgeNiche',
     solutionItems: [
       '230+ channels under 10k subs analysed every hour',
       'Opportunity scores ranked by spike, engagement, saturation',
@@ -219,7 +219,7 @@ export const COPY = {
     footerLegal: 'Legal',
     footerPrivacy: 'Privacy',
     footerTerms: 'Terms',
-    footerCopyright: '© 2026 NicheSurge',
+    footerCopyright: '© 2026 SurgeNiche',
   },
 
   de: {
@@ -329,7 +329,7 @@ export const COPY = {
     relatedEmpty: 'Aktuell keine ähnlichen Nischen.',
 
     heroHeadline: "Ich habe das gebaut, weil YouTube-Recherche meine Wochenenden gefressen hat.",
-    heroSub: "NicheSurge scannt stündlich 230+ kleine Kanäle und markiert die, die zu steigen beginnen — bevor es jemand anderes bemerkt. Kein Keyword-Raten, keine Copy-Paste-Taktik.",
+    heroSub: "SurgeNiche scannt stündlich 230+ kleine Kanäle und markiert die, die zu steigen beginnen — bevor es jemand anderes bemerkt. Kein Keyword-Raten, keine Copy-Paste-Taktik.",
     heroBadge: '47 Kanäle sind in der letzten Stunde gestiegen',
     heroCta: 'Kostenlos ausprobieren',
     heroCta2: 'Wie es funktioniert',
@@ -349,7 +349,7 @@ export const COPY = {
       'Kanäle kopieren, die schon vor zwei Monaten ihren Höhepunkt hatten',
       'Die Nische einen Tag nachdem sie nicht mehr funktioniert finden',
     ],
-    solutionTitle: 'Mit NicheSurge',
+    solutionTitle: 'Mit SurgeNiche',
     solutionItems: [
       '230+ Kanäle unter 10k Subs werden stündlich analysiert',
       'Opportunity-Scores nach Spike, Engagement und Sättigung sortiert',
@@ -440,7 +440,7 @@ export const COPY = {
     footerLegal: 'Rechtliches',
     footerPrivacy: 'Datenschutz',
     footerTerms: 'AGB',
-    footerCopyright: '© 2026 NicheSurge',
+    footerCopyright: '© 2026 SurgeNiche',
   },
 } as const
 

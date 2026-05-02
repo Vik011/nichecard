@@ -97,7 +97,7 @@ export function LoginForm() {
 
   return (
     <div className="w-full max-w-md glass rounded-2xl p-8">
-      <h1 className="text-2xl font-semibold tracking-tight text-slate-100 mb-2">Sign in to NicheSurge</h1>
+      <h1 className="text-2xl font-semibold tracking-tight text-slate-100 mb-2">Sign in to SurgeNiche</h1>
       <p className="text-slate-400 text-sm mb-6">
         We&apos;ll email you a one-time link. No password.
       </p>

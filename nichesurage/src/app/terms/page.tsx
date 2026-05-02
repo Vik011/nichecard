@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — NicheSurge",
+  title: "Terms of Service — SurgeNiche",
 };
 
 export default function TermsPage() {
@@ -12,7 +12,7 @@ export default function TermsPage() {
         href="/"
         className="text-sm text-slate-400 hover:text-slate-200 transition-colors"
       >
-        ← Back to NicheSurge
+        ← Back to SurgeNiche
       </Link>
 
       <h1 className="text-3xl font-bold text-slate-100 mt-8 mb-2">
@@ -29,10 +29,10 @@ export default function TermsPage() {
         1. Acceptance of Terms
       </h2>
       <p className="text-slate-400 leading-relaxed mb-4">
-        By accessing or using NicheSurge (the &quot;Service&quot;), you agree to
+        By accessing or using SurgeNiche (the &quot;Service&quot;), you agree to
         be bound by these Terms of Service (&quot;Terms&quot;). If you do not
         agree to these Terms, you must not use the Service. These Terms
-        constitute a legally binding agreement between you and NicheSurge
+        constitute a legally binding agreement between you and SurgeNiche
         (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;).
       </p>
       <p className="text-slate-400 leading-relaxed mb-4">
@@ -46,13 +46,13 @@ export default function TermsPage() {
         2. Service Description
       </h2>
       <p className="text-slate-400 leading-relaxed mb-4">
-        NicheSurge is an AI-powered YouTube niche discovery platform. The
+        SurgeNiche is an AI-powered YouTube niche discovery platform. The
         Service scans publicly available YouTube channel data, detects trending
         topics and viral spikes, and presents opportunity scores to help content
         creators identify potentially underserved niches.
       </p>
       <p className="text-slate-400 leading-relaxed mb-4">
-        All data and insights provided by NicheSurge are{" "}
+        All data and insights provided by SurgeNiche are{" "}
         <span className="text-slate-300 font-medium">informational only</span>.
         Nothing on the platform constitutes financial, investment, or business
         advice. Past spike patterns and opportunity scores are analytical tools,
@@ -64,7 +64,7 @@ export default function TermsPage() {
         3. Subscriptions &amp; Billing
       </h2>
       <p className="text-slate-400 leading-relaxed mb-4">
-        NicheSurge offers the following subscription plans:
+        SurgeNiche offers the following subscription plans:
       </p>
       <ul className="text-slate-400 leading-relaxed mb-4 list-disc list-inside space-y-2">
         <li>
@@ -108,7 +108,7 @@ export default function TermsPage() {
       </p>
       <ul className="text-slate-400 leading-relaxed mb-4 list-disc list-inside space-y-2">
         <li>
-          Scrape, crawl, or otherwise extract data from NicheSurge through
+          Scrape, crawl, or otherwise extract data from SurgeNiche through
           automated means beyond normal personal use of the web interface.
         </li>
         <li>
@@ -138,7 +138,7 @@ export default function TermsPage() {
         5. Intellectual Property
       </h2>
       <p className="text-slate-400 leading-relaxed mb-4">
-        NicheSurge and its original content, features, and functionality are
+        SurgeNiche and its original content, features, and functionality are
         owned by Viktor Martin and are protected by applicable intellectual
         property laws. You may not reproduce, distribute, or create derivative
         works from any part of the Service without explicit written permission.
@@ -163,7 +163,7 @@ export default function TermsPage() {
         >
           Google Privacy Policy
         </a>
-        . NicheSurge does not claim ownership over any YouTube content or
+        . SurgeNiche does not claim ownership over any YouTube content or
         channel data.
       </p>
 
@@ -180,7 +180,7 @@ export default function TermsPage() {
       <p className="text-slate-400 leading-relaxed mb-4">
         All niche data, opportunity scores, and trend signals are informational
         tools derived from publicly available data. Past spike patterns do not
-        guarantee future results. NicheSurge makes no representations about the
+        guarantee future results. SurgeNiche makes no representations about the
         accuracy, completeness, or timeliness of the data provided.
       </p>
 
@@ -189,7 +189,7 @@ export default function TermsPage() {
         7. Limitation of Liability
       </h2>
       <p className="text-slate-400 leading-relaxed mb-4">
-        To the maximum extent permitted by applicable law, NicheSurge and its
+        To the maximum extent permitted by applicable law, SurgeNiche and its
         operators shall not be liable for any indirect, incidental, special,
         consequential, or punitive damages, including but not limited to loss of
         profits, data, or goodwill, arising from your use of or inability to use

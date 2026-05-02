@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — NicheSurge",
+  title: "Privacy Policy — SurgeNiche",
 };
 
 export default function PrivacyPage() {
@@ -12,7 +12,7 @@ export default function PrivacyPage() {
         href="/"
         className="text-sm text-slate-400 hover:text-slate-200 transition-colors"
       >
-        ← Back to NicheSurge
+        ← Back to SurgeNiche
       </Link>
 
       <h1 className="text-3xl font-bold text-slate-100 mt-8 mb-2">
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
         1. Who We Are
       </h2>
       <p className="text-slate-400 leading-relaxed mb-4">
-        NicheSurge is an AI-powered YouTube niche discovery platform operated by
+        SurgeNiche is an AI-powered YouTube niche discovery platform operated by
         Viktor Martin. If you have any questions about this Privacy Policy or
         how your data is handled, you can reach us at{" "}
         <a
@@ -99,7 +99,7 @@ export default function PrivacyPage() {
         4. Third-Party Services
       </h2>
       <p className="text-slate-400 leading-relaxed mb-4">
-        NicheSurge relies on the following sub-processors, each of which
+        SurgeNiche relies on the following sub-processors, each of which
         maintains its own GDPR-compliant data processing agreement:
       </p>
       <ul className="text-slate-400 leading-relaxed mb-4 list-disc list-inside space-y-2">
@@ -120,7 +120,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <span className="text-slate-300 font-medium">Vercel</span> — hosting
-          and edge delivery of the NicheSurge web application. Vercel is
+          and edge delivery of the SurgeNiche web application. Vercel is
           GDPR-compliant and processes request logs transiently.
         </li>
       </ul>

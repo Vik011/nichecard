@@ -19,18 +19,24 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "NicheSurge — Find YouTube Niches Before They Explode",
+  metadataBase: new URL("https://surgeniche.com"),
+  title: {
+    default: "SurgeNiche — Find YouTube Niches Before They Explode",
+    template: "%s — SurgeNiche",
+  },
   description:
     "AI-powered YouTube niche discovery. Hourly scans of 230+ channels. Opportunity scores, viral spike detection, and Shorts + Longform discovery.",
   openGraph: {
-    title: "NicheSurge — Find YouTube Niches Before They Explode",
+    title: "SurgeNiche — Find YouTube Niches Before They Explode",
     description: "AI-powered opportunity scanner. Real data, updated hourly.",
-    siteName: "NicheSurge",
+    siteName: "SurgeNiche",
+    url: "https://surgeniche.com",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "NicheSurge — Find YouTube Niches Before They Explode",
+    site: "@surgeniche",
+    title: "SurgeNiche — Find YouTube Niches Before They Explode",
     description: "AI-powered opportunity scanner. Real data, updated hourly.",
   },
 };

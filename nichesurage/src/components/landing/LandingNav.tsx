@@ -36,7 +36,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
           href="/"
           className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-brand-indigo-bright bg-clip-text text-transparent"
         >
-          NicheSurge
+          SurgeNiche
         </Link>
 
         {/* Desktop links */}
