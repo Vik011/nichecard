@@ -46,16 +46,16 @@ export function CookieBanner() {
             Learn more in our Privacy Policy.
           </Link>
         </p>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
           <button
             onClick={() => handleConsent('accepted')}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2.5 min-h-[44px] rounded-lg transition-colors"
           >
             Accept
           </button>
           <button
             onClick={() => handleConsent('declined')}
-            className="text-slate-400 hover:text-slate-200 text-sm px-4 py-2 transition-colors"
+            className="flex-1 sm:flex-none text-slate-400 hover:text-slate-200 text-sm px-4 py-2.5 min-h-[44px] transition-colors rounded-lg"
           >
             Decline
           </button>

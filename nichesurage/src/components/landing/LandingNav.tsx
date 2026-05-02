@@ -100,7 +100,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
 
         {/* Mobile hamburger */}
         <button
-          className="md:hidden text-slate-400 hover:text-slate-100"
+          className="md:hidden text-slate-400 hover:text-slate-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
@@ -112,15 +112,15 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
 
       {/* Mobile drawer */}
       {menuOpen && (
-        <div id="mobile-nav-drawer" className="md:hidden bg-slate-900 border-t border-slate-800 px-6 py-4 flex flex-col gap-4">
-          <Link href="/discover/shorts" className="text-slate-300 hover:text-white transition-colors" onClick={() => setMenuOpen(false)}>
+        <div id="mobile-nav-drawer" className="md:hidden bg-slate-900 border-t border-slate-800 px-6 py-4 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-4rem)]">
+          <Link href="/discover/shorts" className="text-slate-300 hover:text-white transition-colors py-2.5 block" onClick={() => setMenuOpen(false)}>
             {copy.navDiscover}
           </Link>
-          <a href="#pricing" className="text-slate-300 hover:text-white transition-colors" onClick={() => setMenuOpen(false)}>
+          <a href="#pricing" className="text-slate-300 hover:text-white transition-colors py-2.5 block" onClick={() => setMenuOpen(false)}>
             {copy.navPricing}
           </a>
           {isLoggedIn && (
-            <Link href="/dashboard" className="text-slate-300 hover:text-white transition-colors" onClick={() => setMenuOpen(false)}>
+            <Link href="/dashboard" className="text-slate-300 hover:text-white transition-colors py-2.5 block" onClick={() => setMenuOpen(false)}>
               {copy.navDashboard}
             </Link>
           )}
@@ -155,7 +155,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
             <>
               <Link
                 href="/login"
-                className="text-slate-300 hover:text-white transition-colors text-sm"
+                className="text-slate-300 hover:text-white transition-colors text-sm py-2.5 block"
                 onClick={() => setMenuOpen(false)}
               >
                 {copy.navLogin}

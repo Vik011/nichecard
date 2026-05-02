@@ -70,7 +70,7 @@ export default function DiscoverPage() {
 
 function DiscoverFallback() {
   return (
-    <main className="min-h-screen text-slate-100 px-4 py-8 max-w-6xl mx-auto">
+    <main className="min-h-screen text-slate-100 px-4 py-8 max-w-6xl mx-auto overflow-x-hidden">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[1, 2, 3, 4, 5].map(i => <NicheCardSkeleton key={i} />)}
       </div>
@@ -182,7 +182,7 @@ function DiscoverPageInner() {
   })()
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto">
+    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto overflow-x-hidden">
       <div className="text-center mb-8">
         <div className="inline-block text-[10px] font-semibold tracking-[0.22em] text-glow-indigo uppercase mb-2">
           {eyebrow}

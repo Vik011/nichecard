@@ -24,11 +24,11 @@ export function HeroSection({ copy, isLoggedIn = false }: HeroSectionProps) {
           </span>
         </div>
 
-        <h1 className="text-5xl md:text-[64px] font-semibold tracking-[-0.02em] leading-[1.05] mb-7 text-slate-100 text-balance">
+        <h1 className="text-4xl sm:text-5xl md:text-[64px] font-semibold tracking-[-0.02em] leading-[1.05] mb-7 text-slate-100 text-balance">
           {copy.heroHeadline}
         </h1>
 
-        <p className="text-[18px] text-slate-400 mb-11 max-w-2xl mx-auto leading-relaxed text-balance">
+        <p className="text-base sm:text-[18px] text-slate-400 mb-11 max-w-2xl mx-auto leading-relaxed text-balance">
           {copy.heroSub}
         </p>
 
