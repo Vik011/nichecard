@@ -1,19 +1,24 @@
 import Link from 'next/link'
 import type { CopyKeys } from './copy'
+import type { RadarSnapshot } from '@/lib/landing/fetchRadarPings'
+import { HeroBackdrop } from './HeroBackdrop'
 
 interface HeroSectionProps {
   copy: CopyKeys
   isLoggedIn?: boolean
+  radar: RadarSnapshot
 }
 
-export function HeroSection({ copy, isLoggedIn = false }: HeroSectionProps) {
+export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProps) {
   return (
-    <section className="relative pt-36 pb-12 px-6 text-center">
-      <div className="max-w-3xl mx-auto">
+    <section className="relative overflow-hidden pt-36 pb-32 px-6 text-center min-h-[88vh] flex items-center">
+      <HeroBackdrop copy={copy} pings={radar.pings} channelsLast24h={radar.channelsLast24h} />
+
+      <div className="relative z-10 max-w-3xl mx-auto w-full">
         <div
           role="status"
           aria-label={copy.heroBadge}
-          className="inline-flex items-center gap-2 bg-charcoal-900/70 gborder rounded-full px-4 py-1.5 mb-10"
+          className="inline-flex items-center gap-2 bg-charcoal-900/70 backdrop-blur-md gborder rounded-full px-4 py-1.5 mb-10"
         >
           <span aria-hidden="true" className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -24,7 +29,7 @@ export function HeroSection({ copy, isLoggedIn = false }: HeroSectionProps) {
           </span>
         </div>
 
-        <h1 className="text-4xl sm:text-5xl md:text-[64px] font-semibold tracking-[-0.02em] leading-[1.05] mb-7 text-slate-100 text-balance">
+        <h1 className="text-4xl sm:text-5xl md:text-[64px] font-semibold tracking-[-0.02em] leading-[1.05] mb-7 text-slate-100 text-balance drop-shadow-[0_2px_24px_rgba(6,9,16,0.85)]">
           {copy.heroHeadline}
         </h1>
 
