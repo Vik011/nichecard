@@ -57,24 +57,10 @@ export function SearchFilters({ value, onChange, copy = COPY.en }: SearchFilters
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Content type */}
-      <div className="flex flex-col gap-2">
-        <span className={eyebrow}>{copy.filterFormat}</span>
-        <div className="flex gap-2" role="radiogroup" aria-label={copy.filterFormat}>
-          {(['shorts', 'longform'] as const).map((type) => (
-            <button
-              key={type}
-              type="button"
-              role="radio"
-              aria-checked={value.contentType === type}
-              onClick={() => set('contentType', type)}
-              className={pillClass(value.contentType === type) + ' flex-1'}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* NOTE: Format (shorts vs longform) lives in the top nav.
+          Removing the duplicate toggle here keeps a single source of truth
+          and resolves the UX confusion of having two controls with the same
+          effect. The page still derives `contentType` from URL params. */}
 
       {/* Subscriber range */}
       <div className="flex flex-col gap-2">

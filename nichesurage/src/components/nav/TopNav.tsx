@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { CaretDown, SignOut } from '@phosphor-icons/react/dist/ssr'
 import { createClient } from '@/lib/supabase/client'
@@ -11,14 +11,33 @@ import { COPY } from '@/components/landing/copy'
 
 export function TopNav() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const router = useRouter()
   const { email, tier, loading } = useUser()
   const [lang] = useLang()
   const copy = COPY[lang]
-  const TABS: Array<{ href: string; label: string }> = [
-    { href: '/discover/shorts', label: copy.topNavShorts },
-    { href: '/discover/longform', label: copy.topNavLongform },
-    { href: '/dashboard', label: copy.topNavSaved },
+
+  // The shorts/longform pages are served from /discover with a ?type= param
+  // (the /discover/shorts and /discover/longform routes are just redirects).
+  // So active-state matching has to look at the query param too.
+  const onDiscover = pathname === '/discover'
+  const currentType = searchParams?.get('type') ?? 'shorts'
+  const TABS: Array<{ href: string; label: string; isActive: boolean }> = [
+    {
+      href: '/discover?type=shorts',
+      label: copy.topNavShorts,
+      isActive: onDiscover && currentType !== 'longform',
+    },
+    {
+      href: '/discover?type=longform',
+      label: copy.topNavLongform,
+      isActive: onDiscover && currentType === 'longform',
+    },
+    {
+      href: '/dashboard',
+      label: copy.topNavSaved,
+      isActive: pathname === '/dashboard',
+    },
   ]
   const [menuOpen, setMenuOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
@@ -55,22 +74,20 @@ export function TopNav() {
         </Link>
 
         <nav className="flex items-center gap-1" aria-label="Primary">
-          {TABS.map(({ href, label }) => {
-            const active = pathname === href || pathname.startsWith(href + '/')
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  active
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-slate-400 hover:text-slate-100'
-                }`}
-              >
-                {label}
-              </Link>
-            )
-          })}
+          {TABS.map(({ href, label, isActive }) => (
+            <Link
+              key={href}
+              href={href}
+              aria-current={isActive ? 'page' : undefined}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-indigo-600 text-white shadow-[0_0_18px_-4px_rgba(99,102,241,0.55)]'
+                  : 'text-slate-400 hover:text-slate-100'
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
         </nav>
 
         <div className="relative" ref={menuRef}>

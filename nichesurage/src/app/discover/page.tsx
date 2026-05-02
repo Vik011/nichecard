@@ -100,6 +100,9 @@ function DiscoverPageInner() {
   const [visibleCount, setVisibleCount] = useState(VISIBLE_STEP)
 
   const activeClusterId = searchParams.get('cluster')
+  // The format (shorts/longform) lives in the URL — top nav navigates by changing
+  // ?type=. We watch this param so re-search fires when the user clicks a tab.
+  const urlContentType = resolveContentType(searchParams)
 
   async function handleSearch(filtersOverride?: SearchFiltersType) {
     const f = filtersOverride ?? filters
@@ -172,7 +175,7 @@ function DiscoverPageInner() {
       handleSearch(f)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLoading, activeClusterId])
+  }, [userLoading, activeClusterId, urlContentType])
 
   const { eyebrow, headline } = headings(copy, filters.contentType)
   const fromUrl = (() => {

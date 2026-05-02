@@ -12,27 +12,14 @@ const defaultFilters: SearchFiltersType = {
 }
 
 describe('SearchFilters', () => {
-  it('renders content type toggle with both options', () => {
+  it('does not render a Format (shorts/longform) toggle (it lives in the top nav now)', () => {
     render(<SearchFilters value={defaultFilters} onChange={() => {}} />)
-    expect(screen.getByRole('radio', { name: /shorts/i })).toBeTruthy()
-    expect(screen.getByRole('radio', { name: /longform/i })).toBeTruthy()
-  })
-
-  it('active content type button is visually distinguished', () => {
-    render(<SearchFilters value={defaultFilters} onChange={() => {}} />)
-    const shortsBtn = screen.getByRole('radio', { name: /shorts/i })
-    expect(shortsBtn.getAttribute('aria-checked')).toBe('true')
-    const longformBtn = screen.getByRole('radio', { name: /longform/i })
-    expect(longformBtn.getAttribute('aria-checked')).toBe('false')
-  })
-
-  it('clicking longform calls onChange with contentType longform', () => {
-    const onChange = jest.fn()
-    render(<SearchFilters value={defaultFilters} onChange={onChange} />)
-    fireEvent.click(screen.getByRole('radio', { name: /longform/i }))
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ contentType: 'longform' })
-    )
+    // The Subscriber, Channel age, and Sort radiogroups should be present...
+    expect(screen.getByRole('radiogroup', { name: /subscriber range/i })).toBeTruthy()
+    expect(screen.getByRole('radiogroup', { name: /channel age/i })).toBeTruthy()
+    expect(screen.getByRole('radiogroup', { name: /sort/i })).toBeTruthy()
+    // ...but no Format radiogroup.
+    expect(screen.queryByRole('radiogroup', { name: /format/i })).toBeNull()
   })
 
   it('renders subscriber range bucket pills', () => {
