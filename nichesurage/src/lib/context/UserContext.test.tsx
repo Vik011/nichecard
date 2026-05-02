@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 const mockCreateClient = createClient as jest.Mock
 
 function makeSupabaseMock({
-  user = null as { id: string } | null,
+  user = null as { id: string; email: string | undefined } | null,
   getUserError = null as object | null,
   dbTier = null as string | null,
 } = {}) {
@@ -40,37 +40,55 @@ describe('useUser', () => {
     mockCreateClient.mockReset()
   })
 
-  it('returns tier:"basic" and loading:false for a logged-in basic user', async () => {
+  it('returns isLoggedIn:true, tier:"basic" and email for a logged-in basic user', async () => {
     mockCreateClient.mockReturnValue(
-      makeSupabaseMock({ user: { id: 'user-1' }, dbTier: 'basic' })
+      makeSupabaseMock({ user: { id: 'user-1', email: 'basic@example.com' }, dbTier: 'basic' })
     )
     const { result } = renderHook(() => useUser(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.tier).toBe('basic')
+    expect(result.current.isLoggedIn).toBe(true)
+    expect(result.current.email).toBe('basic@example.com')
   })
 
-  it('returns tier:"premium" and loading:false for a logged-in premium user', async () => {
+  it('returns isLoggedIn:true, tier:"premium" and email for a logged-in premium user', async () => {
     mockCreateClient.mockReturnValue(
-      makeSupabaseMock({ user: { id: 'user-2' }, dbTier: 'premium' })
+      makeSupabaseMock({ user: { id: 'user-2', email: 'premium@example.com' }, dbTier: 'premium' })
     )
     const { result } = renderHook(() => useUser(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.tier).toBe('premium')
+    expect(result.current.isLoggedIn).toBe(true)
+    expect(result.current.email).toBe('premium@example.com')
   })
 
-  it('returns tier:"free" and loading:false for an unauthenticated user', async () => {
+  it('returns isLoggedIn:false, tier:"free" and null email for an unauthenticated user', async () => {
     mockCreateClient.mockReturnValue(makeSupabaseMock({ user: null }))
     const { result } = renderHook(() => useUser(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.tier).toBe('free')
+    expect(result.current.isLoggedIn).toBe(false)
+    expect(result.current.email).toBeNull()
   })
 
-  it('returns tier:"free" and loading:false when getUser returns an error', async () => {
+  it('returns isLoggedIn:false, tier:"free" when getUser returns an error', async () => {
     mockCreateClient.mockReturnValue(
       makeSupabaseMock({ getUserError: new Error('network error') })
     )
     const { result } = renderHook(() => useUser(), { wrapper })
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.tier).toBe('free')
+    expect(result.current.isLoggedIn).toBe(false)
+    expect(result.current.email).toBeNull()
+  })
+
+  it('returns null email when authUser.email is undefined', async () => {
+    mockCreateClient.mockReturnValue(
+      makeSupabaseMock({ user: { id: 'user-3', email: undefined as unknown as string }, dbTier: 'basic' })
+    )
+    const { result } = renderHook(() => useUser(), { wrapper })
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.isLoggedIn).toBe(true)
+    expect(result.current.email).toBeNull()
   })
 })
