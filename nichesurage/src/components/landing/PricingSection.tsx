@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import type { CopyKeys } from './copy'
+import { MotionCard } from '@/components/ui/MotionCard'
 
 type Billing = 'monthly' | 'yearly'
 
@@ -103,7 +104,7 @@ export function PricingSection({ copy }: PricingSectionProps) {
               : `/login?plan=${tier.plan}&billing=${billing}`
 
             return (
-              <div
+              <MotionCard
                 key={tier.plan}
                 className={
                   tier.highlight
@@ -151,7 +152,7 @@ export function PricingSection({ copy }: PricingSectionProps) {
                 >
                   {tier.cta}
                 </a>
-              </div>
+              </MotionCard>
             )
           })}
         </div>

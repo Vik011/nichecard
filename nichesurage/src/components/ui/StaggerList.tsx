@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion, type HTMLMotionProps } from 'framer-motion'
 import { Children, type ReactNode } from 'react'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 
 interface StaggerListProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
   children: ReactNode
@@ -16,7 +17,7 @@ const containerVariants = (stagger: number, itemDelay: number) => ({
   },
 })
 
-const itemVariants = {
+const springItemVariants = {
   hidden: { opacity: 0, y: 12 },
   show: {
     opacity: 1,
@@ -25,7 +26,7 @@ const itemVariants = {
   },
 }
 
-const reducedItemVariants = {
+const fadeItemVariants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { duration: 0.15 } },
 }
@@ -38,13 +39,17 @@ export function StaggerList({
   ...rest
 }: StaggerListProps) {
   const reduce = useReducedMotion()
-  const variants = reduce ? reducedItemVariants : itemVariants
+  const isMobile = useIsMobile()
+  const useFade = reduce || isMobile
+  const variants = useFade ? fadeItemVariants : springItemVariants
+  const effectiveStagger = useFade ? Math.min(stagger, 0.025) : stagger
+
   return (
     <motion.div
       className={className}
       initial="hidden"
       animate="show"
-      variants={containerVariants(reduce ? 0.02 : stagger, itemDelay)}
+      variants={containerVariants(effectiveStagger, itemDelay)}
       {...rest}
     >
       {Children.map(children, (child, i) => (

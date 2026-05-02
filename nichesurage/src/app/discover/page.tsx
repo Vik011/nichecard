@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { MagnifyingGlass } from '@phosphor-icons/react/dist/ssr'
 import { SearchFilters } from '@/components/search/SearchFilters'
 import { NicheCard } from '@/components/niche/NicheCard'
 import { NicheCardSkeleton } from '@/components/niche/NicheCardSkeleton'
@@ -13,6 +12,8 @@ import { useUser } from '@/lib/context/UserContext'
 import { useLang } from '@/lib/i18n/useLang'
 import { COPY, type CopyKeys } from '@/components/landing/copy'
 import { StaggerList } from '@/components/ui/StaggerList'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { EmptyMagnifier } from '@/components/ui/illustrations/EmptyMagnifier'
 import type {
   SearchFilters as SearchFiltersType,
   NicheCardData,
@@ -190,24 +191,12 @@ export default function DiscoverPage() {
       )}
 
       {!userLoading && !loading && searched && results.length === 0 && !error && (
-        <div className="max-w-md mx-auto py-6">
-          <div className="glass glass-glow rounded-2xl p-8 text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-glow-indigo/10 ring-1 ring-glow-indigo/30 mb-4">
-              <MagnifyingGlass weight="duotone" size={28} className="text-glow-indigo" aria-hidden />
-            </div>
-            <h3 className="text-slate-100 text-base font-semibold mb-1.5">{copy.discoverEmptyTitle}</h3>
-            <p className="text-slate-500 text-sm leading-relaxed mb-5">
-              {copy.discoverEmptyBody}
-            </p>
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-charcoal-800/60 text-slate-200 hover:bg-charcoal-700/60 transition-colors"
-            >
-              {copy.discoverResetBtn}
-            </button>
-          </div>
-        </div>
+        <EmptyState
+          illustration={<EmptyMagnifier size={96} />}
+          title={copy.discoverEmptyTitle}
+          body={copy.discoverEmptyBody}
+          cta={{ label: copy.discoverResetBtn, onClick: handleResetFilters }}
+        />
       )}
 
       {!userLoading && !loading && results.length > 0 && (

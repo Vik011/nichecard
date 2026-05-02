@@ -82,19 +82,19 @@ function DetailSkeleton() {
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-8 max-w-6xl mx-auto" data-testid="niche-detail-skeleton">
       {/* Back link */}
-      <div className="h-5 w-20 bg-charcoal-800 rounded mb-6 animate-pulse" />
+      <div className="h-5 w-20 shimmer rounded mb-6" />
 
       {/* Header card: title + score */}
       <div className="glass rounded-2xl p-6 mb-6">
         <div className="flex justify-between items-start gap-4">
           <div className="flex-1 min-w-0 space-y-3">
-            <div className="h-3 w-24 bg-charcoal-800 rounded animate-pulse" />
-            <div className="h-7 w-2/3 bg-charcoal-800 rounded animate-pulse" />
-            <div className="h-4 w-1/3 bg-charcoal-800/70 rounded animate-pulse" />
+            <div className="h-3 w-24 shimmer rounded" />
+            <div className="h-7 w-2/3 shimmer rounded" />
+            <div className="h-4 w-1/3 shimmer rounded" />
           </div>
           <div className="shrink-0 text-right space-y-2">
-            <div className="h-12 w-20 bg-charcoal-800 rounded animate-pulse ml-auto" />
-            <div className="h-3 w-16 bg-charcoal-800/70 rounded animate-pulse ml-auto" />
+            <div className="h-12 w-20 shimmer rounded ml-auto" />
+            <div className="h-3 w-16 shimmer rounded ml-auto" />
           </div>
         </div>
       </div>
@@ -103,34 +103,34 @@ function DetailSkeleton() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         {[1, 2, 3, 4].map(i => (
           <div key={i} className="glass rounded-xl p-4 space-y-2">
-            <div className="h-3 w-2/3 bg-charcoal-800/70 rounded animate-pulse" />
-            <div className="h-6 w-1/2 bg-charcoal-800 rounded animate-pulse" />
-            <div className="h-3 w-3/4 bg-charcoal-800/60 rounded animate-pulse" />
+            <div className="h-3 w-2/3 shimmer rounded" />
+            <div className="h-6 w-1/2 shimmer rounded" />
+            <div className="h-3 w-3/4 shimmer rounded" />
           </div>
         ))}
       </div>
 
       {/* Performance chart */}
       <div className="glass rounded-2xl p-6 mb-6 space-y-4">
-        <div className="h-3 w-32 bg-charcoal-800/70 rounded animate-pulse" />
-        <div className="h-28 bg-charcoal-800/60 rounded-xl animate-pulse" />
+        <div className="h-3 w-32 shimmer rounded" />
+        <div className="h-28 shimmer rounded-xl" />
         <div className="flex justify-between">
-          <div className="h-3 w-12 bg-charcoal-800/60 rounded animate-pulse" />
-          <div className="h-3 w-20 bg-charcoal-800/60 rounded animate-pulse" />
-          <div className="h-3 w-12 bg-charcoal-800/60 rounded animate-pulse" />
+          <div className="h-3 w-12 shimmer rounded" />
+          <div className="h-3 w-20 shimmer rounded" />
+          <div className="h-3 w-12 shimmer rounded" />
         </div>
       </div>
 
       {/* Health check inline */}
       <div className="glass rounded-2xl p-6 mb-6 space-y-4">
-        <div className="h-3 w-28 bg-charcoal-800/70 rounded animate-pulse" />
-        <div className="h-5 w-1/2 bg-charcoal-800 rounded animate-pulse" />
+        <div className="h-3 w-28 shimmer rounded" />
+        <div className="h-5 w-1/2 shimmer rounded" />
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map(i => (
             <div key={i} className="flex items-center gap-3">
-              <div className="w-28 h-3 bg-charcoal-800/70 rounded animate-pulse" />
-              <div className="flex-1 h-1.5 bg-charcoal-800/60 rounded-full animate-pulse" />
-              <div className="w-12 h-3 bg-charcoal-800/60 rounded animate-pulse" />
+              <div className="w-28 h-3 shimmer rounded" />
+              <div className="flex-1 h-1.5 shimmer rounded-full" />
+              <div className="w-12 h-3 shimmer rounded" />
             </div>
           ))}
         </div>
@@ -138,14 +138,14 @@ function DetailSkeleton() {
 
       {/* AI angles: 5 cards in 2-col grid */}
       <div className="glass rounded-2xl p-6 mb-6">
-        <div className="h-3 w-28 bg-charcoal-800/70 rounded animate-pulse mb-2" />
-        <div className="h-5 w-2/3 bg-charcoal-800 rounded animate-pulse mb-5" />
+        <div className="h-3 w-28 shimmer rounded mb-2" />
+        <div className="h-5 w-2/3 shimmer rounded mb-5" />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {[1, 2, 3, 4, 5].map(i => (
             <div key={i} className="glass rounded-xl p-4 space-y-3">
-              <div className="h-3 w-16 bg-charcoal-800/70 rounded animate-pulse" />
-              <div className="h-4 w-5/6 bg-charcoal-800 rounded animate-pulse" />
-              <div className="h-3 w-3/4 bg-charcoal-800/70 rounded animate-pulse" />
+              <div className="h-3 w-16 shimmer rounded" />
+              <div className="h-4 w-5/6 shimmer rounded" />
+              <div className="h-3 w-3/4 shimmer rounded" />
             </div>
           ))}
         </div>

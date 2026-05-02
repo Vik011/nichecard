@@ -1,6 +1,7 @@
 import type { Icon as PhosphorIcon } from '@phosphor-icons/react'
 import { Robot, Clock, Flame, TrendUp, Lightbulb, BellSimple, Heartbeat } from '@phosphor-icons/react/dist/ssr'
 import type { CopyKeys } from './copy'
+import { MotionCard } from '@/components/ui/MotionCard'
 
 interface FeaturesSectionProps {
   copy: CopyKeys
@@ -29,7 +30,7 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
             const isPremium = feature.tier === 'premium'
             const status = 'status' in feature ? feature.status : undefined
             return (
-              <div
+              <MotionCard
                 key={feature.title}
                 className={`relative rounded-xl p-6 bg-charcoal-900 ${isPremium ? 'glass glass-glow' : 'gborder'}`}
               >
@@ -64,7 +65,7 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
                   </span>
                 )}
                 <p className="text-slate-400 text-sm leading-relaxed">{feature.desc}</p>
-              </div>
+              </MotionCard>
             )
           })}
         </div>

@@ -13,6 +13,7 @@ import { PricingSection } from './PricingSection'
 import { TestimonialsSection } from './TestimonialsSection'
 import { FinalCTASection } from './FinalCTASection'
 import { LandingFooter } from './LandingFooter'
+import { Reveal } from '@/components/ui/Reveal'
 
 interface LandingPageProps {
   niches: NicheCardData[]
@@ -28,12 +29,12 @@ export function LandingPage({ niches }: LandingPageProps) {
       <LandingNav copy={copy} lang={lang} onLangChange={setLang} />
       <HeroSection copy={copy} isLoggedIn={isLoggedIn} />
       <SocialProofBar copy={copy} />
-      <AppPreviewSection niches={niches} copy={copy} isLoggedIn={isLoggedIn} />
-      <PainSolutionSection copy={copy} />
-      <FeaturesSection copy={copy} />
-      <PricingSection copy={copy} />
-      <TestimonialsSection copy={copy} />
-      <FinalCTASection copy={copy} isLoggedIn={isLoggedIn} />
+      <Reveal><AppPreviewSection niches={niches} copy={copy} isLoggedIn={isLoggedIn} /></Reveal>
+      <Reveal><PainSolutionSection copy={copy} /></Reveal>
+      <Reveal><FeaturesSection copy={copy} /></Reveal>
+      <Reveal><PricingSection copy={copy} /></Reveal>
+      <Reveal><TestimonialsSection copy={copy} /></Reveal>
+      <Reveal><FinalCTASection copy={copy} isLoggedIn={isLoggedIn} /></Reveal>
       <LandingFooter copy={copy} lang={lang} onLangChange={setLang} />
     </div>
   )
