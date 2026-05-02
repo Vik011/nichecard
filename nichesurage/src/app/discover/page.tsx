@@ -23,9 +23,11 @@ import type {
   ContentType,
 } from '@/lib/types'
 
+// Sonar default: surface nano-creators (sub <1K) by default — they're where
+// the highest outlier ratios live. Users can narrow via the SearchFilters UI.
 const DEFAULTS: Record<ContentType, { subscriberMin: number; subscriberMax: number }> = {
-  shorts:   { subscriberMin: 1_000, subscriberMax: 100_000 },
-  longform: { subscriberMin: 1_000, subscriberMax: 500_000 },
+  shorts:   { subscriberMin: 0, subscriberMax: 100_000 },
+  longform: { subscriberMin: 0, subscriberMax: 500_000 },
 }
 
 const VISIBLE_STEP = 5

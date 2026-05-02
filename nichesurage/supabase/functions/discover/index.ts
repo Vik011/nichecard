@@ -53,12 +53,16 @@ Deno.serve(async (_req: Request) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
+    // Rotation: surface least-recently-used seeds first (NULL = never used,
+    // wins). Priority is a tie-breaker within the same usage bucket. The
+    // previous order put priority first, which kept re-picking the same top
+    // keywords forever and never rotated to the lower-priority ones.
     const { data: seedRows, error: seedErr } = await supabase
       .from('seed_keywords')
       .select('*')
       .eq('is_active', true)
-      .order('priority', { ascending: false })
       .order('last_used_at', { ascending: true, nullsFirst: true })
+      .order('priority', { ascending: false })
       .limit(SEEDS_PER_RUN)
     if (seedErr) throw seedErr
     if (!seedRows || seedRows.length === 0) {
