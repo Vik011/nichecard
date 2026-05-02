@@ -16,6 +16,8 @@ import { AIContentAngles } from '@/components/niche/AIContentAngles'
 import { ChannelVideoGrid } from '@/components/niche/ChannelVideoGrid'
 import { RelatedNiches } from '@/components/niche/RelatedNiches'
 import { tierFromScore } from '@/components/niche/Sparkline'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { EmptyMagnifier } from '@/components/ui/illustrations/EmptyMagnifier'
 import type { NicheCardData, SpikePoint } from '@/lib/types'
 import type { CopyKeys } from '@/components/landing/copy'
 
@@ -156,16 +158,12 @@ function DetailSkeleton() {
 
 function DetailErrorState({ message, backHref, copy }: { message: string; backHref: string; copy: CopyKeys }) {
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-8 max-w-md mx-auto flex flex-col items-center justify-center">
-      <div className="glass glass-glow rounded-2xl p-8 text-center w-full">
-        <p className="text-slate-200 text-base font-semibold mb-4">{message}</p>
-        <Link
-          href={backHref}
-          className="inline-block text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-charcoal-800/60 text-slate-200 hover:bg-charcoal-700/60 transition-colors"
-        >
-          {copy.detailBack}
-        </Link>
-      </div>
+    <div className="min-h-screen px-4 py-16 flex flex-col items-center justify-center">
+      <EmptyState
+        illustration={<EmptyMagnifier size={88} />}
+        title={message}
+        cta={{ label: copy.detailBack, href: backHref }}
+      />
     </div>
   )
 }

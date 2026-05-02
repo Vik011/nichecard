@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import type { ChannelVideo } from '@/lib/types'
 import type { CopyKeys } from '@/components/landing/copy'
 import { formatViews, timeAgo } from '@/lib/format'
+import { EmptyMagnifier } from '@/components/ui/illustrations/EmptyMagnifier'
 
 interface ChannelVideoGridProps {
   channelId: string
@@ -50,7 +51,7 @@ export function ChannelVideoGrid({ channelId, copy }: ChannelVideoGridProps) {
       {state.kind === 'loading' && <VideoGridSkeleton />}
 
       {state.kind === 'error' && (
-        <div className="flex flex-col gap-3 items-start">
+        <div className="flex flex-col gap-3 items-center text-center py-8">
           <p className="text-red-400 text-sm">{copy.videosError}</p>
           <button
             type="button"
@@ -63,7 +64,10 @@ export function ChannelVideoGrid({ channelId, copy }: ChannelVideoGridProps) {
       )}
 
       {state.kind === 'ready' && state.videos.length === 0 && (
-        <p className="text-slate-500 text-sm py-6 text-center">{copy.videosEmpty}</p>
+        <div className="flex flex-col items-center gap-3 py-8 text-center">
+          <EmptyMagnifier size={64} />
+          <p className="text-slate-500 text-sm">{copy.videosEmpty}</p>
+        </div>
       )}
 
       {state.kind === 'ready' && state.videos.length > 0 && (
@@ -111,9 +115,9 @@ function VideoGridSkeleton() {
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
       {Array.from({ length: 12 }).map((_, i) => (
         <div key={i}>
-          <div className="aspect-video w-full rounded-lg bg-charcoal-800/60 animate-pulse" />
-          <div className="h-3 w-3/4 bg-charcoal-800/60 rounded mt-2 animate-pulse" />
-          <div className="h-3 w-1/2 bg-charcoal-800/60 rounded mt-1 animate-pulse" />
+          <div className="aspect-video w-full rounded-lg shimmer" />
+          <div className="h-3 w-3/4 shimmer rounded mt-2" />
+          <div className="h-3 w-1/2 shimmer rounded mt-1" />
         </div>
       ))}
     </div>

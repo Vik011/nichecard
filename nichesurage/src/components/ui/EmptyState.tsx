@@ -6,7 +6,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 interface EmptyStateProps {
   illustration: ReactNode
   title: string
-  body: string
+  body?: string
   cta?: {
     label: string
     onClick?: () => void
@@ -32,7 +32,7 @@ export function EmptyState({ illustration, title, body, cta }: EmptyStateProps) 
       <div className="glass glass-glow rounded-2xl p-8 text-center">
         <div className="flex justify-center mb-5">{illustration}</div>
         <h3 className="text-slate-100 text-base font-semibold mb-1.5">{title}</h3>
-        <p className="text-slate-500 text-sm leading-relaxed mb-5">{body}</p>
+        {body && <p className="text-slate-500 text-sm leading-relaxed mb-5">{body}</p>}
         {cta && (
           cta.href ? (
             <a
