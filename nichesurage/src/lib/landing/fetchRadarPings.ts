@@ -42,13 +42,20 @@ export async function fetchRadarPings(): Promise<RadarSnapshot> {
     return { pings: [], channelsLast24h: 0 }
   }
 
-  const pings: RadarPing[] = (rows as RadarPingRow[]).map((row) => ({
+  const allPings: RadarPing[] = (rows as RadarPingRow[]).map((row) => ({
     id: row.id,
     outlierRatio: Number(row.outlier_ratio ?? 0),
     clusterLabel: extractClusterLabel(row.niche_clusters),
     language: row.language ?? 'en',
     contentType: row.content_type === 'longform' ? 'longform' : 'shorts',
   }))
+
+  // Prefer pings whose cluster has already been labeled by the AI pipeline
+  // — "Forming cluster" placeholder reads as half-finished in a hero spot,
+  // even when the underlying ratio is dramatic. Fall back to the full set
+  // if the labeled bucket is empty so the radar is never blank.
+  const labeled = allPings.filter(p => p.clusterLabel !== null)
+  const pings = labeled.length >= 4 ? labeled : allPings
 
   // 2) total count of channels with a spike in the last 24h (for the
   //    "Live · N channels in last 24h" counter).

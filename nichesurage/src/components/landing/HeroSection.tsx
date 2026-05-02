@@ -8,7 +8,7 @@ interface HeroSectionProps {
 
 export function HeroSection({ copy, isLoggedIn = false }: HeroSectionProps) {
   return (
-    <section className="relative pt-36 pb-24 px-6 text-center">
+    <section className="relative pt-36 pb-12 px-6 text-center">
       <div className="max-w-3xl mx-auto">
         <div
           role="status"
