@@ -14,8 +14,8 @@ const DIMENSIONS = {
 } as const
 
 const TIER_COLORS: Record<SparklineTier, { stroke: string; fill: string }> = {
-  excellent: { stroke: 'rgb(52 211 153)',  fill: 'rgb(52 211 153)'  },
-  strong:    { stroke: 'rgb(167 139 250)', fill: 'rgb(167 139 250)' },
+  excellent: { stroke: 'rgb(6 182 212)',   fill: 'rgb(6 182 212)'   },
+  strong:    { stroke: 'rgb(129 140 248)', fill: 'rgb(129 140 248)' },
   average:   { stroke: 'rgb(148 163 184)', fill: 'rgb(148 163 184)' },
   weak:      { stroke: 'rgb(248 113 113)', fill: 'rgb(248 113 113)' },
 }

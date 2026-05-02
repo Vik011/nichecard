@@ -49,7 +49,7 @@ export function TopNav() {
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
         <Link
           href="/"
-          className="text-slate-100 font-bold tracking-tight text-base hover:text-violet-300 transition-colors"
+          className="text-slate-100 font-bold tracking-tight text-base hover:text-indigo-300 transition-colors"
         >
           NicheSurge
         </Link>

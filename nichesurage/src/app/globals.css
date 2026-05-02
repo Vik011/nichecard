@@ -84,8 +84,7 @@ body {
     -webkit-backdrop-filter: blur(32px) saturate(150%);
   }
 
-  .glass-glow::before,
-  .glass-violet::before {
+  .glass-glow::before {
     background: linear-gradient(
       135deg,
       rgba(255, 255, 255, 0.10),

@@ -52,7 +52,7 @@ interface ScoreTier {
 
 function scoreTier(score: number): ScoreTier {
   if (score >= 70) return { textClass: 'text-emerald-300', label: 'EXCELLENT' }
-  if (score >= 50) return { textClass: 'text-glow-violet', label: 'STRONG' }
+  if (score >= 50) return { textClass: 'text-glow-indigo', label: 'STRONG' }
   if (score >= 30) return { textClass: 'text-amber-300', label: 'AVERAGE' }
   return { textClass: 'text-red-400', label: 'WEAK' }
 }
@@ -104,7 +104,7 @@ export function HealthCheckModal({ scanResultId, nicheLabel, onClose }: HealthCh
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="relative glass glass-violet rounded-2xl w-full max-w-xl p-7">
+      <div className="relative glass glass-glow rounded-2xl w-full max-w-xl p-7">
         <button
           type="button"
           aria-label="Close"
@@ -114,7 +114,7 @@ export function HealthCheckModal({ scanResultId, nicheLabel, onClose }: HealthCh
           <X weight="bold" size={18} aria-hidden />
         </button>
 
-        <div className="mb-1 text-[10px] font-semibold tracking-[0.22em] text-glow-violet uppercase">
+        <div className="mb-1 text-[10px] font-semibold tracking-[0.22em] text-glow-indigo uppercase">
           Niche Health Check
         </div>
         <h2 className="text-xl font-semibold text-slate-100 tracking-tight mb-6">{nicheLabel}</h2>
@@ -144,10 +144,10 @@ function LoadingBody() {
   return (
     <div data-testid="health-check-loading" className="flex flex-col items-center gap-5 py-4">
       <div className="relative w-20 h-20">
-        <div className="absolute inset-0 rounded-full border-2 border-glow-violet/15" />
-        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-glow-violet animate-spin" style={{ animationDuration: '1.6s' }} />
+        <div className="absolute inset-0 rounded-full border-2 border-glow-indigo/15" />
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-glow-indigo animate-spin" style={{ animationDuration: '1.6s' }} />
         <div className="absolute inset-0 flex items-center justify-center">
-          <Heartbeat weight="duotone" size={36} className="text-glow-violet animate-pulse" aria-hidden />
+          <Heartbeat weight="duotone" size={36} className="text-glow-indigo animate-pulse" aria-hidden />
         </div>
       </div>
 
@@ -160,7 +160,7 @@ function LoadingBody() {
           <div
             key={i}
             className={`h-1 w-10 rounded-full transition-colors duration-300 ${
-              i <= stage ? 'bg-glow-violet' : 'bg-charcoal-700'
+              i <= stage ? 'bg-glow-indigo' : 'bg-charcoal-700'
             }`}
           />
         ))}
@@ -213,7 +213,7 @@ function ReadyBody({ data }: { data: HealthCheckResponse }) {
               <span className="w-28 text-slate-400">{label}</span>
               <div className="flex-1 h-1.5 bg-charcoal-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-glow-indigo to-glow-violet"
+                  className="h-full bg-gradient-to-r from-brand-indigo to-brand-indigo-bright"
                   style={{ width: `${pct}%` }}
                 />
               </div>

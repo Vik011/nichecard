@@ -59,9 +59,9 @@ describe('PricingSection', () => {
     })
   })
 
-  it('Premium tier card has violet glass class', () => {
+  it('Premium tier card has glow glass class', () => {
     const { container } = render(<PricingSection copy={copy} />)
-    const cards = container.querySelectorAll('[class*="glass-violet"]')
+    const cards = container.querySelectorAll('[class*="glass-glow"]')
     expect(cards.length).toBeGreaterThan(0)
   })
 

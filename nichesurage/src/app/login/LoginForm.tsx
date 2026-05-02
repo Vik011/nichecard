@@ -103,7 +103,7 @@ export function LoginForm() {
       </p>
 
       {plan && billing && (
-        <div className="mb-5 text-xs text-glow-violet bg-charcoal-800/60 gborder rounded-lg px-3 py-2">
+        <div className="mb-5 text-xs text-glow-indigo bg-charcoal-800/60 gborder rounded-lg px-3 py-2">
           After login you&apos;ll go straight to checkout for {plan === 'premium' ? 'Premium' : 'Basic'} ({billing}).
         </div>
       )}
@@ -145,7 +145,7 @@ export function LoginForm() {
           <button
             type="submit"
             disabled={status === 'sending' || !email || (mode === 'password' && !password)}
-            className="text-[15px] font-semibold px-5 py-2.5 rounded-xl bg-gradient-to-br from-glow-indigo to-glow-violet hover:brightness-110 transition-all text-white disabled:opacity-50"
+            className="text-[15px] font-semibold px-5 py-2.5 rounded-xl bg-gradient-to-br from-brand-indigo to-brand-indigo-bright hover:brightness-110 hover:shadow-glow-cyan transition-all text-white disabled:opacity-50"
           >
             {status === 'sending'
               ? 'Signing in…'

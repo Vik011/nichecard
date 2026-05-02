@@ -31,12 +31,12 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
             return (
               <div
                 key={feature.title}
-                className={`relative rounded-xl p-6 bg-charcoal-900 ${isPremium ? 'glass glass-violet' : 'gborder'}`}
+                className={`relative rounded-xl p-6 bg-charcoal-900 ${isPremium ? 'glass glass-glow' : 'gborder'}`}
               >
                 {isPremium && (
                   <span
                     data-testid={`feature-premium-badge-${feature.icon}`}
-                    className="absolute top-4 right-4 text-[10px] font-semibold tracking-[0.18em] text-glow-violet uppercase"
+                    className="absolute top-4 right-4 text-[10px] font-semibold tracking-[0.18em] text-glow-indigo uppercase"
                   >
                     {copy.featuresPremiumBadge}
                   </span>
@@ -47,7 +47,7 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
                     size={30}
                     aria-hidden="true"
                     data-testid={`feature-icon-${feature.icon}`}
-                    className={isPremium ? 'text-glow-violet mb-5' : 'text-glow-indigo mb-5'}
+                    className={isPremium ? 'text-glow-indigo mb-5' : 'text-glow-indigo mb-5'}
                   />
                 )}
                 <h3 className="text-slate-100 font-semibold mb-2 text-[15px]">{feature.title}</h3>

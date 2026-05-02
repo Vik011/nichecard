@@ -20,7 +20,7 @@ type LoadState =
   | { kind: 'error'; message: string }
   | { kind: 'ready'; angles: ContentAngle[] }
 
-const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-violet'
+const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-indigo'
 
 export function AIContentAngles({ scanResultId, userTier, copy }: AIContentAnglesProps) {
   const allowed = canUseAIFeatures(userTier)
@@ -55,9 +55,9 @@ export function AIContentAngles({ scanResultId, userTier, copy }: AIContentAngle
   }
 
   return (
-    <section className="glass glass-violet rounded-2xl p-6 mb-6">
+    <section className="glass glass-glow rounded-2xl p-6 mb-6">
       <div className="flex items-center gap-2 mb-2">
-        <Sparkle weight="fill" size={14} className="text-glow-violet" aria-hidden />
+        <Sparkle weight="fill" size={14} className="text-glow-indigo" aria-hidden />
         <div className={eyebrow}>{copy.anglesEyebrow}</div>
       </div>
       <h2 className="text-xl font-semibold tracking-tight text-slate-100 mb-5">
@@ -94,7 +94,7 @@ function AngleCard({ angle, copy }: { angle: ContentAngle; copy: CopyKeys }) {
   const formatLabel = angle.format === 'shorts' ? copy.anglesShorts : copy.anglesLongform
   return (
     <div data-testid="angle-card" className="glass rounded-xl p-4 flex flex-col gap-2">
-      <span className="self-start text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-0.5 rounded-md bg-glow-violet/15 text-violet-200 ring-1 ring-glow-violet/40">
+      <span className="self-start text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-0.5 rounded-md bg-glow-indigo/15 text-indigo-200 ring-1 ring-glow-indigo/40">
         {formatLabel}
       </span>
       <h3 className="text-slate-100 text-base font-semibold leading-snug">{angle.title}</h3>
@@ -124,8 +124,8 @@ function AnglesLoading({ copy }: { copy: CopyKeys }) {
     <div data-testid="angles-loading" className="flex flex-col items-center gap-5 py-6">
       <div className="flex items-center gap-2.5">
         <span aria-hidden className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-glow-violet opacity-75" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-glow-violet" />
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-glow-indigo opacity-75" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-glow-indigo" />
         </span>
         <p className="text-slate-200 text-sm font-medium tabular-nums transition-opacity duration-300">
           {stages[stage]}
@@ -137,7 +137,7 @@ function AnglesLoading({ copy }: { copy: CopyKeys }) {
           <div
             key={i}
             className={`h-1 w-10 rounded-full transition-colors duration-300 ${
-              i <= stage ? 'bg-glow-violet' : 'bg-charcoal-700'
+              i <= stage ? 'bg-glow-indigo' : 'bg-charcoal-700'
             }`}
           />
         ))}
@@ -163,9 +163,9 @@ function AnglesLoading({ copy }: { copy: CopyKeys }) {
 
 function LockedTeaser({ copy }: { copy: CopyKeys }) {
   return (
-    <section className="glass glass-violet rounded-2xl p-6 mb-6 relative overflow-hidden">
+    <section className="glass glass-glow rounded-2xl p-6 mb-6 relative overflow-hidden">
       <div className="flex items-center gap-2 mb-2">
-        <Sparkle weight="fill" size={14} className="text-glow-violet" aria-hidden />
+        <Sparkle weight="fill" size={14} className="text-glow-indigo" aria-hidden />
         <div className={eyebrow}>{copy.anglesEyebrow}</div>
       </div>
       <h2 className="text-xl font-semibold tracking-tight text-slate-100 mb-5">
@@ -184,11 +184,11 @@ function LockedTeaser({ copy }: { copy: CopyKeys }) {
       </div>
 
       <div className="absolute inset-0 flex items-center justify-center px-6">
-        <div className="glass rounded-2xl p-6 text-center max-w-sm w-full ring-1 ring-glow-violet/40 shadow-[0_0_40px_-8px_rgba(157,128,232,0.45)]">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-glow-violet/15 ring-1 ring-glow-violet/40 mb-3">
-            <LockSimple weight="fill" size={20} className="text-glow-violet" aria-hidden />
+        <div className="glass rounded-2xl p-6 text-center max-w-sm w-full ring-1 ring-glow-indigo/40 shadow-[0_0_40px_-8px_rgba(157,128,232,0.45)]">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-glow-indigo/15 ring-1 ring-glow-indigo/40 mb-3">
+            <LockSimple weight="fill" size={20} className="text-glow-indigo" aria-hidden />
           </div>
-          <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-violet mb-2">
+          <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-indigo mb-2">
             {copy.anglesLockedTitle}
           </div>
           <p className="text-slate-300 text-sm leading-relaxed mb-5">
@@ -196,7 +196,7 @@ function LockedTeaser({ copy }: { copy: CopyKeys }) {
           </p>
           <Link
             href="/pricing"
-            className="inline-block w-full text-[13px] font-semibold px-4 py-2.5 rounded-lg bg-gradient-to-br from-glow-indigo to-glow-violet text-white hover:brightness-110 transition-all shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
+            className="inline-block w-full text-[13px] font-semibold px-4 py-2.5 rounded-lg bg-gradient-to-br from-brand-indigo to-brand-indigo-bright text-white hover:brightness-110 hover:shadow-glow-cyan transition-all shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
           >
             {copy.anglesUpgradeCta}
           </Link>

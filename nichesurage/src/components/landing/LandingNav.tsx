@@ -34,7 +34,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
         {/* Logo */}
         <Link
           href="/"
-          className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent"
+          className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-brand-indigo-bright bg-clip-text text-transparent"
         >
           NicheSurge
         </Link>
@@ -62,7 +62,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
               <span
                 className={
                   tier === 'premium'
-                    ? 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-glow-violet/15 text-violet-200 ring-1 ring-glow-violet/40'
+                    ? 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-glow-indigo/15 text-indigo-200 ring-1 ring-glow-indigo/40'
                     : 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-slate-800 text-slate-400 ring-1 ring-slate-700'
                 }
               >
@@ -75,7 +75,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
               )}
               <Link
                 href="/discover/shorts"
-                className="text-sm font-semibold px-4 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 transition-all text-white"
+                className="text-sm font-semibold px-4 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-brand-indigo-bright hover:from-indigo-500 hover:to-brand-indigo-bright transition-all text-white"
               >
                 {copy.navOpenApp}
               </Link>
@@ -90,7 +90,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
               </Link>
               <Link
                 href="/login"
-                className="text-sm font-semibold px-4 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 transition-all text-white"
+                className="text-sm font-semibold px-4 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-brand-indigo-bright hover:from-indigo-500 hover:to-brand-indigo-bright transition-all text-white"
               >
                 {copy.navCta}
               </Link>
@@ -131,7 +131,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
                 <span
                   className={
                     tier === 'premium'
-                      ? 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-glow-violet/15 text-violet-200 ring-1 ring-glow-violet/40'
+                      ? 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-glow-indigo/15 text-indigo-200 ring-1 ring-glow-indigo/40'
                       : 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-slate-800 text-slate-400 ring-1 ring-slate-700'
                   }
                 >
@@ -145,7 +145,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
               </div>
               <Link
                 href="/discover/shorts"
-                className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white"
+                className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-brand-indigo-bright text-white"
                 onClick={() => setMenuOpen(false)}
               >
                 {copy.navOpenApp}
@@ -162,7 +162,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
               </Link>
               <Link
                 href="/login"
-                className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white"
+                className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-brand-indigo-bright text-white"
                 onClick={() => setMenuOpen(false)}
               >
                 {copy.navCta}

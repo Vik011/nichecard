@@ -40,13 +40,13 @@ interface ScoreTierStyle {
 
 function scoreTier(score: number, copy: CopyKeys): ScoreTierStyle {
   if (score >= 70) return { textClass: 'text-emerald-300', label: 'EXCELLENT' }
-  if (score >= 50) return { textClass: 'text-glow-violet', label: 'STRONG' }
+  if (score >= 50) return { textClass: 'text-glow-indigo', label: 'STRONG' }
   if (score >= 30) return { textClass: 'text-amber-300', label: 'AVERAGE' }
   return { textClass: 'text-red-400', label: 'WEAK' }
   void copy
 }
 
-const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-violet'
+const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-indigo'
 
 export function HealthCheckInline({ scanResultId, userTier, copy }: HealthCheckInlineProps) {
   const allowed = canUseAIFeatures(userTier)
@@ -83,7 +83,7 @@ export function HealthCheckInline({ scanResultId, userTier, copy }: HealthCheckI
   return (
     <section className="glass rounded-2xl p-6 mb-6">
       <div className="flex items-center gap-2 mb-2">
-        <Heartbeat weight="duotone" size={14} className="text-glow-violet" aria-hidden />
+        <Heartbeat weight="duotone" size={14} className="text-glow-indigo" aria-hidden />
         <div className={eyebrow}>{copy.healthEyebrow}</div>
       </div>
       <h2 className="text-xl font-semibold tracking-tight text-slate-100 mb-5">
@@ -146,7 +146,7 @@ function ReadyBody({ data, copy }: { data: HealthCheckResponse; copy: CopyKeys }
               <span className="w-28 text-slate-400">{label}</span>
               <div className="flex-1 h-1.5 bg-charcoal-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-glow-indigo to-glow-violet"
+                  className="h-full bg-gradient-to-r from-brand-indigo to-brand-indigo-bright"
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -175,13 +175,13 @@ function HealthLoading({ copy }: { copy: CopyKeys }) {
   return (
     <div data-testid="health-check-loading" className="flex flex-col items-center gap-5 py-6">
       <div className="relative w-16 h-16">
-        <div className="absolute inset-0 rounded-full border-2 border-glow-violet/15" />
+        <div className="absolute inset-0 rounded-full border-2 border-glow-indigo/15" />
         <div
-          className="absolute inset-0 rounded-full border-2 border-transparent border-t-glow-violet animate-spin"
+          className="absolute inset-0 rounded-full border-2 border-transparent border-t-glow-indigo animate-spin"
           style={{ animationDuration: '1.6s' }}
         />
         <div className="absolute inset-0 flex items-center justify-center">
-          <Heartbeat weight="duotone" size={28} className="text-glow-violet animate-pulse" aria-hidden />
+          <Heartbeat weight="duotone" size={28} className="text-glow-indigo animate-pulse" aria-hidden />
         </div>
       </div>
 
@@ -194,7 +194,7 @@ function HealthLoading({ copy }: { copy: CopyKeys }) {
           <div
             key={i}
             className={`h-1 w-10 rounded-full transition-colors duration-300 ${
-              i <= stage ? 'bg-glow-violet' : 'bg-charcoal-700'
+              i <= stage ? 'bg-glow-indigo' : 'bg-charcoal-700'
             }`}
           />
         ))}
@@ -211,7 +211,7 @@ function LockedTeaser({ copy }: { copy: CopyKeys }) {
   return (
     <section className="glass rounded-2xl p-6 mb-6 relative overflow-hidden">
       <div className="flex items-center gap-2 mb-2">
-        <Heartbeat weight="duotone" size={14} className="text-glow-violet" aria-hidden />
+        <Heartbeat weight="duotone" size={14} className="text-glow-indigo" aria-hidden />
         <div className={eyebrow}>{copy.healthEyebrow}</div>
       </div>
       <h2 className="text-xl font-semibold tracking-tight text-slate-100 mb-5">
@@ -229,11 +229,11 @@ function LockedTeaser({ copy }: { copy: CopyKeys }) {
       </div>
 
       <div className="absolute inset-0 flex items-center justify-center px-6">
-        <div className="glass rounded-2xl p-6 text-center max-w-sm w-full ring-1 ring-glow-violet/40 shadow-[0_0_40px_-8px_rgba(157,128,232,0.45)]">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-glow-violet/15 ring-1 ring-glow-violet/40 mb-3">
-            <LockSimple weight="fill" size={20} className="text-glow-violet" aria-hidden />
+        <div className="glass rounded-2xl p-6 text-center max-w-sm w-full ring-1 ring-glow-indigo/40 shadow-[0_0_40px_-8px_rgba(157,128,232,0.45)]">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-glow-indigo/15 ring-1 ring-glow-indigo/40 mb-3">
+            <LockSimple weight="fill" size={20} className="text-glow-indigo" aria-hidden />
           </div>
-          <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-violet mb-2">
+          <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-indigo mb-2">
             {copy.anglesLockedTitle}
           </div>
           <p className="text-slate-300 text-sm leading-relaxed mb-5">
@@ -241,7 +241,7 @@ function LockedTeaser({ copy }: { copy: CopyKeys }) {
           </p>
           <Link
             href="/pricing"
-            className="inline-block w-full text-[13px] font-semibold px-4 py-2.5 rounded-lg bg-gradient-to-br from-glow-indigo to-glow-violet text-white hover:brightness-110 transition-all shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
+            className="inline-block w-full text-[13px] font-semibold px-4 py-2.5 rounded-lg bg-gradient-to-br from-brand-indigo to-brand-indigo-bright text-white hover:brightness-110 hover:shadow-glow-cyan transition-all shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
           >
             {copy.anglesUpgradeCta}
           </Link>

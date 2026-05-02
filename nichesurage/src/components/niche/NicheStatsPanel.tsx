@@ -18,7 +18,7 @@ function ageMonths(createdAt: string): number {
   return Math.max(0, Math.floor((now.getTime() - created.getTime()) / (30 * 24 * 60 * 60 * 1000)))
 }
 
-const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-violet'
+const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-indigo'
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (

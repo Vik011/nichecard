@@ -12,6 +12,7 @@ import { filtersToParams, paramsToFilters, type ReadableParams } from '@/lib/sup
 import { useUser } from '@/lib/context/UserContext'
 import { useLang } from '@/lib/i18n/useLang'
 import { COPY, type CopyKeys } from '@/components/landing/copy'
+import { StaggerList } from '@/components/ui/StaggerList'
 import type {
   SearchFilters as SearchFiltersType,
   NicheCardData,
@@ -156,7 +157,7 @@ export default function DiscoverPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto">
       <div className="text-center mb-8">
-        <div className="inline-block text-[10px] font-semibold tracking-[0.22em] text-glow-violet uppercase mb-2">
+        <div className="inline-block text-[10px] font-semibold tracking-[0.22em] text-glow-indigo uppercase mb-2">
           {eyebrow}
         </div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-100 mb-2">
@@ -190,9 +191,9 @@ export default function DiscoverPage() {
 
       {!userLoading && !loading && searched && results.length === 0 && !error && (
         <div className="max-w-md mx-auto py-6">
-          <div className="glass glass-violet rounded-2xl p-8 text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-glow-violet/10 ring-1 ring-glow-violet/30 mb-4">
-              <MagnifyingGlass weight="duotone" size={28} className="text-glow-violet" aria-hidden />
+          <div className="glass glass-glow rounded-2xl p-8 text-center">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-glow-indigo/10 ring-1 ring-glow-indigo/30 mb-4">
+              <MagnifyingGlass weight="duotone" size={28} className="text-glow-indigo" aria-hidden />
             </div>
             <h3 className="text-slate-100 text-base font-semibold mb-1.5">{copy.discoverEmptyTitle}</h3>
             <p className="text-slate-500 text-sm leading-relaxed mb-5">
@@ -211,7 +212,10 @@ export default function DiscoverPage() {
 
       {!userLoading && !loading && results.length > 0 && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <StaggerList
+            key={`grid-${visibleCount}-${results.length}`}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          >
             {results.slice(0, visibleCount).map((niche, i) => (
               <NicheCard
                 key={niche.id}
@@ -225,7 +229,7 @@ export default function DiscoverPage() {
                 onBookmarkToggle={handleBookmarkToggle}
               />
             ))}
-          </div>
+          </StaggerList>
           {visibleCount < results.length && (
             <div className="flex justify-center mt-6">
               <button

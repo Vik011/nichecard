@@ -36,7 +36,7 @@ export function HealthCheckButton({ scanResultId, nicheLabel, userTier }: Health
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true) }}
         aria-label={`Health check for ${nicheLabel}`}
-        className="text-glow-violet hover:brightness-110 p-1.5 rounded-lg transition-all"
+        className="text-glow-indigo hover:brightness-110 p-1.5 rounded-lg transition-all"
       >
         <Heartbeat weight="duotone" size={18} aria-hidden />
       </button>

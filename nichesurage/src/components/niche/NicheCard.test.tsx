@@ -101,10 +101,10 @@ describe('NicheCard', () => {
     expect(screen.getByText(/12\.4k views\/video/i)).toBeTruthy()
   })
 
-  it('skeleton: renders without errors, contains animate-pulse elements', () => {
+  it('skeleton: renders without errors, contains shimmer elements', () => {
     render(<NicheCardSkeleton />)
-    const pulseEls = document.querySelectorAll('.animate-pulse')
-    expect(pulseEls.length).toBeGreaterThan(0)
+    const shimmerEls = document.querySelectorAll('.shimmer')
+    expect(shimmerEls.length).toBeGreaterThan(0)
   })
 
   it('renders BookmarkButton when onBookmarkToggle is provided', () => {

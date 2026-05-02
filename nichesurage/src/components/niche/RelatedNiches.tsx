@@ -12,7 +12,7 @@ interface RelatedNichesProps {
   copy: CopyKeys
 }
 
-const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-violet'
+const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-indigo'
 
 export function RelatedNiches({ niche, userTier, copy }: RelatedNichesProps) {
   const [related, setRelated] = useState<NicheCardData[]>([])

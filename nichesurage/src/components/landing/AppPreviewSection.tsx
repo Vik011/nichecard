@@ -40,7 +40,7 @@ export function AppPreviewSection({ niches, copy, isLoggedIn = false }: AppPrevi
         <div className="text-center mt-10">
           <Link
             href={isLoggedIn ? '/discover/shorts' : '/login'}
-            className="inline-block text-[15px] font-semibold px-7 py-3 rounded-xl bg-gradient-to-br from-glow-indigo to-glow-violet hover:brightness-110 transition-all text-white shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
+            className="inline-block text-[15px] font-semibold px-7 py-3 rounded-xl bg-gradient-to-br from-brand-indigo to-brand-indigo-bright hover:brightness-110 hover:shadow-glow-cyan transition-all text-white shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
           >
             {isLoggedIn ? copy.navOpenApp : copy.previewCta}
           </Link>

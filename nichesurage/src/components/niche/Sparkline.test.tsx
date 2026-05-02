@@ -50,6 +50,18 @@ describe('Sparkline', () => {
     const idB = b.querySelector('linearGradient')!.getAttribute('id')!
     expect(idA).not.toBe(idB)
   })
+
+  it('paints the excellent tier in deep cyan (Midnight palette accent)', () => {
+    const { container } = render(<Sparkline data={data} variant="card" tier="excellent" />)
+    const stroke = container.querySelector('polyline')!.getAttribute('stroke')!
+    expect(stroke).toBe('rgb(6 182 212)')
+  })
+
+  it('paints the strong tier in indigo-bright (default brand accent)', () => {
+    const { container } = render(<Sparkline data={data} variant="card" tier="strong" />)
+    const stroke = container.querySelector('polyline')!.getAttribute('stroke')!
+    expect(stroke).toBe('rgb(129 140 248)')
+  })
 })
 
 describe('tierFromScore', () => {

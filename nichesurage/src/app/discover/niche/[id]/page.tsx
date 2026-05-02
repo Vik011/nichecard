@@ -157,7 +157,7 @@ function DetailSkeleton() {
 function DetailErrorState({ message, backHref, copy }: { message: string; backHref: string; copy: CopyKeys }) {
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-8 max-w-md mx-auto flex flex-col items-center justify-center">
-      <div className="glass glass-violet rounded-2xl p-8 text-center w-full">
+      <div className="glass glass-glow rounded-2xl p-8 text-center w-full">
         <p className="text-slate-200 text-base font-semibold mb-4">{message}</p>
         <Link
           href={backHref}

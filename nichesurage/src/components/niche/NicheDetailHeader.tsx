@@ -14,7 +14,7 @@ function scoreTier(score: number): ScoreTier {
     label: 'EXCELLENT',
   }
   if (score >= 50) return {
-    textClass: 'text-violet-300',
+    textClass: 'text-indigo-300',
     glowShadow: 'drop-shadow-[0_0_24px_rgba(167,139,250,0.55)]',
     label: 'STRONG',
   }
@@ -40,17 +40,17 @@ export function NicheDetailHeader({ niche, copy }: NicheDetailHeaderProps) {
   const eyebrow = niche.contentType === 'shorts' ? copy.discoverShortsEyebrow : copy.discoverLongformEyebrow
 
   return (
-    <section className="glass glass-violet rounded-2xl p-7 mb-6">
+    <section className="glass glass-glow rounded-2xl p-7 mb-6">
       <div className="flex flex-col md:flex-row justify-between items-start gap-6">
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-violet mb-2">
+          <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-indigo mb-2">
             {eyebrow}
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-100 truncate">
             {niche.channelName ?? '—'}
           </h1>
           {niche.nicheLabel && (
-            <p className="text-violet-400 text-sm mt-1.5 truncate">{niche.nicheLabel}</p>
+            <p className="text-indigo-300 text-sm mt-1.5 truncate">{niche.nicheLabel}</p>
           )}
           {niche.channelUrl && (
             <a

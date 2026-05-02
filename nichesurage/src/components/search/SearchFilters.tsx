@@ -37,13 +37,13 @@ const SUBSCRIBER_BUCKETS: Array<{ key: string; min: number; max: number; label: 
   { key: 'over-100k',  min: 100_000, max: 10_000_000, label: '100K+' },
 ]
 
-const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-violet'
+const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-indigo'
 
 function pillClass(active: boolean): string {
   return [
     'px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150',
     active
-      ? 'bg-glow-violet/15 text-violet-100 ring-1 ring-glow-violet/40 shadow-[0_0_12px_-2px_rgba(157,128,232,0.35)]'
+      ? 'bg-glow-indigo/15 text-indigo-100 ring-1 ring-glow-indigo/40 shadow-[0_0_12px_-2px_rgba(157,128,232,0.35)]'
       : 'bg-charcoal-800/60 text-slate-400 hover:text-slate-100 hover:bg-charcoal-700/60',
   ].join(' ')
 }
@@ -148,7 +148,7 @@ export function SearchFilters({ value, onChange, copy = COPY.en }: SearchFilters
         className={[
           'flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-left transition-all',
           value.onlyRecentlyViral
-            ? 'bg-glow-violet/10 ring-1 ring-glow-violet/40 shadow-[0_0_12px_-2px_rgba(157,128,232,0.3)]'
+            ? 'bg-glow-indigo/10 ring-1 ring-glow-indigo/40 shadow-[0_0_12px_-2px_rgba(157,128,232,0.3)]'
             : 'bg-charcoal-800/60 hover:bg-charcoal-700/60',
         ].join(' ')}
       >
@@ -160,7 +160,7 @@ export function SearchFilters({ value, onChange, copy = COPY.en }: SearchFilters
           className={[
             'shrink-0 w-5 h-5 rounded-md flex items-center justify-center transition-all',
             value.onlyRecentlyViral
-              ? 'bg-glow-violet text-charcoal-900'
+              ? 'bg-glow-indigo text-charcoal-900'
               : 'bg-charcoal-700 text-transparent',
           ].join(' ')}
           aria-hidden

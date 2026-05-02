@@ -49,7 +49,7 @@ function scoreTier(score: number): ScoreTier {
     label: 'EXCELLENT',
   }
   if (score >= 50) return {
-    textClass: 'text-violet-300',
+    textClass: 'text-indigo-300',
     glowShadow: 'drop-shadow-[0_0_18px_rgba(167,139,250,0.55)]',
     label: 'STRONG',
   }
@@ -69,7 +69,7 @@ function ShortsMetrics({ data, locked }: { data: ShortsNicheCardData; locked: bo
         </span>
       )}
       {!locked && data.hookScore !== undefined && (
-        <span className="bg-slate-800/70 text-purple-300 px-2 py-0.5 rounded-full text-xs">
+        <span className="bg-slate-800/70 text-indigo-300 px-2 py-0.5 rounded-full text-xs">
           🎣 hook {data.hookScore}
         </span>
       )}
@@ -111,7 +111,7 @@ export function NicheCard({ data, userTier, rank, isSaved, savedCount, spikeHist
     <Link
       href={detailHref}
       aria-label={`Open detail page for ${data.channelName ?? 'this niche'}`}
-      className={`glass ${isHero ? 'glass-violet' : ''} rounded-xl p-4 block transition-all duration-200 hover:scale-[1.02] hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-glow-violet/60`}
+      className={`glass ${isHero ? 'glass-glow' : ''} rounded-xl p-4 block transition-all duration-200 hover:scale-[1.02] hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60`}
     >
       {/* Header: rank label + actions */}
       <div className="flex justify-between items-start mb-1">
@@ -155,7 +155,7 @@ export function NicheCard({ data, userTier, rank, isSaved, savedCount, spikeHist
             )}
           </div>
           {data.nicheLabel && (
-            <div className="text-violet-400 text-xs mt-0.5 truncate">{data.nicheLabel}</div>
+            <div className="text-indigo-300 text-xs mt-0.5 truncate">{data.nicheLabel}</div>
           )}
         </div>
         <div className="shrink-0 text-right">
