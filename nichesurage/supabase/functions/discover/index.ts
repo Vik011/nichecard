@@ -32,11 +32,15 @@ function expand(seed: SeedKeyword): SeedExpansion[] {
   const types: ('shorts' | 'longform')[] =
     seed.content_type === 'both' ? ['shorts', 'longform'] : [seed.content_type as 'shorts' | 'longform']
 
+  // YouTube duration buckets: short (<4min), medium (4-20min), long (>20min).
+  // Most premium longform creator content (AI tutorials, productivity, finance)
+  // lives in the "medium" bucket. The "long" filter was excluding ~90% of the
+  // intended creator pool, hence near-zero longform outliers in early runs.
   return types.map(t => ({
     seed,
     contentType: t,
-    videoDuration: t === 'shorts' ? 'short' : 'long',
-    publishedAfterDays: t === 'shorts' ? 2 : 7,
+    videoDuration: t === 'shorts' ? 'short' : 'medium',
+    publishedAfterDays: t === 'shorts' ? 2 : 14,
     maxSubs: t === 'shorts' ? MAX_SUBS_SHORTS : MAX_SUBS_LONGFORM,
     maxAgeMonths: t === 'shorts' ? MAX_AGE_MONTHS_SHORTS : MAX_AGE_MONTHS_LONGFORM,
     regionCode: region,

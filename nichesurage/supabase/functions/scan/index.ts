@@ -60,8 +60,10 @@ Deno.serve(async (_req: Request) => {
         if (videos.length === 0) continue
         scanned++
 
-        // Sonar outlier window: 48h Shorts, 7d Longform.
-        const windowHours = channel.content_type === 'shorts' ? 48 : 168
+        // Sonar outlier window: 48h Shorts (fast viral cycle),
+        // 14d Longform (slower viral half-life — tutorials/podcasts/finance
+        // content often peaks 1-2 weeks after upload).
+        const windowHours = channel.content_type === 'shorts' ? 48 : 336
         const outlier = findOutlier(videos, stats.subscriberCount, windowHours)
         if (outlier.ratio < OUTLIER_DB_FLOOR) {
           // Below DB floor — drop on the floor (don't pollute scan_results).
