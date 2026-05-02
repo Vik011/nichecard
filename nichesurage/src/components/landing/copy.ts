@@ -113,9 +113,14 @@ export const COPY = {
     heroCta: 'Try it free',
     heroCta2: 'How it works',
 
-    socialTrust: 'Trusted by 1,847 creators',
-    socialNiches: '3,612 niches scanned this week',
-    socialViews: '11.4 billion views processed',
+    radarLive: 'Live',
+    radarPingPrefix: 'Channel discovered',
+    radarSubline: 'Watching the small accounts the moment they start moving.',
+    radarUnclusteredLabel: 'Forming cluster',
+    radarFormatShorts: 'Shorts',
+    radarFormatLongform: 'Longform',
+    radarChannelsLast24h: (n: number) =>
+      `${n.toLocaleString('en-US')} channels surfaced in the last 24h`,
 
     previewTitle: 'These niches are moving right now.',
     previewSub: 'Sign up free to see channel names and full metrics.',
@@ -334,9 +339,14 @@ export const COPY = {
     heroCta: 'Kostenlos ausprobieren',
     heroCta2: 'Wie es funktioniert',
 
-    socialTrust: 'Vertraut von 1.847 Creatorn',
-    socialNiches: '3.612 Nischen diese Woche gescannt',
-    socialViews: '11,4 Milliarden Views verarbeitet',
+    radarLive: 'Live',
+    radarPingPrefix: 'Kanal entdeckt',
+    radarSubline: 'Wir beobachten die kleinen Kanäle in dem Moment, in dem sie zu steigen beginnen.',
+    radarUnclusteredLabel: 'Cluster wird gebildet',
+    radarFormatShorts: 'Shorts',
+    radarFormatLongform: 'Longform',
+    radarChannelsLast24h: (n: number) =>
+      `${n.toLocaleString('de-DE')} Kanäle in den letzten 24 Stunden entdeckt`,
 
     previewTitle: 'Diese Nischen steigen gerade.',
     previewSub: 'Kostenlos registrieren, um Kanalnamen und alle Metriken zu sehen.',

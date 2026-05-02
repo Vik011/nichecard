@@ -1,11 +1,12 @@
 'use client'
 import type { NicheCardData } from '@/lib/types'
+import type { RadarSnapshot } from '@/lib/landing/fetchRadarPings'
 import { COPY } from './copy'
 import { useLang } from '@/lib/i18n/useLang'
 import { useUser } from '@/lib/context/UserContext'
 import { LandingNav } from './LandingNav'
 import { HeroSection } from './HeroSection'
-import { SocialProofBar } from './SocialProofBar'
+import { LiveRadar } from './LiveRadar'
 import { AppPreviewSection } from './AppPreviewSection'
 import { PainSolutionSection } from './PainSolutionSection'
 import { FeaturesSection } from './FeaturesSection'
@@ -17,9 +18,10 @@ import { Reveal } from '@/components/ui/Reveal'
 
 interface LandingPageProps {
   niches: NicheCardData[]
+  radar: RadarSnapshot
 }
 
-export function LandingPage({ niches }: LandingPageProps) {
+export function LandingPage({ niches, radar }: LandingPageProps) {
   const [lang, setLang] = useLang()
   const copy = COPY[lang]
   const { isLoggedIn } = useUser()
@@ -28,7 +30,7 @@ export function LandingPage({ niches }: LandingPageProps) {
     <div className="relative min-h-screen text-slate-100">
       <LandingNav copy={copy} lang={lang} onLangChange={setLang} />
       <HeroSection copy={copy} isLoggedIn={isLoggedIn} />
-      <SocialProofBar copy={copy} />
+      <LiveRadar copy={copy} pings={radar.pings} channelsLast24h={radar.channelsLast24h} />
       <Reveal><AppPreviewSection niches={niches} copy={copy} isLoggedIn={isLoggedIn} /></Reveal>
       <Reveal><PainSolutionSection copy={copy} /></Reveal>
       <Reveal><FeaturesSection copy={copy} /></Reveal>
