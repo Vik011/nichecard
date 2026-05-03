@@ -1,17 +1,7 @@
 import { withSentryConfig } from '@sentry/nextjs'
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  experimental: {
-    // youtube-dl-exec ships a native yt-dlp binary that webpack would otherwise
-    // fail to bundle into Vercel's serverless function output. Listing it here
-    // tells Next.js to treat it as an external runtime package — the entire
-    // node_modules/youtube-dl-exec dir (including the binary) is copied into
-    // the function bundle as-is. Required for Sprint B trend engine's related-
-    // video discovery (see /api/spike/ytdlp).
-    serverComponentsExternalPackages: ['youtube-dl-exec'],
-  },
-}
+const nextConfig = {}
 
 const sentryConfig = {
   org: process.env.SENTRY_ORG,
