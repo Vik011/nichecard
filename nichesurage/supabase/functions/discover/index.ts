@@ -7,6 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import {
   searchVideosByKeyword,
   getChannelStats,
+  getVideoStatsBatch,
   getYoutubeKeys,
 } from '../_shared/youtube.ts'
 import type { SeedKeyword } from '../_shared/types.ts'
@@ -23,6 +24,21 @@ const MAX_SUBS_SHORTS = 100_000
 const MAX_SUBS_LONGFORM = 500_000
 const MAX_AGE_MONTHS_SHORTS = 12
 const MAX_AGE_MONTHS_LONGFORM = 24
+
+// Sprint A.8 follow-up — pre-screen thresholds (relaxed vs premiumSpike).
+// A candidate channel must have AT LEAST ONE search-hit video (in the recent
+// publishedAfter window) clearing both an absolute view floor AND a VPS
+// floor. This eliminates "channel matched the keyword but their best recent
+// video is a dud" cases at discovery time, instead of letting them rot in
+// the watchlist burning scan-cycle YouTube quota.
+//
+// Numbers are ~50% of the equivalent premiumSpike thresholds so we let
+// near-miss candidates into the watchlist (they may sharpen up by the time
+// the next scan runs) without admitting obvious junk.
+const DISCOVER_MIN_VIEWS_SHORTS = 15_000     // premium SHORTS_VIEWS_MIN is 30k
+const DISCOVER_MIN_VIEWS_LONGFORM = 5_000    // premium LONGFORM_VIEWS_MIN is 10k
+const DISCOVER_MIN_VPS_SHORTS = 200          // premium SHORTS_VPS_MIN is 1000
+const DISCOVER_MIN_VPS_LONGFORM = 5          // premium LONGFORM_VPS_MIN is 10
 
 interface SeedExpansion {
   seed: SeedKeyword
@@ -119,6 +135,31 @@ Deno.serve(async (_req: Request) => {
           const stats = await getChannelStats(youtubeKeys, candidateIds)
           const maxAgeMs = exp.maxAgeMonths * 30 * 24 * 60 * 60 * 1000
 
+          // Sprint A.8 follow-up — discover pre-screen: batch-fetch viewCount
+          // for every search hit, then index "best hit views per channel".
+          // Only channels whose strongest hit clears both the absolute view
+          // floor AND the VPS floor get inserted. Without this, channels with
+          // one mediocre hit were inflating the watchlist; with it, we admit
+          // only candidates that look "near-premium" already.
+          const hitVideoIds = [...new Set(hits.map(h => h.videoId))]
+          const videoStats = await getVideoStatsBatch(youtubeKeys, hitVideoIds)
+          const viewsByVideoId = new Map<string, number>(
+            videoStats.map(v => [v.videoId, v.viewCount]),
+          )
+          const bestHitByChannel = new Map<string, number>()
+          for (const hit of hits) {
+            const views = viewsByVideoId.get(hit.videoId) ?? 0
+            const prev = bestHitByChannel.get(hit.channelId) ?? 0
+            if (views > prev) bestHitByChannel.set(hit.channelId, views)
+          }
+
+          const minViews = exp.contentType === 'shorts'
+            ? DISCOVER_MIN_VIEWS_SHORTS
+            : DISCOVER_MIN_VIEWS_LONGFORM
+          const minVps = exp.contentType === 'shorts'
+            ? DISCOVER_MIN_VPS_SHORTS
+            : DISCOVER_MIN_VPS_LONGFORM
+
           for (const channel of stats) {
             if (existingIds.has(channel.channelId)) continue
             const ageMs = Date.now() - new Date(channel.channelCreatedAt).getTime()
@@ -128,6 +169,15 @@ Deno.serve(async (_req: Request) => {
             if (channel.subscriberCount < exp.minSubs) continue
             if (channel.subscriberCount > exp.maxSubs) continue
             if (ageMs > maxAgeMs) continue
+
+            // Pre-screen: best search-hit video for this channel must clear
+            // both the absolute view floor AND the VPS floor. Both — because
+            // a 1M-sub channel making 30k-view shorts looks fine on absolute
+            // views but is mediocre on VPS, and vice-versa.
+            const bestHitViews = bestHitByChannel.get(channel.channelId) ?? 0
+            const bestHitVps = bestHitViews / Math.max(channel.subscriberCount, 1)
+            if (bestHitViews < minViews) continue
+            if (bestHitVps < minVps) continue
 
             const { error } = await supabase.from('channels_watchlist').insert({
               youtube_channel_id: channel.channelId,

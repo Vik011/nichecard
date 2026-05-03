@@ -188,6 +188,49 @@ export async function getRecentVideos(
   })).sort((a: VideoData, b: VideoData) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
 }
 
+/**
+ * Batch-fetch viewCount + publishedAt for a list of video IDs. Cheap
+ * (one videos.list call per 50 IDs, 1 quota unit each). Used by
+ * /discover pre-screen to compute "best-VPS hit" per candidate channel
+ * before deciding whether to insert into the watchlist.
+ *
+ * Sprint A.8 follow-up: without this, /discover was inserting any channel
+ * whose subs/age fit the bracket — even if their best video was a 5k-view
+ * dud. The pre-screen catches that before scan-cycle quota gets burned.
+ */
+export async function getVideoStatsBatch(
+  apiKeys: string[],
+  videoIds: string[],
+): Promise<Array<{ videoId: string; viewCount: number; publishedAt: string }>> {
+  if (videoIds.length === 0) return []
+
+  const out: Array<{ videoId: string; viewCount: number; publishedAt: string }> = []
+
+  for (let i = 0; i < videoIds.length; i += 50) {
+    const batch = videoIds.slice(i, i + 50)
+    const buildUrl = (key: string) => {
+      const url = new URL(`${BASE}/videos`)
+      url.searchParams.set('key', key)
+      url.searchParams.set('part', 'snippet,statistics')
+      url.searchParams.set('id', batch.join(','))
+      return url
+    }
+
+    const res = await tryFetchWithFallback(apiKeys, buildUrl, 'videos.list (discover-prescreen)')
+    const data = await res.json()
+
+    for (const item of (data.items ?? [])) {
+      out.push({
+        videoId: item.id,
+        viewCount: parseInt(item.statistics?.viewCount ?? '0', 10),
+        publishedAt: item.snippet?.publishedAt ?? '',
+      })
+    }
+  }
+
+  return out
+}
+
 // Sonar: keyword-driven search returning videos + their channelIds.
 // Used by sonar-discover to find outlier candidates by seed term.
 export async function searchVideosByKeyword(
