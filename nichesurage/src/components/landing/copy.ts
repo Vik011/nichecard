@@ -9,6 +9,7 @@ export const COPY = {
     navCta: 'Start Free',
     navOpenApp: 'Open app',
     tierFree: 'FREE',
+    tierBasic: 'BASIC',
     tierPremium: 'PREMIUM',
 
     discoverShortsEyebrow: 'Shorts Niche Discovery',
@@ -239,6 +240,7 @@ export const COPY = {
     navCta: 'Kostenlos starten',
     navOpenApp: 'App öffnen',
     tierFree: 'FREE',
+    tierBasic: 'BASIC',
     tierPremium: 'PREMIUM',
 
     discoverShortsEyebrow: 'Shorts-Nischenfinder',

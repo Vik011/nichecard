@@ -4,6 +4,21 @@ import Link from 'next/link'
 import { LanguageToggle } from './LanguageToggle'
 import type { CopyKeys, Lang } from './copy'
 import { useUser } from '@/lib/context/UserContext'
+import type { UserTier } from '@/lib/types/database'
+
+// 3-tier badge consistent with TopNav. Previously LandingNav only had a
+// 2-way ternary (premium vs everything else) which made BASIC users show as
+// FREE on the landing page even though /discover correctly read them as
+// BASIC — i.e. tier display was inconsistent across the app shell.
+function TierBadge({ tier, copy }: { tier: UserTier; copy: CopyKeys }) {
+  const isElevated = tier === 'premium' || tier === 'basic'
+  const className = isElevated
+    ? 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-glow-indigo/15 text-indigo-200 ring-1 ring-glow-indigo/40'
+    : 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-slate-800 text-slate-400 ring-1 ring-slate-700'
+  const label =
+    tier === 'premium' ? copy.tierPremium : tier === 'basic' ? copy.tierBasic : copy.tierFree
+  return <span className={className}>{label}</span>
+}
 
 interface LandingNavProps {
   copy: CopyKeys
@@ -59,15 +74,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
         <div className="hidden md:flex items-center gap-3">
           {userLoading ? null : isLoggedIn ? (
             <>
-              <span
-                className={
-                  tier === 'premium'
-                    ? 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-glow-indigo/15 text-indigo-200 ring-1 ring-glow-indigo/40'
-                    : 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-slate-800 text-slate-400 ring-1 ring-slate-700'
-                }
-              >
-                {tier === 'premium' ? copy.tierPremium : copy.tierFree}
-              </span>
+              <TierBadge tier={tier} copy={copy} />
               {email && (
                 <span className="text-sm text-slate-400 max-w-[180px] truncate" title={email}>
                   {email}
@@ -128,15 +135,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
           {userLoading ? null : isLoggedIn ? (
             <>
               <div className="flex items-center gap-2 pt-1">
-                <span
-                  className={
-                    tier === 'premium'
-                      ? 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-glow-indigo/15 text-indigo-200 ring-1 ring-glow-indigo/40'
-                      : 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-slate-800 text-slate-400 ring-1 ring-slate-700'
-                  }
-                >
-                  {tier === 'premium' ? copy.tierPremium : copy.tierFree}
-                </span>
+                <TierBadge tier={tier} copy={copy} />
                 {email && (
                   <span className="text-sm text-slate-400 truncate" title={email}>
                     {email}

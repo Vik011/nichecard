@@ -20,12 +20,20 @@ function makeSupabaseMock({
   const eq = jest.fn().mockReturnValue({ single })
   const select = jest.fn().mockReturnValue({ eq })
   const from = jest.fn().mockReturnValue({ select })
+  // Subscription stub for onAuthStateChange — we don't fire any auth events
+  // in these unit tests; we just need a no-op subscription with a working
+  // unsubscribe so the provider's cleanup effect doesn't blow up on unmount.
+  const unsubscribe = jest.fn()
+  const onAuthStateChange = jest.fn().mockReturnValue({
+    data: { subscription: { unsubscribe } },
+  })
   return {
     auth: {
       getUser: jest.fn().mockResolvedValue({
         data: { user },
         error: getUserError,
       }),
+      onAuthStateChange,
     },
     from,
   }
