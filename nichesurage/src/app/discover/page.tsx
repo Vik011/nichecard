@@ -1,10 +1,12 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useMemo, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { SearchFilters } from '@/components/search/SearchFilters'
 import { NicheCard } from '@/components/niche/NicheCard'
 import { NicheCardSkeleton } from '@/components/niche/NicheCardSkeleton'
+import { RevealCountdown } from '@/components/niche/RevealCountdown'
+import { UpsellModal } from '@/components/niche/UpsellModal'
 import { fetchNiches, fetchSpikeHistory } from '@/lib/supabase/queries'
 import { fetchSavedNicheIds } from '@/lib/supabase/savedNiches'
 import { filtersToParams, paramsToFilters, type ReadableParams } from '@/lib/supabase/filterParams'
@@ -16,6 +18,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { EmptyMagnifier } from '@/components/ui/illustrations/EmptyMagnifier'
 import { SonarEmptyState } from '@/components/ui/SonarEmptyState'
 import { TrendingTopics } from '@/components/niche/TrendingTopics'
+import { getRevealedIds } from '@/lib/tier/reveal'
 import type {
   SearchFilters as SearchFiltersType,
   NicheCardData,
@@ -81,9 +84,11 @@ function DiscoverFallback() {
 function DiscoverPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { tier: userTier, loading: userLoading } = useUser()
+  const { tier: userTier, userId, loading: userLoading } = useUser()
   const [lang] = useLang()
   const copy = COPY[lang]
+  // Tracks an in-flight upsell modal opened by clicking a locked card.
+  const [upsellOpen, setUpsellOpen] = useState(false)
 
   const initialContentType = resolveContentType(searchParams)
 
@@ -184,6 +189,21 @@ function DiscoverPageInner() {
     return `/discover?${p.toString()}`
   })()
 
+  // Reveal set for the current user/tier. Recomputed when results change
+  // (the underlying niche IDs change with filters and re-searches). userId
+  // is null briefly during initial UserContext load — getRevealedIds is
+  // safe with the empty string (just produces a stable but anonymous
+  // reveal slot), and we re-render once userId resolves.
+  const revealedIds = useMemo(() => {
+    const ids = results.map(n => n.id)
+    return getRevealedIds(userTier, ids, userId ?? '', new Date())
+    // We deliberately don't depend on the current Date — re-rendering
+    // every second to advance the reveal isn't useful here, the next
+    // 6h-window flip happens on the time scale of hours, not seconds.
+    // Page reloads or filter changes will pick up the latest window.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [results, userTier, userId])
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto overflow-x-hidden">
       <div className="text-center mb-8">
@@ -203,6 +223,14 @@ function DiscoverPageInner() {
         emptyHint={copy.discoverTrendingEmpty}
         activeClusterId={activeClusterId}
       />
+
+      {/* Reveal countdown / tier badge — placed above the search form so
+          it reads as page-level state, not part of the results section. */}
+      {!userLoading && (
+        <div className="flex justify-center mb-5">
+          <RevealCountdown tier={userTier} copy={copy} />
+        </div>
+      )}
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 max-w-2xl mx-auto">
         <SearchFilters value={filters} onChange={handleFiltersChange} copy={copy} />
@@ -253,6 +281,8 @@ function DiscoverPageInner() {
                 data={niche}
                 userTier={userTier}
                 rank={i + 1}
+                revealed={revealedIds.has(niche.id)}
+                onLockedClick={() => setUpsellOpen(true)}
                 isSaved={savedIds.has(niche.id)}
                 savedCount={savedCount}
                 spikeHistory={histories.get(niche.id)}
@@ -273,6 +303,10 @@ function DiscoverPageInner() {
             </div>
           )}
         </>
+      )}
+
+      {upsellOpen && (
+        <UpsellModal tier={userTier} copy={copy} onClose={() => setUpsellOpen(false)} />
       )}
     </main>
   )

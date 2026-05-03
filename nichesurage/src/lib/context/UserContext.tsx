@@ -9,6 +9,11 @@ interface UserContextValue {
   loading: boolean
   isLoggedIn: boolean
   email: string | null
+  // Stable per-user identifier from supabase auth. Used as the seed for
+  // deterministic reveal hashing (Sprint A.7) — different users in the
+  // same 6h window get different FREE reveals because their userIds
+  // produce different hash buckets.
+  userId: string | null
 }
 
 const UserContext = createContext<UserContextValue | undefined>(undefined)
@@ -18,6 +23,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [email, setEmail] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
 
   // Build a stable client once. We refresh state in two situations:
   // 1) on mount (initial session lookup)
@@ -31,12 +37,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (error || !user) {
       setIsLoggedIn(false)
       setEmail(null)
+      setUserId(null)
       setTier('free')
       setLoading(false)
       return
     }
     setIsLoggedIn(true)
     setEmail(user.email ?? null)
+    setUserId(user.id)
     const { data, error: dbError } = await supabase
       .from('users')
       .select('tier')
@@ -71,7 +79,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [refresh])
 
   return (
-    <UserContext.Provider value={{ tier, loading, isLoggedIn, email }}>
+    <UserContext.Provider value={{ tier, loading, isLoggedIn, email, userId }}>
       {children}
     </UserContext.Provider>
   )

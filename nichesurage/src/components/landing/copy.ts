@@ -18,6 +18,20 @@ export const COPY = {
     discoverLongformHeadline: "Today's high-potential Longform opportunities",
     discoverSubline: 'Refreshed daily · Ranked by opportunity score',
     discoverSearchBtn: 'Search Niches',
+    // Sprint A.7 reveal mechanic copy
+    revealNextLabel: 'Next reveal in',
+    revealFreeBadge: '1 of 1 niche unlocked · top 9 paywalled',
+    revealBasicBadge: '10 niches unlocked',
+    revealPremiumBadge: 'All niches unlocked',
+    upsellTitleFree: "You've unlocked 1 of 10",
+    upsellBodyFree:
+      'The top 9 niches by opportunity score are Basic territory. Upgrade for the full top 10 — refreshed daily.',
+    upsellCtaFree: 'Upgrade to Basic',
+    upsellTitleBasic: 'Beyond your top 10',
+    upsellBodyBasic:
+      'Premium reveals every niche our scanner finds, plus unlimited AI deep-dives. Go Premium to keep digging.',
+    upsellCtaBasic: 'Upgrade to Premium',
+    upsellSecondary: 'Maybe later',
     discoverSearchingBtn: 'Searching…',
     discoverEmptyTitle: 'No niches match these filters',
     discoverEmptyBody: 'Try widening the subscriber range or relaxing the channel age filter.',
@@ -249,6 +263,20 @@ export const COPY = {
     discoverLongformHeadline: 'Longform-Nischen mit dem größten Potenzial heute',
     discoverSubline: 'Täglich aktualisiert · Sortiert nach Opportunity-Score',
     discoverSearchBtn: 'Nischen suchen',
+    // Sprint A.7 reveal mechanic copy
+    revealNextLabel: 'Nächste Freischaltung in',
+    revealFreeBadge: '1 von 1 Nische freigeschaltet · Top 9 hinter Paywall',
+    revealBasicBadge: '10 Nischen freigeschaltet',
+    revealPremiumBadge: 'Alle Nischen freigeschaltet',
+    upsellTitleFree: 'Du hast 1 von 10 freigeschaltet',
+    upsellBodyFree:
+      'Die Top 9 Nischen nach Opportunity-Score sind Basic-Gebiet. Upgrade für die komplette Top 10 — täglich frisch.',
+    upsellCtaFree: 'Auf Basic upgraden',
+    upsellTitleBasic: 'Über deine Top 10 hinaus',
+    upsellBodyBasic:
+      'Premium zeigt jede Nische, die unser Scanner findet, plus unbegrenzte KI-Analysen. Premium für die volle Tiefe.',
+    upsellCtaBasic: 'Auf Premium upgraden',
+    upsellSecondary: 'Vielleicht später',
     discoverSearchingBtn: 'Suche…',
     discoverEmptyTitle: 'Keine Nischen für diese Filter gefunden',
     discoverEmptyBody: 'Erweitere den Abonnenten-Bereich oder lockere den Kanal-Alter-Filter.',

@@ -54,8 +54,8 @@ const longformBasic: LongformNicheCardData = {
 }
 
 describe('NicheCard', () => {
-  it('free tier: blurred elements present, no engagement badge, lock icon shown', () => {
-    render(<NicheCard data={shortsBase} userTier="free" rank={1} />)
+  it('locked card (revealed=false): blurred fields, no engagement badge, lock icon shown', () => {
+    render(<NicheCard data={shortsBase} userTier="free" rank={1} revealed={false} />)
 
     expect(document.querySelector('[style*="blur"] span')).not.toBeNull()
 
@@ -63,19 +63,53 @@ describe('NicheCard', () => {
     expect(viralityEl.closest('[style*="blur"]')).not.toBeNull()
 
     expect(screen.queryByText(/eng/)).toBeNull()
-    expect(screen.getByLabelText(/locked/i)).toBeTruthy()
+    // The lock icon next to the channel name carries an aria-label of
+    // exactly "Locked". The wrapper button carries "Locked niche — upgrade
+    // to unlock". Anchor on the exact match so we test the icon, not the
+    // wrapper.
+    expect(screen.getByLabelText('Locked')).toBeTruthy()
   })
 
-  it('whole card is a link to the detail page', () => {
-    render(<NicheCard data={shortsBasic} userTier="basic" rank={1} />)
+  it('locked card renders as a button (not a link) and triggers onLockedClick', () => {
+    const onLockedClick = jest.fn()
+    render(
+      <NicheCard
+        data={shortsBase}
+        userTier="free"
+        rank={1}
+        revealed={false}
+        onLockedClick={onLockedClick}
+      />,
+    )
+    expect(screen.queryByRole('link')).toBeNull()
+    const btn = screen.getByRole('button', { name: /upgrade to unlock/i })
+    btn.click()
+    expect(onLockedClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('revealed card is a link to the detail page', () => {
+    render(<NicheCard data={shortsBasic} userTier="basic" rank={1} revealed />)
     const link = screen.getByRole('link', { name: /detail page for Tech Tutorials DE/i })
     expect(link.getAttribute('href')).toBe('/discover/niche/1')
   })
 
   it('detail link includes ?from when fromUrl prop is set', () => {
-    render(<NicheCard data={shortsBasic} userTier="basic" rank={1} fromUrl="/discover/shorts?subscriberMin=1000" />)
+    render(
+      <NicheCard
+        data={shortsBasic}
+        userTier="basic"
+        rank={1}
+        revealed
+        fromUrl="/discover/shorts?subscriberMin=1000"
+      />,
+    )
     const link = screen.getByRole('link', { name: /detail page/i })
     expect(link.getAttribute('href')).toBe('/discover/niche/1?from=%2Fdiscover%2Fshorts%3FsubscriberMin%3D1000')
+  })
+
+  it('defaults to revealed=true for backwards compatibility', () => {
+    render(<NicheCard data={shortsBasic} userTier="basic" rank={1} />)
+    expect(screen.getByRole('link', { name: /detail page/i })).toBeTruthy()
   })
 
   it('basic tier shorts: channel name + engagement + avg duration + hook visible', () => {

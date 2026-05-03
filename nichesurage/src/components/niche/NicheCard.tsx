@@ -13,6 +13,18 @@ interface NicheCardProps {
   data: NicheCardData
   userTier: UserTier
   rank: number
+  /**
+   * Sprint A.7: parent decides whether this card is unlocked based on
+   * tier + reveal logic (see lib/tier/reveal.ts). When false, the card
+   * renders as a button (not a Link) and clicking it triggers
+   * onLockedClick instead of navigating to the detail page. The blur +
+   * lock-icon visuals also key off this prop.
+   *
+   * Backwards compat: defaults to true so any caller that hasn't migrated
+   * still gets the old "fully unlocked" behavior. Migrate callers ASAP.
+   */
+  revealed?: boolean
+  onLockedClick?: () => void
   isSaved?: boolean
   savedCount?: number
   spikeHistory?: SpikePoint[]
@@ -102,20 +114,33 @@ function LongformMetrics({ data, locked }: { data: LongformNicheCardData; locked
   )
 }
 
-export function NicheCard({ data, userTier, rank, isSaved, savedCount, spikeHistory, fromUrl, onBookmarkToggle }: NicheCardProps) {
-  const locked = userTier === 'free'
+export function NicheCard({
+  data,
+  userTier,
+  rank,
+  revealed = true,
+  onLockedClick,
+  isSaved,
+  savedCount,
+  spikeHistory,
+  fromUrl,
+  onBookmarkToggle,
+}: NicheCardProps) {
+  const locked = !revealed
   const tier = scoreTier(data.opportunityScore)
   const isHero = rank <= 3
   const detailHref = fromUrl
     ? `/discover/niche/${data.id}?from=${encodeURIComponent(fromUrl)}`
     : `/discover/niche/${data.id}`
 
-  return (
-    <Link
-      href={detailHref}
-      aria-label={`Open detail page for ${data.channelName ?? 'this niche'}`}
-      className={`glass ${isHero ? 'glass-glow' : ''} rounded-xl p-4 block transition-all duration-200 hover:scale-[1.02] hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60`}
-    >
+  // Wrap-element: real Link when the card is unlocked (full nav), and a
+  // button when locked so clicks raise an upsell modal instead of leaking
+  // through to the detail page. Same outer styling so the visual swap is
+  // invisible.
+  const wrapperClass = `glass ${isHero ? 'glass-glow' : ''} rounded-xl p-4 block w-full text-left transition-all duration-200 hover:scale-[1.02] hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60`
+
+  const cardBody = (
+    <>
       {/* Header: rank label + actions */}
       <div className="flex justify-between items-start mb-1">
         <div className="flex items-center gap-2 min-w-0">
@@ -220,6 +245,28 @@ export function NicheCard({ data, userTier, rank, isSaved, savedCount, spikeHist
           : <LongformMetrics data={data} locked={locked} />
         }
       </div>
+    </>
+  )
+
+  if (locked) {
+    return (
+      <button
+        type="button"
+        onClick={onLockedClick}
+        aria-label={`Locked niche — upgrade to unlock`}
+        className={wrapperClass}
+      >
+        {cardBody}
+      </button>
+    )
+  }
+  return (
+    <Link
+      href={detailHref}
+      aria-label={`Open detail page for ${data.channelName ?? 'this niche'}`}
+      className={wrapperClass}
+    >
+      {cardBody}
     </Link>
   )
 }
