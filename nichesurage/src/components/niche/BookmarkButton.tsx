@@ -22,7 +22,9 @@ export function BookmarkButton({ nicheId, isSaved, userTier, savedCount, onToggl
     setTimeout(() => setTooltip(null), 2500)
   }
 
-  async function handleClick() {
+  async function handleClick(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
     if (userTier === 'free') {
       showTooltip('Upgrade to Basic to save niches')
       return

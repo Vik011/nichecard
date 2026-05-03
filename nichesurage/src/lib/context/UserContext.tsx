@@ -1,51 +1,85 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { UserTier } from '@/lib/types/database'
 
 interface UserContextValue {
-  user: { id: string; email: string | null } | null
   tier: UserTier
   loading: boolean
+  isLoggedIn: boolean
+  email: string | null
+  // Stable per-user identifier from supabase auth. Used as the seed for
+  // deterministic reveal hashing (Sprint A.7) — different users in the
+  // same 6h window get different FREE reveals because their userIds
+  // produce different hash buckets.
+  userId: string | null
 }
 
 const UserContext = createContext<UserContextValue | undefined>(undefined)
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<{ id: string; email: string | null } | null>(null)
   const [tier, setTier] = useState<UserTier>('free')
   const [loading, setLoading] = useState(true)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [email, setEmail] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
 
-  useEffect(() => {
+  // Build a stable client once. We refresh state in two situations:
+  // 1) on mount (initial session lookup)
+  // 2) on every supabase auth event (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED…)
+  // Without the auth-state subscription, signing out leaves the rest of the
+  // app reading stale "logged in / tier=basic" values until a hard reload —
+  // which is what produced the "shows Sign out even after logout" bug.
+  const refresh = useCallback(async () => {
     const supabase = createClient()
-
-    async function fetchUser() {
-      try {
-        const { data: { user: authUser }, error } = await supabase.auth.getUser()
-        if (error || !authUser) return
-        setUser({ id: authUser.id, email: authUser.email ?? null })
-        const { data, error: dbError } = await supabase
-          .from('users')
-          .select('tier')
-          .eq('id', authUser.id)
-          .single()
-        if (dbError && process.env.NODE_ENV !== 'production') {
-          console.error('[UserContext] DB error fetching tier:', dbError)
-        }
-        if (data?.tier) {
-          setTier(data.tier as UserTier)
-        }
-      } finally {
-        setLoading(false)
-      }
+    const { data: { user }, error } = await supabase.auth.getUser()
+    if (error || !user) {
+      setIsLoggedIn(false)
+      setEmail(null)
+      setUserId(null)
+      setTier('free')
+      setLoading(false)
+      return
     }
-
-    fetchUser()
+    setIsLoggedIn(true)
+    setEmail(user.email ?? null)
+    setUserId(user.id)
+    const { data, error: dbError } = await supabase
+      .from('users')
+      .select('tier')
+      .eq('id', user.id)
+      .single()
+    if (dbError && process.env.NODE_ENV !== 'production') {
+      console.error('[UserContext] DB error fetching tier:', dbError)
+    }
+    setTier((data?.tier as UserTier | undefined) ?? 'free')
+    setLoading(false)
   }, [])
 
+  useEffect(() => {
+    let cancelled = false
+    refresh()
+
+    const supabase = createClient()
+    // Re-pull the user + tier on every auth transition. We deliberately
+    // ignore the session payload from the event and re-query so the tier
+    // row from the `users` table is always fresh too (a Stripe webhook
+    // promoting free→basic mid-session needs to take effect on the next
+    // auth tick, not on a hard reload).
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      if (cancelled) return
+      refresh()
+    })
+
+    return () => {
+      cancelled = true
+      sub?.subscription.unsubscribe()
+    }
+  }, [refresh])
+
   return (
-    <UserContext.Provider value={{ user, tier, loading }}>
+    <UserContext.Provider value={{ tier, loading, isLoggedIn, email, userId }}>
       {children}
     </UserContext.Provider>
   )

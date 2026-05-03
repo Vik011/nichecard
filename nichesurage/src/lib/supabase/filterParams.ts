@@ -1,6 +1,7 @@
-import type { SearchFilters, ChannelAge, ContentType } from '@/lib/types'
+import type { SearchFilters, ChannelAge, ContentType, SortBy } from '@/lib/types'
 
 const VALID_CHANNEL_AGES: ChannelAge[] = ['1month', '3months', '6months', '1year', 'any']
+const VALID_SORTS: SortBy[] = ['score', 'newest']
 
 export interface ReadableParams {
   get(name: string): string | null
@@ -18,6 +19,7 @@ export function filtersToParams(filters: SearchFilters): URLSearchParams {
   params.set('subscriberMax', String(filters.subscriberMax))
   params.set('channelAge', filters.channelAge)
   params.set('viral', String(filters.onlyRecentlyViral))
+  params.set('sortBy', filters.sortBy)
   return params
 }
 
@@ -27,6 +29,7 @@ export function paramsToFilters(
   defaults: FilterDefaults,
 ): SearchFilters {
   const channelAge = params.get('channelAge')
+  const sortBy = params.get('sortBy')
   return {
     contentType,
     subscriberMin: params.has('subscriberMin')
@@ -39,5 +42,6 @@ export function paramsToFilters(
       ? (channelAge as ChannelAge)
       : 'any',
     onlyRecentlyViral: params.get('viral') === 'true',
+    sortBy: VALID_SORTS.includes(sortBy as SortBy) ? (sortBy as SortBy) : 'score',
   }
 }

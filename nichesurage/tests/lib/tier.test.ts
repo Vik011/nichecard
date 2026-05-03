@@ -17,8 +17,11 @@ describe('canUseAIFeatures', () => {
   it('returns false for free tier', () => {
     expect(canUseAIFeatures('free')).toBe(false)
   })
-  it('returns false for basic tier', () => {
-    expect(canUseAIFeatures('basic')).toBe(false)
+  // Sprint A.7: AI is now bundled with daily quota, BASIC has 1/day and
+  // PREMIUM is unlimited. Both tiers gate UI access — server-side
+  // checkAiQuota enforces the per-tier daily cap separately.
+  it('returns true for basic tier', () => {
+    expect(canUseAIFeatures('basic')).toBe(true)
   })
   it('returns true for premium tier', () => {
     expect(canUseAIFeatures('premium')).toBe(true)

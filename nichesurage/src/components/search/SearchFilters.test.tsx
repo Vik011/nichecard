@@ -5,55 +5,56 @@ import type { SearchFilters as SearchFiltersType } from '@/lib/types'
 const defaultFilters: SearchFiltersType = {
   contentType: 'shorts',
   subscriberMin: 1000,
-  subscriberMax: 100000,
+  subscriberMax: 5000,
   channelAge: 'any',
   onlyRecentlyViral: false,
+  sortBy: 'score',
 }
 
 describe('SearchFilters', () => {
-  it('renders content type toggle with both options', () => {
+  it('does not render a Format (shorts/longform) toggle (it lives in the top nav now)', () => {
     render(<SearchFilters value={defaultFilters} onChange={() => {}} />)
-    expect(screen.getByRole('button', { name: /shorts/i })).toBeTruthy()
-    expect(screen.getByRole('button', { name: /longform/i })).toBeTruthy()
+    // The Subscriber, Channel age, and Sort radiogroups should be present...
+    expect(screen.getByRole('radiogroup', { name: /subscriber range/i })).toBeTruthy()
+    expect(screen.getByRole('radiogroup', { name: /channel age/i })).toBeTruthy()
+    expect(screen.getByRole('radiogroup', { name: /sort/i })).toBeTruthy()
+    // ...but no Format radiogroup.
+    expect(screen.queryByRole('radiogroup', { name: /format/i })).toBeNull()
   })
 
-  it('active content type button is visually distinguished', () => {
+  it('renders subscriber range bucket pills', () => {
     render(<SearchFilters value={defaultFilters} onChange={() => {}} />)
-    const shortsBtn = screen.getByRole('button', { name: /shorts/i })
-    expect(shortsBtn.className).toMatch(/indigo|active|selected|bg-/)
-    const longformBtn = screen.getByRole('button', { name: /longform/i })
-    expect(longformBtn.className).not.toMatch(shortsBtn.className.split(' ').find(c => c.includes('indigo')) ?? 'NOMATCH')
-  })
-
-  it('clicking longform calls onChange with contentType longform', () => {
-    const onChange = jest.fn()
-    render(<SearchFilters value={defaultFilters} onChange={onChange} />)
-    fireEvent.click(screen.getByRole('button', { name: /longform/i }))
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ contentType: 'longform' })
+    const group = screen.getByRole('radiogroup', { name: /subscriber range/i })
+    const labels = Array.from(group.querySelectorAll('button[role="radio"]')).map(b => b.textContent)
+    expect(labels).toEqual(
+      expect.arrayContaining(['Any', '< 1K', '1K – 5K', '5K – 10K', '10K – 50K', '50K – 100K', '100K+'])
     )
   })
 
-  it('renders subscriber min/max inputs', () => {
+  it('active subscriber bucket reflects current min/max', () => {
     render(<SearchFilters value={defaultFilters} onChange={() => {}} />)
-    expect(screen.getByLabelText(/min/i)).toBeTruthy()
-    expect(screen.getByLabelText(/max/i)).toBeTruthy()
+    const group = screen.getByRole('radiogroup', { name: /subscriber range/i })
+    const active = group.querySelector('button[role="radio"][aria-checked="true"]')
+    expect(active?.textContent).toBe('1K – 5K')
   })
 
-  it('changing subscriber min calls onChange with updated value', () => {
+  it('clicking a subscriber bucket calls onChange with bucket min/max', () => {
     const onChange = jest.fn()
     render(<SearchFilters value={defaultFilters} onChange={onChange} />)
-    fireEvent.change(screen.getByLabelText(/min/i), { target: { value: '5000' } })
+    const group = screen.getByRole('radiogroup', { name: /subscriber range/i })
+    const tenToFifty = Array.from(group.querySelectorAll('button[role="radio"]'))
+      .find(b => b.textContent === '10K – 50K')!
+    fireEvent.click(tenToFifty)
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ subscriberMin: 5000 })
+      expect.objectContaining({ subscriberMin: 10_000, subscriberMax: 50_000 })
     )
   })
 
-  it('renders channel age select with all options', () => {
+  it('renders channel age radio group with all options', () => {
     render(<SearchFilters value={defaultFilters} onChange={() => {}} />)
-    const select = screen.getByLabelText(/channel age/i)
-    const options = Array.from((select as HTMLSelectElement).options).map(o => o.value)
-    expect(options).toEqual(expect.arrayContaining(['1month', '3months', '6months', '1year', 'any']))
+    const group = screen.getByRole('radiogroup', { name: /channel age/i })
+    const labels = Array.from(group.querySelectorAll('button[role="radio"]')).map(b => b.textContent)
+    expect(labels).toEqual(expect.arrayContaining(['1 mo', '3 mo', '6 mo', '1 yr', 'Any']))
   })
 
   it('renders viral-only toggle and clicking it calls onChange', () => {
@@ -62,6 +63,23 @@ describe('SearchFilters', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /viral/i }))
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ onlyRecentlyViral: true })
+    )
+  })
+
+  it('renders sort toggle with Best score active by default', () => {
+    render(<SearchFilters value={defaultFilters} onChange={() => {}} />)
+    const scoreBtn = screen.getByRole('radio', { name: /best score/i })
+    const newestBtn = screen.getByRole('radio', { name: /newest/i })
+    expect(scoreBtn.getAttribute('aria-checked')).toBe('true')
+    expect(newestBtn.getAttribute('aria-checked')).toBe('false')
+  })
+
+  it('clicking Newest calls onChange with sortBy=newest', () => {
+    const onChange = jest.fn()
+    render(<SearchFilters value={defaultFilters} onChange={onChange} />)
+    fireEvent.click(screen.getByRole('radio', { name: /newest/i }))
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ sortBy: 'newest' })
     )
   })
 })

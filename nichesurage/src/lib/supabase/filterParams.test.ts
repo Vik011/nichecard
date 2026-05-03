@@ -10,15 +10,17 @@ const BASE_FILTERS: SearchFilters = {
   subscriberMax: 100000,
   channelAge: 'any',
   onlyRecentlyViral: false,
+  sortBy: 'score',
 }
 
 describe('filtersToParams', () => {
-  it('serializes subscriberMin, subscriberMax, channelAge, viral', () => {
+  it('serializes subscriberMin, subscriberMax, channelAge, viral, sortBy', () => {
     const params = filtersToParams(BASE_FILTERS)
     expect(params.get('subscriberMin')).toBe('1000')
     expect(params.get('subscriberMax')).toBe('100000')
     expect(params.get('channelAge')).toBe('any')
     expect(params.get('viral')).toBe('false')
+    expect(params.get('sortBy')).toBe('score')
   })
 
   it('does not include contentType in output', () => {
@@ -54,6 +56,7 @@ describe('paramsToFilters', () => {
       subscriberMax: 100000,
       channelAge: 'any',
       onlyRecentlyViral: false,
+      sortBy: 'score',
     })
   })
 
@@ -88,5 +91,18 @@ describe('paramsToFilters', () => {
     })
     const result = paramsToFilters(params, 'shorts', SHORTS_DEFAULTS)
     expect(result.onlyRecentlyViral).toBe(true)
+  })
+
+  it('falls back to score when sortBy is missing or invalid', () => {
+    const empty = paramsToFilters(new URLSearchParams(), 'shorts', SHORTS_DEFAULTS)
+    expect(empty.sortBy).toBe('score')
+    const bad = paramsToFilters(new URLSearchParams({ sortBy: 'bogus' }), 'shorts', SHORTS_DEFAULTS)
+    expect(bad.sortBy).toBe('score')
+  })
+
+  it('parses sortBy=newest', () => {
+    const params = new URLSearchParams({ sortBy: 'newest' })
+    const result = paramsToFilters(params, 'shorts', SHORTS_DEFAULTS)
+    expect(result.sortBy).toBe('newest')
   })
 })

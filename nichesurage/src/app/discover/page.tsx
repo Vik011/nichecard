@@ -1,71 +1,161 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useMemo, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { SearchFilters } from '@/components/search/SearchFilters'
 import { NicheCard } from '@/components/niche/NicheCard'
 import { NicheCardSkeleton } from '@/components/niche/NicheCardSkeleton'
-import { fetchNiches } from '@/lib/supabase/queries'
+import { RevealCountdown } from '@/components/niche/RevealCountdown'
+import { UpsellModal } from '@/components/niche/UpsellModal'
+import { fetchNiches, fetchSpikeHistory } from '@/lib/supabase/queries'
 import { fetchSavedNicheIds } from '@/lib/supabase/savedNiches'
 import { filtersToParams, paramsToFilters, type ReadableParams } from '@/lib/supabase/filterParams'
 import { useUser } from '@/lib/context/UserContext'
-import type { SearchFilters as SearchFiltersType, NicheCardData, ContentType } from '@/lib/types'
+import { useLang } from '@/lib/i18n/useLang'
+import { COPY, type CopyKeys } from '@/components/landing/copy'
+import { StaggerList } from '@/components/ui/StaggerList'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { EmptyMagnifier } from '@/components/ui/illustrations/EmptyMagnifier'
+import { SonarEmptyState } from '@/components/ui/SonarEmptyState'
+import { TrendingTopics } from '@/components/niche/TrendingTopics'
+import { getRevealedIds } from '@/lib/tier/reveal'
+import type {
+  SearchFilters as SearchFiltersType,
+  NicheCardData,
+  SpikePoint,
+  ContentType,
+} from '@/lib/types'
 
+// Sonar default: surface nano-creators (sub <1K) by default — they're where
+// the highest outlier ratios live. Users can narrow via the SearchFilters UI.
 const DEFAULTS: Record<ContentType, { subscriberMin: number; subscriberMax: number }> = {
-  shorts: { subscriberMin: 1000, subscriberMax: 100000 },
-  longform: { subscriberMin: 1000, subscriberMax: 500000 },
+  shorts:   { subscriberMin: 0, subscriberMax: 100_000 },
+  longform: { subscriberMin: 0, subscriberMax: 500_000 },
 }
 
-const HEADINGS: Record<ContentType, { icon: string; title: string; sub: string }> = {
-  shorts: {
-    icon: '🎬',
-    title: 'Shorts Niche Discovery',
-    sub: 'Find viral Shorts niches. Set your filters and search.',
-  },
-  longform: {
-    icon: '🎥',
-    title: 'Longform Niche Discovery',
-    sub: 'Find high-potential Longform niches. Set your filters and search.',
-  },
+const VISIBLE_STEP = 5
+
+function defaultFilters(contentType: ContentType): SearchFiltersType {
+  return {
+    contentType,
+    subscriberMin: DEFAULTS[contentType].subscriberMin,
+    subscriberMax: DEFAULTS[contentType].subscriberMax,
+    channelAge: 'any',
+    onlyRecentlyViral: false,
+    sortBy: 'score',
+  }
 }
 
 function resolveContentType(params: ReadableParams): ContentType {
   return params.get('type') === 'longform' ? 'longform' : 'shorts'
 }
 
+function headings(copy: CopyKeys, contentType: ContentType) {
+  if (contentType === 'longform') {
+    return {
+      eyebrow: copy.discoverLongformEyebrow,
+      headline: copy.discoverLongformHeadline,
+    }
+  }
+  return {
+    eyebrow: copy.discoverShortsEyebrow,
+    headline: copy.discoverShortsHeadline,
+  }
+}
+
 export default function DiscoverPage() {
+  return (
+    <Suspense fallback={<DiscoverFallback />}>
+      <DiscoverPageInner />
+    </Suspense>
+  )
+}
+
+function DiscoverFallback() {
+  return (
+    <main className="min-h-screen text-slate-100 px-4 py-8 max-w-6xl mx-auto overflow-x-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[1, 2, 3, 4, 5].map(i => <NicheCardSkeleton key={i} />)}
+      </div>
+    </main>
+  )
+}
+
+function DiscoverPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { tier: userTier, loading: userLoading } = useUser()
+  const { tier: userTier, userId, loading: userLoading } = useUser()
+  const [lang] = useLang()
+  const copy = COPY[lang]
+  // Tracks an in-flight upsell modal opened by clicking a locked card.
+  const [upsellOpen, setUpsellOpen] = useState(false)
 
-  const contentType = resolveContentType(searchParams)
+  const initialContentType = resolveContentType(searchParams)
 
   const [filters, setFilters] = useState<SearchFiltersType>(() =>
-    paramsToFilters(searchParams, contentType, DEFAULTS[contentType])
+    paramsToFilters(searchParams, initialContentType, DEFAULTS[initialContentType])
   )
   const [results, setResults] = useState<NicheCardData[]>([])
+  const [histories, setHistories] = useState<Map<string, SpikePoint[]>>(new Map())
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [savedCount, setSavedCount] = useState(0)
+  const [visibleCount, setVisibleCount] = useState(VISIBLE_STEP)
+
+  const activeClusterId = searchParams.get('cluster')
+  // The format (shorts/longform) lives in the URL — top nav navigates by changing
+  // ?type=. We watch this param so re-search fires when the user clicks a tab.
+  const urlContentType = resolveContentType(searchParams)
 
   async function handleSearch(filtersOverride?: SearchFiltersType) {
     const f = filtersOverride ?? filters
+    setVisibleCount(VISIBLE_STEP)
     setLoading(true)
     setSearched(true)
     setError(null)
-    const { data, error: fetchError } = await fetchNiches(f)
+    const { data, error: fetchError } = await fetchNiches(f, {
+      clusterId: activeClusterId ?? undefined,
+    })
     setResults(data)
     setError(fetchError)
     setLoading(false)
+    if (data.length > 0) {
+      const points = await Promise.all(data.map(n => fetchSpikeHistory(n.youtubeChannelId)))
+      const map = new Map<string, SpikePoint[]>()
+      data.forEach((n, i) => map.set(n.id, points[i]))
+      setHistories(map)
+    } else {
+      setHistories(new Map())
+    }
   }
 
   function handleFiltersChange(updated: SearchFiltersType) {
-    const params = filtersToParams(updated)
-    params.set('type', updated.contentType)
-    router.replace(`/discover?${params}`)
+    if (updated.contentType !== filters.contentType) {
+      const nextDefaults = DEFAULTS[updated.contentType]
+      const isCurrentDefault =
+        filters.subscriberMin === DEFAULTS[filters.contentType].subscriberMin &&
+        filters.subscriberMax === DEFAULTS[filters.contentType].subscriberMax
+      const reconciled: SearchFiltersType = isCurrentDefault
+        ? { ...updated, subscriberMin: nextDefaults.subscriberMin, subscriberMax: nextDefaults.subscriberMax }
+        : updated
+      const params = filtersToParams(reconciled)
+      params.set('type', reconciled.contentType)
+      router.replace(`/discover?${params}`)
+      setFilters(reconciled)
+      return
+    }
     setFilters(updated)
+  }
+
+  function handleResetFilters() {
+    const reset = defaultFilters(filters.contentType)
+    setFilters(reset)
+    handleSearch(reset)
+    const params = filtersToParams(reset)
+    params.set('type', reset.contentType)
+    router.replace(`/discover?${params}`)
   }
 
   function handleBookmarkToggle(id: string, saved: boolean) {
@@ -84,34 +174,73 @@ export default function DiscoverPage() {
         setSavedIds(ids)
         setSavedCount(ids.size)
       })
-      if (searchParams.size > 0) {
-        const ct = resolveContentType(searchParams)
-        const f = paramsToFilters(searchParams, ct, DEFAULTS[ct])
-        setFilters(f)
-        handleSearch(f)
-      }
+      const ct = resolveContentType(searchParams)
+      const f = paramsToFilters(searchParams, ct, DEFAULTS[ct])
+      setFilters(f)
+      handleSearch(f)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLoading])
+  }, [userLoading, activeClusterId, urlContentType])
 
-  const { icon, title, sub } = HEADINGS[contentType]
+  const { eyebrow, headline } = headings(copy, filters.contentType)
+  const fromUrl = (() => {
+    const p = filtersToParams(filters)
+    p.set('type', filters.contentType)
+    return `/discover?${p.toString()}`
+  })()
+
+  // Reveal set for the current user/tier. Recomputed when results change
+  // (the underlying niche IDs change with filters and re-searches). userId
+  // is null briefly during initial UserContext load — getRevealedIds is
+  // safe with the empty string (just produces a stable but anonymous
+  // reveal slot), and we re-render once userId resolves.
+  const revealedIds = useMemo(() => {
+    const ids = results.map(n => n.id)
+    return getRevealedIds(userTier, ids, userId ?? '', new Date())
+    // We deliberately don't depend on the current Date — re-rendering
+    // every second to advance the reveal isn't useful here, the next
+    // 6h-window flip happens on the time scale of hours, not seconds.
+    // Page reloads or filter changes will pick up the latest window.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [results, userTier, userId])
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-1">
-        {icon} {title}
-      </h1>
-      <p className="text-slate-400 text-sm mb-6">{sub}</p>
+    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto overflow-x-hidden">
+      <div className="text-center mb-8">
+        <div className="inline-block text-[10px] font-semibold tracking-[0.22em] text-glow-indigo uppercase mb-2">
+          {eyebrow}
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-100 mb-2">
+          {headline}
+        </h1>
+        <p className="text-slate-500 text-sm">
+          {copy.discoverSubline}
+        </p>
+      </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6">
-        <SearchFilters value={filters} onChange={handleFiltersChange} />
+      <TrendingTopics
+        eyebrow={copy.discoverTrendingTopics}
+        emptyHint={copy.discoverTrendingEmpty}
+        activeClusterId={activeClusterId}
+      />
+
+      {/* Reveal countdown / tier badge — placed above the search form so
+          it reads as page-level state, not part of the results section. */}
+      {!userLoading && (
+        <div className="flex justify-center mb-5">
+          <RevealCountdown tier={userTier} copy={copy} />
+        </div>
+      )}
+
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 max-w-2xl mx-auto">
+        <SearchFilters value={filters} onChange={handleFiltersChange} copy={copy} />
         <button
           type="button"
           onClick={() => handleSearch()}
           disabled={loading || userLoading}
           className="mt-5 w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition-colors"
         >
-          {loading ? 'Searching…' : 'Search Niches'}
+          {loading ? copy.discoverSearchingBtn : copy.discoverSearchBtn}
         </button>
         {error && (
           <p className="mt-3 text-red-400 text-sm text-center">{error}</p>
@@ -119,29 +248,65 @@ export default function DiscoverPage() {
       </div>
 
       {(userLoading || loading) && (
-        <div className="flex flex-col gap-3">
-          {[1, 2, 3].map(i => <NicheCardSkeleton key={i} />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5].map(i => <NicheCardSkeleton key={i} />)}
         </div>
       )}
 
       {!userLoading && !loading && searched && results.length === 0 && !error && (
-        <p className="text-slate-500 text-center py-12">No niches found for these filters.</p>
+        activeClusterId ? (
+          <EmptyState
+            illustration={<EmptyMagnifier size={96} />}
+            title={copy.discoverEmptyTitle}
+            body={copy.discoverEmptyBody}
+            cta={{ label: copy.discoverResetBtn, onClick: handleResetFilters }}
+          />
+        ) : (
+          <SonarEmptyState
+            caption={copy.discoverScanningDeepWeb}
+            hint={copy.discoverEmptyBody}
+          />
+        )
       )}
 
       {!userLoading && !loading && results.length > 0 && (
-        <div className="flex flex-col gap-3">
-          {results.map((niche, i) => (
-            <NicheCard
-              key={niche.id}
-              data={niche}
-              userTier={userTier}
-              rank={i + 1}
-              isSaved={savedIds.has(niche.id)}
-              savedCount={savedCount}
-              onBookmarkToggle={handleBookmarkToggle}
-            />
-          ))}
-        </div>
+        <>
+          <StaggerList
+            key={`grid-${visibleCount}-${results.length}`}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          >
+            {results.slice(0, visibleCount).map((niche, i) => (
+              <NicheCard
+                key={niche.id}
+                data={niche}
+                userTier={userTier}
+                rank={i + 1}
+                revealed={revealedIds.has(niche.id)}
+                onLockedClick={() => setUpsellOpen(true)}
+                isSaved={savedIds.has(niche.id)}
+                savedCount={savedCount}
+                spikeHistory={histories.get(niche.id)}
+                fromUrl={fromUrl}
+                onBookmarkToggle={handleBookmarkToggle}
+              />
+            ))}
+          </StaggerList>
+          {visibleCount < results.length && (
+            <div className="flex justify-center mt-6">
+              <button
+                type="button"
+                onClick={() => setVisibleCount(c => Math.min(c + VISIBLE_STEP, results.length))}
+                className="bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 text-slate-200 hover:text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
+              >
+                {copy.discoverShowMore(results.length - visibleCount)}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      {upsellOpen && (
+        <UpsellModal tier={userTier} copy={copy} onClose={() => setUpsellOpen(false)} />
       )}
     </main>
   )

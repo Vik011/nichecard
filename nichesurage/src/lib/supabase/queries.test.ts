@@ -45,6 +45,14 @@ const baseRow: DbScanResult = {
   search_volume: null,
   competition_score: null,
   scanned_at: '2026-04-28T10:00:00Z',
+  outlier_ratio: null,
+  is_spike: false,
+  outlier_video_id: null,
+  outlier_video_title: null,
+  outlier_video_views: null,
+  window_hours: 48,
+  seed_keyword: null,
+  cluster_id: null,
 }
 
 describe('mapRow', () => {
