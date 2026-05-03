@@ -4,15 +4,16 @@ import type { UserTier } from '@/lib/types/database'
 //
 // Strategic intent:
 // - PREMIUM sees everything, no rotation.
-// - BASIC sees the top 10 niches by score (positions 0–9 of the sorted
-//   feed). They rotate naturally as new scans land in scan_results_latest;
-//   we don't manage a separate "BASIC window" — the underlying feed is
-//   already the rotation.
+// - BASIC sees the top 5 niches per content_type (positions 0–4 of the
+//   sorted feed for the current shorts/longform view). With both formats
+//   browsed they get 10 total. They rotate naturally as new scans land in
+//   scan_results_latest; we don't manage a separate "BASIC window" — the
+//   underlying feed is already the rotation.
 // - FREE sees exactly ONE niche unlocked at a time, picked deterministically
-//   from positions 9 to 19 of the sorted feed for the current 6h window.
-//   The picked niche persists across reloads in the same window so the user
-//   has a stable "today's reveal" experience; it advances at the next 6h
-//   boundary.
+//   from positions 4 to 14 of the sorted feed for the current 6h window
+//   (i.e. the band right below Basic's top 5). The picked niche persists
+//   across reloads in the same window so the user has a stable "today's
+//   reveal" experience; it advances at the next 6h boundary.
 //
 // Why deterministic + window-based instead of a DB-tracked rotation:
 // - No new DB writes on every page view.
@@ -22,15 +23,15 @@ import type { UserTier } from '@/lib/types/database'
 //   see different "reveals", which is itself a marketing surface ("I got
 //   X today, what did you get?").
 //
-// The "always-locked top 9" is the FOMO core: FREE users see 9 blurred
+// The "always-locked top 4" is the FOMO core: FREE users see 4 blurred
 // cards with visible scores RANKED HIGHER than their unlocked one. That's
 // the upgrade trigger — not "you don't see anything", but "you see that
 // better stuff exists, paywalled".
 
 export const FREE_WINDOW_MS = 6 * 60 * 60 * 1000
-export const BASIC_VISIBLE_COUNT = 10
-export const FREE_REVEAL_RANGE_START = 9 // first index eligible for FREE reveal
-export const FREE_REVEAL_RANGE_END = 19 // last index eligible (inclusive)
+export const BASIC_VISIBLE_COUNT = 5
+export const FREE_REVEAL_RANGE_START = 4 // first index eligible for FREE reveal
+export const FREE_REVEAL_RANGE_END = 14 // last index eligible (inclusive)
 
 /**
  * Stable 32-bit hash. Not cryptographic — we just need a uniform,
@@ -53,9 +54,9 @@ export function getFreeWindowIndex(now: Date): number {
 
 /**
  * Pick the index of the FREE-revealed niche for this user in the current
- * 6h window. Picks from [9, 19] inclusive, clamped to the actual pool size.
+ * 6h window. Picks from [4, 14] inclusive, clamped to the actual pool size.
  * Returns null when the pool has fewer than FREE_REVEAL_RANGE_START + 1
- * items — i.e. there isn't a "position 10+" to reveal, the entire pool is
+ * items — i.e. there isn't a "position 5+" to reveal, the entire pool is
  * Basic territory.
  */
 export function getFreeRevealedIndex(
@@ -76,7 +77,7 @@ export function getFreeRevealedIndex(
 
 /**
  * Returns the set of niche IDs currently unlocked for this user/tier in
- * the current window. Premium gets everything, Basic gets the top 10 by
+ * the current window. Premium gets everything, Basic gets the top 5 by
  * input order, Free gets exactly one (or zero, if pool is too small).
  *
  * Caller is responsible for sorting `sortedNicheIds` by opportunity score

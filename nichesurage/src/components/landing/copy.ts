@@ -20,14 +20,14 @@ export const COPY = {
     discoverSearchBtn: 'Search Niches',
     // Sprint A.7 reveal mechanic copy
     revealNextLabel: 'Next reveal in',
-    revealFreeBadge: '1 of 1 niche unlocked · top 9 paywalled',
-    revealBasicBadge: '10 niches unlocked',
+    revealFreeBadge: '1 of 1 niche unlocked · top 4 paywalled',
+    revealBasicBadge: '5 niches unlocked',
     revealPremiumBadge: 'All niches unlocked',
-    upsellTitleFree: "You've unlocked 1 of 10",
+    upsellTitleFree: "You've unlocked 1 of 5",
     upsellBodyFree:
-      'The top 9 niches by opportunity score are Basic territory. Upgrade for the full top 10 — refreshed daily.',
+      'The top 4 niches by opportunity score are Basic territory. Upgrade for the full top 5 per format — refreshed daily.',
     upsellCtaFree: 'Upgrade to Basic',
-    upsellTitleBasic: 'Beyond your top 10',
+    upsellTitleBasic: 'Beyond your top 5 per format',
     upsellBodyBasic:
       'Premium reveals every niche our scanner finds, plus unlimited AI deep-dives. Go Premium to keep digging.',
     upsellCtaBasic: 'Upgrade to Premium',
@@ -42,7 +42,7 @@ export const COPY = {
     tierMatrixTitle: 'What you get at each tier',
     tierMatrixCol: { feature: 'Feature', free: 'Free', basic: 'Basic', premium: 'Premium' },
     tierMatrixRows: [
-      { label: 'Unlocked niche cards', free: '1 (rotates /6h)', basic: '10 (top 1–10)', premium: 'All (top 50)' },
+      { label: 'Unlocked niche cards', free: '1 (rotates /6h)', basic: '5 per format (top 1–5)', premium: 'All (top 50)' },
       { label: 'Reveal cadence', free: 'Every 6 hours', basic: 'Refreshed daily', premium: 'Live, no rotation' },
       { label: 'AI deep-dive (Health + Angles bundled)', free: '—', basic: '1 / day', premium: 'Unlimited' },
       { label: 'Saved niches', free: '0', basic: '10', premium: 'Unlimited' },
@@ -56,11 +56,11 @@ export const COPY = {
     faqItems: [
       {
         q: 'How does the 6-hour reveal work for Free?',
-        a: 'Every 6 hours your account unlocks one niche from positions 10–20 of the day\'s sorted list. Same window — same niche, even across reloads. Different users see different reveals in the same window. The top 9 stay paywalled forever (those are Basic territory).',
+        a: 'Every 6 hours your account unlocks one niche from positions 5–15 of the day\'s sorted list (the band right below Basic\'s top 5). Same window — same niche, even across reloads. Different users see different reveals in the same window. The top 4 stay paywalled forever (those are Basic territory).',
       },
       {
         q: 'What does Basic actually unlock?',
-        a: 'The full top 10 niches, refreshed every 24 hours, with channel name + URL + exact metrics on every card. Plus 1 AI deep-dive per day — Health Check + Content Angles share that quota, so you pick one niche to fully analyze each day.',
+        a: 'The full top 5 niches per format (5 shorts + 5 longform), refreshed every 24 hours, with channel name + URL + exact metrics on every card. Plus 1 AI deep-dive per day — Health Check + Content Angles share that quota, so you pick one niche to fully analyze each day.',
       },
       {
         q: 'Why is the AI deep-dive bundled?',
@@ -241,17 +241,17 @@ export const COPY = {
     pricingCtaBasic: 'Start Basic',
     pricingCtaPremium: 'Go Premium',
     // Sprint A.7 — feature lists rewritten to match the actual three-tier
-    // funnel: 1 reveal /6h for free, top 10 /24h + 1 AI deep-dive for basic,
-    // unlimited everything for premium.
+    // funnel: 1 reveal /6h for free, top 5 per format /24h + 1 AI deep-dive
+    // for basic, unlimited everything for premium.
     pricingFreeFeatures: [
       '1 unlocked niche, rotates every 6h',
       'Channel name + URL on the unlocked one',
-      'Top 9 niches blurred (Basic territory)',
+      'Top 4 niches blurred (Basic territory)',
       'No AI deep-dives',
       'No saved niches',
     ],
     pricingBasicFeatures: [
-      'Top 10 unlocked niches, refreshed daily',
+      'Top 5 niches per format unlocked, refreshed daily',
       'Full channel name, URL & exact metrics',
       '1 AI deep-dive per day (Health Check + Angles)',
       '10 saved niches',
@@ -318,14 +318,14 @@ export const COPY = {
     discoverSearchBtn: 'Nischen suchen',
     // Sprint A.7 reveal mechanic copy
     revealNextLabel: 'Nächste Freischaltung in',
-    revealFreeBadge: '1 von 1 Nische freigeschaltet · Top 9 hinter Paywall',
-    revealBasicBadge: '10 Nischen freigeschaltet',
+    revealFreeBadge: '1 von 1 Nische freigeschaltet · Top 4 hinter Paywall',
+    revealBasicBadge: '5 Nischen freigeschaltet',
     revealPremiumBadge: 'Alle Nischen freigeschaltet',
-    upsellTitleFree: 'Du hast 1 von 10 freigeschaltet',
+    upsellTitleFree: 'Du hast 1 von 5 freigeschaltet',
     upsellBodyFree:
-      'Die Top 9 Nischen nach Opportunity-Score sind Basic-Gebiet. Upgrade für die komplette Top 10 — täglich frisch.',
+      'Die Top 4 Nischen nach Opportunity-Score sind Basic-Gebiet. Upgrade für die kompletten Top 5 pro Format — täglich frisch.',
     upsellCtaFree: 'Auf Basic upgraden',
-    upsellTitleBasic: 'Über deine Top 10 hinaus',
+    upsellTitleBasic: 'Über deine Top 5 pro Format hinaus',
     upsellBodyBasic:
       'Premium zeigt jede Nische, die unser Scanner findet, plus unbegrenzte KI-Analysen. Premium für die volle Tiefe.',
     upsellCtaBasic: 'Auf Premium upgraden',
@@ -340,7 +340,7 @@ export const COPY = {
     tierMatrixTitle: 'Was du in jedem Tier bekommst',
     tierMatrixCol: { feature: 'Feature', free: 'Free', basic: 'Basic', premium: 'Premium' },
     tierMatrixRows: [
-      { label: 'Freigeschaltete Nischen-Karten', free: '1 (rotiert /6h)', basic: '10 (Top 1–10)', premium: 'Alle (Top 50)' },
+      { label: 'Freigeschaltete Nischen-Karten', free: '1 (rotiert /6h)', basic: '5 pro Format (Top 1–5)', premium: 'Alle (Top 50)' },
       { label: 'Freischaltungsrhythmus', free: 'Alle 6 Stunden', basic: 'Täglich erneuert', premium: 'Live, keine Rotation' },
       { label: 'KI-Analyse (Health + Angles gebündelt)', free: '—', basic: '1 / Tag', premium: 'Unbegrenzt' },
       { label: 'Gespeicherte Nischen', free: '0', basic: '10', premium: 'Unbegrenzt' },
@@ -354,11 +354,11 @@ export const COPY = {
     faqItems: [
       {
         q: 'Wie funktioniert die 6-Stunden-Freischaltung für Free?',
-        a: 'Alle 6 Stunden schaltet dein Account eine Nische aus den Positionen 10–20 der Tagesliste frei. Gleiches 6h-Fenster — gleiche Nische, auch nach Reload. Verschiedene Nutzer sehen im selben Fenster verschiedene Freischaltungen. Die Top 9 bleiben dauerhaft hinter der Paywall (das ist Basic-Gebiet).',
+        a: 'Alle 6 Stunden schaltet dein Account eine Nische aus den Positionen 5–15 der Tagesliste frei (das Band direkt unter Basics Top 5). Gleiches 6h-Fenster — gleiche Nische, auch nach Reload. Verschiedene Nutzer sehen im selben Fenster verschiedene Freischaltungen. Die Top 4 bleiben dauerhaft hinter der Paywall (das ist Basic-Gebiet).',
       },
       {
         q: 'Was schaltet Basic eigentlich frei?',
-        a: 'Die kompletten Top-10 Nischen, alle 24 Stunden erneuert, mit vollem Kanalnamen + URL + exakten Metriken auf jeder Karte. Plus 1 KI-Analyse pro Tag — Health Check + Content Angles teilen sich dieses Kontingent, du wählst also eine Nische zur vollen Analyse pro Tag.',
+        a: 'Die kompletten Top-5 Nischen pro Format (5 Shorts + 5 Longform), alle 24 Stunden erneuert, mit vollem Kanalnamen + URL + exakten Metriken auf jeder Karte. Plus 1 KI-Analyse pro Tag — Health Check + Content Angles teilen sich dieses Kontingent, du wählst also eine Nische zur vollen Analyse pro Tag.',
       },
       {
         q: 'Warum ist die KI-Analyse gebündelt?',
@@ -542,12 +542,12 @@ export const COPY = {
     pricingFreeFeatures: [
       '1 freigeschaltete Nische, rotiert alle 6h',
       'Kanalname + URL der freigeschalteten',
-      'Top 9 Nischen verschwommen (Basic-Gebiet)',
+      'Top 4 Nischen verschwommen (Basic-Gebiet)',
       'Keine KI-Analysen',
       'Keine gespeicherten Nischen',
     ],
     pricingBasicFeatures: [
-      'Top 10 Nischen freigeschaltet, täglich frisch',
+      'Top 5 Nischen pro Format freigeschaltet, täglich frisch',
       'Voller Kanalname, URL & exakte Metriken',
       '1 KI-Analyse pro Tag (Health Check + Angles)',
       '10 gespeicherte Nischen',
