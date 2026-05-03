@@ -37,6 +37,48 @@ export const COPY = {
     aiQuotaUsedBody:
       "You've used your 1 AI deep-dive for today. The quota resets in {hours}. Upgrade to Premium for unlimited deep-dives.",
     aiQuotaUpgradeCta: 'Upgrade to Premium',
+
+    // Tier comparison matrix (Sprint A.7) — rendered below the pricing cards
+    tierMatrixTitle: 'What you get at each tier',
+    tierMatrixCol: { feature: 'Feature', free: 'Free', basic: 'Basic', premium: 'Premium' },
+    tierMatrixRows: [
+      { label: 'Unlocked niche cards', free: '1 (rotates /6h)', basic: '10 (top 1–10)', premium: 'All (top 50)' },
+      { label: 'Reveal cadence', free: 'Every 6 hours', basic: 'Refreshed daily', premium: 'Live, no rotation' },
+      { label: 'AI deep-dive (Health + Angles bundled)', free: '—', basic: '1 / day', premium: 'Unlimited' },
+      { label: 'Saved niches', free: '0', basic: '10', premium: 'Unlimited' },
+      { label: 'Channel name + URL', free: 'Only on the unlocked niche', basic: 'All visible', premium: 'All visible' },
+      { label: 'Filters (subs, age, sort)', free: 'Yes', basic: 'Yes', premium: 'Yes' },
+      { label: '30-day spike chart', free: 'On the unlocked one', basic: 'Yes', premium: 'Yes' },
+    ],
+
+    // FAQ section (Sprint A.7)
+    faqTitle: 'Frequently asked questions',
+    faqItems: [
+      {
+        q: 'How does the 6-hour reveal work for Free?',
+        a: 'Every 6 hours your account unlocks one niche from positions 10–20 of the day\'s sorted list. Same window — same niche, even across reloads. Different users see different reveals in the same window. The top 9 stay paywalled forever (those are Basic territory).',
+      },
+      {
+        q: 'What does Basic actually unlock?',
+        a: 'The full top 10 niches, refreshed every 24 hours, with channel name + URL + exact metrics on every card. Plus 1 AI deep-dive per day — Health Check + Content Angles share that quota, so you pick one niche to fully analyze each day.',
+      },
+      {
+        q: 'Why is the AI deep-dive bundled?',
+        a: 'Health Check and Content Angles are two views of the same analysis. Bundling them as a single daily allowance keeps the upgrade trigger clear: if one niche-per-day isn\'t enough, that\'s the moment Premium starts paying for itself.',
+      },
+      {
+        q: 'Do cache hits count against my Basic AI quota?',
+        a: 'Yes. From your perspective you used your daily deep-dive on that niche, regardless of whether our cache served it or we ran the AI fresh. We don\'t penalize you for re-reading the same analysis — but the next analysis on a different niche will still cost a quota slot.',
+      },
+      {
+        q: 'Can I cancel anytime?',
+        a: 'Yes. Cancel from the Stripe billing portal — access continues until the end of your current period, then auto-downgrades to Free.',
+      },
+      {
+        q: 'Why Google sign-in only?',
+        a: 'Real accounts. The Free tier (1 reveal / 6h) is only meaningful if creating extra accounts is expensive — disposable-email signups would let one person register four addresses and get four reveals. Google enforces the cost we don\'t want to operate ourselves.',
+      },
+    ],
     discoverSearchingBtn: 'Searching…',
     discoverEmptyTitle: 'No niches match these filters',
     discoverEmptyBody: 'Try widening the subscriber range or relaxing the channel age filter.',
@@ -198,24 +240,30 @@ export const COPY = {
     pricingCtaFree: 'Get Started',
     pricingCtaBasic: 'Start Basic',
     pricingCtaPremium: 'Go Premium',
-    pricingFreeFeatures: ['Opportunity score visible', 'Top 5 niches per scan', 'Channel name hidden', '3 searches / day'],
+    // Sprint A.7 — feature lists rewritten to match the actual three-tier
+    // funnel: 1 reveal /6h for free, top 10 /24h + 1 AI deep-dive for basic,
+    // unlimited everything for premium.
+    pricingFreeFeatures: [
+      '1 unlocked niche, rotates every 6h',
+      'Channel name + URL on the unlocked one',
+      'Top 9 niches blurred (Basic territory)',
+      'No AI deep-dives',
+      'No saved niches',
+    ],
     pricingBasicFeatures: [
-      'Top 20 niches per scan',
-      'Channel names + full metrics',
-      'Top 3 viral videos per niche',
-      '20 searches / day',
-      '10 saved bookmarks',
+      'Top 10 unlocked niches, refreshed daily',
+      'Full channel name, URL & exact metrics',
+      '1 AI deep-dive per day (Health Check + Angles)',
+      '10 saved niches',
       'EN + DE markets',
     ],
     pricingPremiumFeatures: [
       'Everything in Basic, plus:',
-      'AI Clone & Twist suggestions',
-      '5 AI Shorts ideas per niche',
-      'AI thumbnail + title concepts',
-      'Early Warning spike alerts',
-      'AI Niche Health Check',
+      'All niches unlocked (top 50)',
+      'Unlimited AI deep-dives',
+      'Unlimited saves',
       '30-day scan history',
-      'Unlimited bookmarks + searches',
+      'Priority support',
     ],
 
     testimonialsTitle: 'Creators who found their niche',
@@ -287,6 +335,48 @@ export const COPY = {
     aiQuotaUsedBody:
       'Du hast deine 1 KI-Analyse für heute genutzt. Reset in {hours}. Upgrade auf Premium für unbegrenzte Analysen.',
     aiQuotaUpgradeCta: 'Auf Premium upgraden',
+
+    // Tier-Vergleichsmatrix (Sprint A.7)
+    tierMatrixTitle: 'Was du in jedem Tier bekommst',
+    tierMatrixCol: { feature: 'Feature', free: 'Free', basic: 'Basic', premium: 'Premium' },
+    tierMatrixRows: [
+      { label: 'Freigeschaltete Nischen-Karten', free: '1 (rotiert /6h)', basic: '10 (Top 1–10)', premium: 'Alle (Top 50)' },
+      { label: 'Freischaltungsrhythmus', free: 'Alle 6 Stunden', basic: 'Täglich erneuert', premium: 'Live, keine Rotation' },
+      { label: 'KI-Analyse (Health + Angles gebündelt)', free: '—', basic: '1 / Tag', premium: 'Unbegrenzt' },
+      { label: 'Gespeicherte Nischen', free: '0', basic: '10', premium: 'Unbegrenzt' },
+      { label: 'Kanalname + URL', free: 'Nur bei der freigeschalteten', basic: 'Alle sichtbar', premium: 'Alle sichtbar' },
+      { label: 'Filter (Abos, Alter, Sortierung)', free: 'Ja', basic: 'Ja', premium: 'Ja' },
+      { label: '30-Tage Spike-Chart', free: 'Bei der freigeschalteten', basic: 'Ja', premium: 'Ja' },
+    ],
+
+    // FAQ-Sektion (Sprint A.7)
+    faqTitle: 'Häufige Fragen',
+    faqItems: [
+      {
+        q: 'Wie funktioniert die 6-Stunden-Freischaltung für Free?',
+        a: 'Alle 6 Stunden schaltet dein Account eine Nische aus den Positionen 10–20 der Tagesliste frei. Gleiches 6h-Fenster — gleiche Nische, auch nach Reload. Verschiedene Nutzer sehen im selben Fenster verschiedene Freischaltungen. Die Top 9 bleiben dauerhaft hinter der Paywall (das ist Basic-Gebiet).',
+      },
+      {
+        q: 'Was schaltet Basic eigentlich frei?',
+        a: 'Die kompletten Top-10 Nischen, alle 24 Stunden erneuert, mit vollem Kanalnamen + URL + exakten Metriken auf jeder Karte. Plus 1 KI-Analyse pro Tag — Health Check + Content Angles teilen sich dieses Kontingent, du wählst also eine Nische zur vollen Analyse pro Tag.',
+      },
+      {
+        q: 'Warum ist die KI-Analyse gebündelt?',
+        a: 'Health Check und Content Angles sind zwei Sichten derselben Analyse. Sie als ein tägliches Kontingent zu bündeln macht den Upgrade-Trigger klar: wenn eine Nische pro Tag nicht reicht, fängt Premium genau da an, sich zu lohnen.',
+      },
+      {
+        q: 'Zählen Cache-Treffer gegen mein Basic-KI-Kontingent?',
+        a: 'Ja. Aus deiner Perspektive hast du deine Tages-Analyse auf dieser Nische verwendet, unabhängig davon, ob unser Cache sie ausgeliefert oder die KI sie frisch gerechnet hat. Du wirst nicht bestraft, wenn du dieselbe Analyse erneut liest — aber die nächste Analyse einer anderen Nische kostet einen Slot.',
+      },
+      {
+        q: 'Kann ich jederzeit kündigen?',
+        a: 'Ja. Kündigung über das Stripe-Billing-Portal — der Zugang läuft bis zum Periodenende und wechselt dann automatisch auf Free.',
+      },
+      {
+        q: 'Warum nur Google Sign-in?',
+        a: 'Echte Accounts. Das Free-Tier (1 Freischaltung / 6h) funktioniert nur, wenn das Erstellen zusätzlicher Accounts teuer ist — Wegwerf-Mails würden eine Person dazu bringen, vier Adressen zu registrieren und vier Freischaltungen zu bekommen. Google erzwingt die Kosten, die wir nicht selbst betreiben wollen.',
+      },
+    ],
     discoverSearchingBtn: 'Suche…',
     discoverEmptyTitle: 'Keine Nischen für diese Filter gefunden',
     discoverEmptyBody: 'Erweitere den Abonnenten-Bereich oder lockere den Kanal-Alter-Filter.',
@@ -448,24 +538,28 @@ export const COPY = {
     pricingCtaFree: 'Jetzt starten',
     pricingCtaBasic: 'Basic starten',
     pricingCtaPremium: 'Premium holen',
-    pricingFreeFeatures: ['Opportunity-Score sichtbar', 'Top 5 Nischen pro Scan', 'Kanalname versteckt', '3 Suchen / Tag'],
+    // Sprint A.7 — Feature-Listen entsprechen jetzt der Drei-Tier-Logik.
+    pricingFreeFeatures: [
+      '1 freigeschaltete Nische, rotiert alle 6h',
+      'Kanalname + URL der freigeschalteten',
+      'Top 9 Nischen verschwommen (Basic-Gebiet)',
+      'Keine KI-Analysen',
+      'Keine gespeicherten Nischen',
+    ],
     pricingBasicFeatures: [
-      'Top 20 Nischen pro Scan',
-      'Kanalnamen + alle Metriken',
-      'Top 3 virale Videos pro Nische',
-      '20 Suchen / Tag',
-      '10 gespeicherte Bookmarks',
+      'Top 10 Nischen freigeschaltet, täglich frisch',
+      'Voller Kanalname, URL & exakte Metriken',
+      '1 KI-Analyse pro Tag (Health Check + Angles)',
+      '10 gespeicherte Nischen',
       'EN + DE Märkte',
     ],
     pricingPremiumFeatures: [
       'Alles aus Basic, plus:',
-      'KI Clone & Twist Vorschläge',
-      '5 KI Shorts-Ideen pro Nische',
-      'KI Thumbnail- + Titel-Konzepte',
-      'Frühwarn-Spike-Alerts',
-      'KI Niche Health Check',
+      'Alle Nischen freigeschaltet (Top 50)',
+      'Unbegrenzte KI-Analysen',
+      'Unbegrenzte Speicher',
       '30-Tage Scan-Historie',
-      'Unbegrenzte Bookmarks + Suchen',
+      'Priority-Support',
     ],
 
     testimonialsTitle: 'Creator, die ihre Nische gefunden haben',

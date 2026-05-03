@@ -10,6 +10,8 @@ import { AppPreviewSection } from './AppPreviewSection'
 import { PainSolutionSection } from './PainSolutionSection'
 import { FeaturesSection } from './FeaturesSection'
 import { PricingSection } from './PricingSection'
+import { TierMatrix } from './TierMatrix'
+import { FaqSection } from './FaqSection'
 import { TestimonialsSection } from './TestimonialsSection'
 import { FinalCTASection } from './FinalCTASection'
 import { LandingFooter } from './LandingFooter'
@@ -33,6 +35,8 @@ export function LandingPage({ niches, radar }: LandingPageProps) {
       <Reveal><PainSolutionSection copy={copy} /></Reveal>
       <Reveal><FeaturesSection copy={copy} /></Reveal>
       <Reveal><PricingSection copy={copy} /></Reveal>
+      <Reveal><TierMatrix copy={copy} /></Reveal>
+      <Reveal><FaqSection copy={copy} /></Reveal>
       <Reveal><TestimonialsSection copy={copy} /></Reveal>
       <Reveal><FinalCTASection copy={copy} isLoggedIn={isLoggedIn} /></Reveal>
       <LandingFooter copy={copy} lang={lang} onLangChange={setLang} />
