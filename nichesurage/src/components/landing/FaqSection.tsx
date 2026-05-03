@@ -14,7 +14,9 @@ interface FaqSectionProps {
 // before I buy" is a common buyer behavior, especially when the pricing
 // model has unfamiliar mechanics like rotating reveals.
 export function FaqSection({ copy }: FaqSectionProps) {
-  const [openIndex, setOpenIndex] = useState<number | null>(0) // first item open by default
+  // Start with all items collapsed — auto-opening the first item is visually
+  // noisy and reads as a prefilled UI bug. Users who care will click.
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
 
   return (
     <section id="faq" className="py-20 px-6">
