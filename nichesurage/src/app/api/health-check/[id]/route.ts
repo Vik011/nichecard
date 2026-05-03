@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { canUseAIFeatures } from '@/lib/tier'
+import { checkAiQuota, recordAiRun } from '@/lib/tier/aiUsage'
 import { computeHealthScore } from '@/lib/health-check/score'
 import { generateVerdict } from '@/lib/health-check/verdict'
 import type { UserTier } from '@/lib/types'
@@ -21,8 +21,30 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     .single()
 
   const tier = (profile?.tier ?? 'free') as UserTier
-  if (!canUseAIFeatures(tier)) {
-    return NextResponse.json({ error: 'Premium required' }, { status: 403 })
+
+  // Sprint A.7: Health Check + Content Angles share a single daily AI quota
+  // bundled per niche. FREE has 0 (paywall), BASIC has 1, PREMIUM unlimited.
+  // checkAiQuota reads ai_usage_daily for today; we only count *successful*
+  // responses (cache hit OR fresh AI run) — see recordAiRun call below.
+  const quota = await checkAiQuota(supabase, user.id, tier)
+  if (!quota.ok) {
+    if (quota.reason === 'tier') {
+      return NextResponse.json(
+        { error: 'Upgrade to Basic or Premium for AI deep-dives', tier },
+        { status: 403 },
+      )
+    }
+    // reason === 'limit'
+    return NextResponse.json(
+      {
+        error: 'daily_limit',
+        tier,
+        usedToday: quota.usedToday,
+        limit: quota.limit,
+        resetAt: quota.resetAt.toISOString(),
+      },
+      { status: 429 },
+    )
   }
 
   const { data: cached } = await supabase
@@ -33,6 +55,10 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     .maybeSingle()
 
   if (cached) {
+    // Strict quota semantics: cache hits still count. The user just spent
+    // their daily deep-dive on this niche, regardless of whether the AI
+    // had to run fresh. (See aiUsage.ts for the rationale.)
+    await safeRecord(supabase, user.id)
     return NextResponse.json({
       score: cached.health_score,
       components: cached.components,
@@ -65,10 +91,27 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   }, { onConflict: 'scan_result_id' })
   if (cacheErr) console.error('[health-check] cache write failed:', cacheErr)
 
+  await safeRecord(supabase, user.id)
   return NextResponse.json({
     score: score.score,
     components: score.components,
     verdict,
     cached: false,
   })
+}
+
+// Quota increment is best-effort logging — if the RPC throws (e.g. transient
+// DB hiccup), we still return the AI result the user just earned. The
+// alternative (fail the response after we already paid the AI cost) is
+// worse for UX and we'd lose the cache write anyway. The next request will
+// re-evaluate quota from whatever state the DB ends up in.
+async function safeRecord(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+) {
+  try {
+    await recordAiRun(supabase, userId)
+  } catch (err) {
+    console.error('[health-check] recordAiRun failed:', (err as Error).message)
+  }
 }

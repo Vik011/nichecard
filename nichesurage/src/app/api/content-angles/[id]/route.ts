@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { canUseAIFeatures } from '@/lib/tier'
+import { checkAiQuota, recordAiRun } from '@/lib/tier/aiUsage'
 import { generateAngles, AnglesParseError } from '@/lib/content-angles/generate'
 import type { ContentAngle, UserTier, ContentType } from '@/lib/types'
 
@@ -20,8 +20,27 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     .single()
 
   const tier = (profile?.tier ?? 'free') as UserTier
-  if (!canUseAIFeatures(tier)) {
-    return NextResponse.json({ error: 'Premium required' }, { status: 403 })
+
+  // Bundled with Health Check — same daily quota counter (ai_usage_daily).
+  // FREE = 403, BASIC at limit = 429 with resetAt, PREMIUM = unlimited.
+  const quota = await checkAiQuota(supabase, user.id, tier)
+  if (!quota.ok) {
+    if (quota.reason === 'tier') {
+      return NextResponse.json(
+        { error: 'Upgrade to Basic or Premium for AI deep-dives', tier },
+        { status: 403 },
+      )
+    }
+    return NextResponse.json(
+      {
+        error: 'daily_limit',
+        tier,
+        usedToday: quota.usedToday,
+        limit: quota.limit,
+        resetAt: quota.resetAt.toISOString(),
+      },
+      { status: 429 },
+    )
   }
 
   const { data: cached } = await supabase
@@ -32,6 +51,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     .maybeSingle()
 
   if (cached) {
+    await safeRecord(supabase, user.id)
     return NextResponse.json({ angles: cached.angles as ContentAngle[], cached: true })
   }
 
@@ -75,5 +95,17 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   }, { onConflict: 'scan_result_id' })
   if (cacheErr) console.error('[content-angles] cache write failed:', cacheErr)
 
+  await safeRecord(supabase, user.id)
   return NextResponse.json({ angles, cached: false })
+}
+
+async function safeRecord(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+) {
+  try {
+    await recordAiRun(supabase, userId)
+  } catch (err) {
+    console.error('[content-angles] recordAiRun failed:', (err as Error).message)
+  }
 }
