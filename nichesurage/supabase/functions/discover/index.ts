@@ -12,6 +12,13 @@ import {
 import type { SeedKeyword } from '../_shared/types.ts'
 
 const SEEDS_PER_RUN = parseInt(Deno.env.get('SEEDS_PER_RUN') ?? '4', 10)
+// Sprint A.8 follow-up: MIN_SUBS aligned with premiumSpike SUBS_MIN. Without
+// a floor, discover was filling 2/3 of the watchlist with sub-100-sub channels
+// (one-hit-wonders that will never qualify for premium and burn API quota
+// on every scan). Floor matches premium thresholds so every watchlist insert
+// has at least a chance to clear premium check eventually.
+const MIN_SUBS_SHORTS = 100
+const MIN_SUBS_LONGFORM = 1_000
 const MAX_SUBS_SHORTS = 100_000
 const MAX_SUBS_LONGFORM = 500_000
 const MAX_AGE_MONTHS_SHORTS = 12
@@ -22,6 +29,7 @@ interface SeedExpansion {
   contentType: 'shorts' | 'longform'
   videoDuration: 'short' | 'medium' | 'long'
   publishedAfterDays: number
+  minSubs: number
   maxSubs: number
   maxAgeMonths: number
   regionCode: 'US'
@@ -43,6 +51,7 @@ function expand(seed: SeedKeyword): SeedExpansion[] {
     contentType: t,
     videoDuration: t === 'shorts' ? 'short' : 'medium',
     publishedAfterDays: t === 'shorts' ? 2 : 14,
+    minSubs: t === 'shorts' ? MIN_SUBS_SHORTS : MIN_SUBS_LONGFORM,
     maxSubs: t === 'shorts' ? MAX_SUBS_SHORTS : MAX_SUBS_LONGFORM,
     maxAgeMonths: t === 'shorts' ? MAX_AGE_MONTHS_SHORTS : MAX_AGE_MONTHS_LONGFORM,
     regionCode: 'US',
@@ -113,6 +122,10 @@ Deno.serve(async (_req: Request) => {
           for (const channel of stats) {
             if (existingIds.has(channel.channelId)) continue
             const ageMs = Date.now() - new Date(channel.channelCreatedAt).getTime()
+            // Sprint A.8 follow-up: floor at premiumSpike SUBS_MIN. Below this
+            // the channel can never qualify premium — skip the watchlist insert
+            // entirely instead of paying scan-cycle quota for it.
+            if (channel.subscriberCount < exp.minSubs) continue
             if (channel.subscriberCount > exp.maxSubs) continue
             if (ageMs > maxAgeMs) continue
 
