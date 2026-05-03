@@ -17,7 +17,7 @@ function scrubUrl(rawUrl: string | undefined): string | undefined {
   try {
     const u = new URL(rawUrl, 'https://placeholder.local')
     let modified = false
-    for (const key of [...u.searchParams.keys()]) {
+    for (const key of Array.from(u.searchParams.keys())) {
       if (SENSITIVE_QUERY_KEYS.some(s => key.toLowerCase().includes(s))) {
         u.searchParams.set(key, '[redacted]')
         modified = true
