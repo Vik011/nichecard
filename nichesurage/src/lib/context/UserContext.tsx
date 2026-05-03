@@ -62,12 +62,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     refresh()
 
     const supabase = createClient()
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, _session) => {
-      // Re-pull the user + tier on every auth transition. We deliberately
-      // ignore the session payload from the event and re-query so the tier
-      // row from the `users` table is always fresh too (a Stripe webhook
-      // promoting free→basic mid-session needs to take effect on the next
-      // auth tick, not on a hard reload).
+    // Re-pull the user + tier on every auth transition. We deliberately
+    // ignore the session payload from the event and re-query so the tier
+    // row from the `users` table is always fresh too (a Stripe webhook
+    // promoting free→basic mid-session needs to take effect on the next
+    // auth tick, not on a hard reload).
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
       if (cancelled) return
       refresh()
     })
