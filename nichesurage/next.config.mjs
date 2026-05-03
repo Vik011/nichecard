@@ -13,6 +13,7 @@ import { withSentryConfig } from '@sentry/nextjs'
 //   - PostHog (analytics): *.posthog.com, us.i.posthog.com, us-assets.i.posthog.com
 //   - Sentry (error reporting): *.sentry.io, *.ingest.sentry.io
 //   - Google (OAuth redirect): accounts.google.com
+//   - Cloudflare Turnstile (login bot defense): challenges.cloudflare.com
 //
 // `unsafe-inline` + `unsafe-eval` for scripts is required by Next.js
 // hydration runtime + framer-motion. Tightening this would require nonce
@@ -20,13 +21,13 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 const cspDirectives = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.posthog.com https://us.i.posthog.com https://us-assets.i.posthog.com https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob: https:",
   "media-src 'self'",
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.posthog.com https://us.i.posthog.com https://*.sentry.io https://*.ingest.sentry.io https://accounts.google.com",
-  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://accounts.google.com",
+  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://accounts.google.com https://challenges.cloudflare.com",
   // No iframes from us — kills clickjacking.
   "frame-ancestors 'none'",
   "object-src 'none'",

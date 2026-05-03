@@ -1,11 +1,36 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import Script from 'next/script'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 const VALID_PLANS = new Set(['basic', 'premium'])
 const VALID_INTERVALS = new Set(['monthly', 'yearly'])
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ''
+
+// Cloudflare Turnstile global API. Loaded lazily by the <Script> tag below
+// with `?render=explicit`, which prevents the auto-render from running before
+// our React effect attaches the container ref.
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (container: HTMLElement, options: TurnstileRenderOptions) => string
+      reset: (widgetId?: string) => void
+      remove: (widgetId?: string) => void
+    }
+    onloadTurnstileCallback?: () => void
+  }
+}
+
+interface TurnstileRenderOptions {
+  sitekey: string
+  theme?: 'light' | 'dark' | 'auto'
+  callback?: (token: string) => void
+  'error-callback'?: () => void
+  'expired-callback'?: () => void
+}
 
 // Google-only auth. We intentionally removed the email/password and magic-link
 // paths in Sprint A.7 Phase 0: the freemium tier limits are tied to user_id,
@@ -16,8 +41,11 @@ const VALID_INTERVALS = new Set(['monthly', 'yearly'])
 // we add Apple Sign In before re-opening email signup.
 export function LoginForm() {
   const searchParams = useSearchParams()
-  const [status, setStatus] = useState<'idle' | 'redirecting' | 'error'>('idle')
+  const [status, setStatus] = useState<'idle' | 'verifying' | 'redirecting' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const widgetRef = useRef<HTMLDivElement | null>(null)
+  const widgetIdRef = useRef<string | null>(null)
 
   const rawPlan = searchParams.get('plan')
   const rawBilling = searchParams.get('billing')
@@ -33,10 +61,79 @@ export function LoginForm() {
     }
   }, [callbackError])
 
+  // Render the Turnstile widget once the script has loaded. We use explicit
+  // render instead of the auto-render `class="cf-turnstile"` pattern so the
+  // token state lives in React, not on a global window callback.
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) return
+
+    function tryRender() {
+      if (!window.turnstile || !widgetRef.current || widgetIdRef.current) return
+      widgetIdRef.current = window.turnstile.render(widgetRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        theme: 'dark',
+        callback: (token) => setTurnstileToken(token),
+        'expired-callback': () => setTurnstileToken(null),
+        'error-callback': () => setTurnstileToken(null),
+      })
+    }
+
+    // If the script already loaded, render now. Otherwise the onload callback
+    // (set on window below) will fire it.
+    tryRender()
+    window.onloadTurnstileCallback = tryRender
+
+    return () => {
+      // Clean up so re-mounts (e.g. fast refresh in dev) don't double-render.
+      if (widgetIdRef.current && window.turnstile) {
+        try {
+          window.turnstile.remove(widgetIdRef.current)
+        } catch {
+          // ignore — widget may already be gone
+        }
+        widgetIdRef.current = null
+      }
+    }
+  }, [])
+
   async function handleGoogleSignIn() {
-    setStatus('redirecting')
     setErrorMessage(null)
 
+    // If Turnstile is configured but we don't have a token yet, refuse to
+    // start OAuth. The button is also disabled in this state, so this is a
+    // belt-and-braces guard.
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setStatus('error')
+      setErrorMessage('Please complete the security check before signing in.')
+      return
+    }
+
+    if (TURNSTILE_SITE_KEY && turnstileToken) {
+      setStatus('verifying')
+      try {
+        const res = await fetch('/api/auth/turnstile/verify', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ token: turnstileToken }),
+        })
+        if (!res.ok) {
+          setStatus('error')
+          setErrorMessage('Security check failed. Please refresh and try again.')
+          // Reset the widget so the user can solve a fresh challenge.
+          if (widgetIdRef.current && window.turnstile) {
+            window.turnstile.reset(widgetIdRef.current)
+          }
+          setTurnstileToken(null)
+          return
+        }
+      } catch {
+        setStatus('error')
+        setErrorMessage('Network error during security check. Try again.')
+        return
+      }
+    }
+
+    setStatus('redirecting')
     const supabase = createClient()
 
     // Forward plan + billing through OAuth so the callback route can run the
@@ -62,50 +159,83 @@ export function LoginForm() {
     // is just a guard against double-clicks.
   }
 
+  const buttonDisabled =
+    status === 'verifying' ||
+    status === 'redirecting' ||
+    (!!TURNSTILE_SITE_KEY && !turnstileToken)
+
+  const buttonLabel =
+    status === 'verifying'
+      ? 'Verifying…'
+      : status === 'redirecting'
+      ? 'Redirecting to Google…'
+      : 'Sign in with Google'
+
   return (
-    <div className="w-full max-w-md glass rounded-2xl p-8">
-      <h1 className="text-2xl font-semibold tracking-tight text-slate-100 mb-2">
-        Sign in to SurgeNiche
-      </h1>
-      <p className="text-slate-400 text-sm mb-6">
-        We use Google sign-in to keep accounts real. No passwords to remember.
-      </p>
-
-      {plan && billing && (
-        <div className="mb-5 text-xs text-glow-indigo bg-charcoal-800/60 gborder rounded-lg px-3 py-2">
-          After login you&apos;ll go straight to checkout for{' '}
-          {plan === 'premium' ? 'Premium' : 'Basic'} ({billing}).
-        </div>
+    <>
+      {TURNSTILE_SITE_KEY && (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback&render=explicit"
+          strategy="afterInteractive"
+          async
+          defer
+        />
       )}
+      <div className="w-full max-w-md glass rounded-2xl p-8">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-100 mb-2">
+          Sign in to SurgeNiche
+        </h1>
+        <p className="text-slate-400 text-sm mb-6">
+          We use Google sign-in to keep accounts real. No passwords to remember.
+        </p>
 
-      <button
-        type="button"
-        onClick={handleGoogleSignIn}
-        disabled={status === 'redirecting'}
-        className="w-full inline-flex items-center justify-center gap-3 px-5 py-3 rounded-xl bg-white text-slate-900 hover:bg-slate-100 transition-colors font-semibold text-[15px] shadow-[0_8px_24px_-8px_rgba(255,255,255,0.18)] disabled:opacity-60 disabled:cursor-wait"
-      >
-        <GoogleGlyph />
-        {status === 'redirecting' ? 'Redirecting to Google…' : 'Sign in with Google'}
-      </button>
+        {plan && billing && (
+          <div className="mb-5 text-xs text-glow-indigo bg-charcoal-800/60 gborder rounded-lg px-3 py-2">
+            After login you&apos;ll go straight to checkout for{' '}
+            {plan === 'premium' ? 'Premium' : 'Basic'} ({billing}).
+          </div>
+        )}
 
-      {errorMessage && (
-        <div className="mt-4 text-red-400 text-xs" role="alert">
-          {errorMessage}
-        </div>
-      )}
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={buttonDisabled}
+          className="w-full inline-flex items-center justify-center gap-3 px-5 py-3 rounded-xl bg-white text-slate-900 hover:bg-slate-100 transition-colors font-semibold text-[15px] shadow-[0_8px_24px_-8px_rgba(255,255,255,0.18)] disabled:opacity-60 disabled:cursor-wait"
+        >
+          <GoogleGlyph />
+          {buttonLabel}
+        </button>
 
-      <p className="mt-6 text-slate-500 text-[11px] leading-relaxed">
-        By signing in you agree to our{' '}
-        <a href="/terms" className="underline-offset-4 hover:underline hover:text-slate-300">
-          Terms
-        </a>{' '}
-        and{' '}
-        <a href="/privacy" className="underline-offset-4 hover:underline hover:text-slate-300">
-          Privacy Policy
-        </a>
-        .
-      </p>
-    </div>
+        {/* Turnstile widget container — sized to leave room for the challenge
+            iframe. The widget often runs invisibly; when it does need a UI
+            (high-risk traffic), it shows here. */}
+        {TURNSTILE_SITE_KEY && (
+          <div
+            ref={widgetRef}
+            className="mt-4 flex justify-center min-h-[65px]"
+            aria-label="Security check"
+          />
+        )}
+
+        {errorMessage && (
+          <div className="mt-4 text-red-400 text-xs" role="alert">
+            {errorMessage}
+          </div>
+        )}
+
+        <p className="mt-6 text-slate-500 text-[11px] leading-relaxed">
+          By signing in you agree to our{' '}
+          <a href="/terms" className="underline-offset-4 hover:underline hover:text-slate-300">
+            Terms
+          </a>{' '}
+          and{' '}
+          <a href="/privacy" className="underline-offset-4 hover:underline hover:text-slate-300">
+            Privacy Policy
+          </a>
+          .
+        </p>
+      </div>
+    </>
   )
 }
 
