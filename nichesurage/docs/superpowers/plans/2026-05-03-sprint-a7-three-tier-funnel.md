@@ -57,24 +57,58 @@ function getFreeRevealedIndex(userId: string, now: Date, poolSize: number): numb
 - If filter result has < 10 items, BASIC sees all of them, FREE sees the last one
 - If filter result has 0 items, FREE sees empty + "next reveal in Xh Ym"
 
-### AI rate limiting — count from existing tables
+### AI rate limiting — new `ai_usage_daily` table
 
-`niche_health_checks` already has `user_id` + `created_at`. Same for `content_angles_cache` (or wherever angles writes — verify in code).
+**Correction from initial plan:** the existing `niche_health_checks` and `content_angles_cache` tables are *shared caches* keyed by `scan_result_id` with a unique constraint — they have no user dimension. We need a small dedicated table.
 
-Add a server-side helper:
+```sql
+-- supabase/migrations/0020_ai_usage_daily.sql
+create table if not exists public.ai_usage_daily (
+  user_id uuid not null references public.users(id) on delete cascade,
+  day date not null,
+  count int not null default 0,
+  primary key (user_id, day)
+);
+
+create index if not exists ai_usage_daily_recent_idx
+  on public.ai_usage_daily (user_id, day desc);
+
+alter table public.ai_usage_daily enable row level security;
+
+create policy "users see their own ai usage"
+  on public.ai_usage_daily for select
+  to authenticated
+  using (user_id = auth.uid());
+-- INSERT/UPDATE go through service_role (the API route runs server-side
+-- with the SSR client, which is auth.uid()-aware; we keep service_role
+-- as the writer to avoid race surfaces).
+```
+
+Server helper:
 ```ts
 // src/lib/tier/aiUsage.ts
 async function getAiRunsToday(userId: string, supabase): Promise<number> {
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-  // Count rows where this user triggered an AI run in the last 24h
-  // (either health check or content angles — they share the same daily quota)
-  const [{ count: hc }, { count: ca }] = await Promise.all([
-    supabase.from('niche_health_checks').select('id', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', since),
-    supabase.from('content_angles_cache').select('id', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', since),
-  ])
-  return (hc ?? 0) + (ca ?? 0)
+  const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD UTC
+  const { data } = await supabase
+    .from('ai_usage_daily')
+    .select('count')
+    .eq('user_id', userId)
+    .eq('day', today)
+    .maybeSingle()
+  return data?.count ?? 0
+}
+
+async function incrementAiRun(userId: string, supabase): Promise<void> {
+  const today = new Date().toISOString().slice(0, 10)
+  // Upsert with atomic increment via SQL RPC, or two-step (read, write)
+  // with optimistic concurrency. Using a tiny RPC is cleanest.
+  await supabase.rpc('increment_ai_usage', { p_user_id: userId, p_day: today })
 }
 ```
+
+We add a small SQL function `increment_ai_usage(p_user_id, p_day)` to do `INSERT … ON CONFLICT … DO UPDATE SET count = count + 1` atomically, returning the new count.
+
+Quota semantics: every successful API call increments, even cache hits. From the user's perspective they "used" their daily AI deep-dive regardless of whether we served from cache.
 
 API routes (`/api/health-check/[id]`, `/api/content-angles/[id]`) check this count and:
 - `tier === 'free'` → always 403
