@@ -62,18 +62,25 @@ export function HeroBackdrop({ copy, pings, channelsLast24h }: HeroBackdropProps
         <div className="scan-line" />
       </div>
 
-      {/* Layer 3 — TOP-LEFT: floating LIVE counter chip. */}
-      <div className="hidden md:flex absolute top-8 left-8 z-20 items-center gap-2 bg-charcoal-900/70 backdrop-blur-md gborder rounded-full px-4 py-2 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]">
-        <span aria-hidden="true" className="relative flex h-1.5 w-1.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
-        </span>
-        <span className="text-emerald-300/95 text-[10px] font-semibold uppercase tracking-[0.22em]">
-          {copy.radarLive}
-        </span>
-        <span className="text-slate-300 text-[12px] font-medium">
-          · {copy.radarChannelsLast24h(channelsLast24h)}
-        </span>
+      {/* Layer 3 — TOP-LEFT: floating LIVE counter chip.
+          Defensive structure: outer div owns the absolute positioning,
+          inner div owns the chip styling. Mixing display:flex with
+          position:absolute on the same element was producing erratic
+          positioning in production (chip stretching across viewport
+          and ignoring its `top-8 left-8` anchor). */}
+      <div className="absolute top-8 left-8 z-20 hidden md:block">
+        <div className="inline-flex items-center gap-2 bg-charcoal-900/70 backdrop-blur-md gborder rounded-full px-4 py-2 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]">
+          <span aria-hidden="true" className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+          </span>
+          <span className="text-emerald-300/95 text-[10px] font-semibold uppercase tracking-[0.22em]">
+            {copy.radarLive}
+          </span>
+          <span className="text-slate-300 text-[12px] font-medium whitespace-nowrap">
+            · {copy.radarChannelsLast24h(channelsLast24h)}
+          </span>
+        </div>
       </div>
 
       {/* Layer 4 — BOTTOM-LEFT: next-scan countdown. Dopamine driver — gives
@@ -82,7 +89,7 @@ export function HeroBackdrop({ copy, pings, channelsLast24h }: HeroBackdropProps
 
       {/* Layer 5 — BOTTOM-RIGHT: floating "channel discovered" notification. */}
       <div
-        className="hidden md:block absolute bottom-8 right-8 z-20 w-[300px] min-h-[100px]"
+        className="absolute bottom-8 right-8 z-20 hidden md:block w-[300px] min-h-[100px]"
         aria-live="polite"
         aria-atomic="true"
       >
@@ -148,13 +155,15 @@ function NextScanCountdown({ copy }: { copy: CopyKeys }) {
   const seconds = totalSeconds % 60
 
   return (
-    <div className="hidden md:flex absolute bottom-8 left-8 z-20 flex-col gap-1 bg-charcoal-900/70 backdrop-blur-md gborder rounded-2xl px-4 py-3 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]">
-      <span className="text-slate-500 text-[9px] font-semibold uppercase tracking-[0.22em]">
-        {copy.heroNextScanLabel}
-      </span>
-      <span className="text-slate-100 text-base font-semibold tabular-nums tracking-tight">
-        {copy.heroNextScanFormat(minutes, seconds)}
-      </span>
+    <div className="absolute bottom-8 left-8 z-20 hidden md:block">
+      <div className="inline-flex flex-col gap-1 bg-charcoal-900/70 backdrop-blur-md gborder rounded-2xl px-4 py-3 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]">
+        <span className="text-slate-500 text-[9px] font-semibold uppercase tracking-[0.22em] whitespace-nowrap">
+          {copy.heroNextScanLabel}
+        </span>
+        <span className="text-slate-100 text-base font-semibold tabular-nums tracking-tight whitespace-nowrap">
+          {copy.heroNextScanFormat(minutes, seconds)}
+        </span>
+      </div>
     </div>
   )
 }
