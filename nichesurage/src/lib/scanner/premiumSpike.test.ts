@@ -8,6 +8,7 @@ import {
   calculateVPS,
   detectSpikeMultiplier,
   isPremiumSpikeChannel,
+  matchesContentFarmPattern,
   SHORTS_MAX_DURATION_S,
   LONGFORM_VPS_MIN,
   SHORTS_VPS_MIN,
@@ -293,5 +294,93 @@ describe('isPremiumSpikeChannel — recency window', () => {
     })
     const r = isPremiumSpikeChannel(channel, [old(0), old(2), old(4), old(6), old(8)], NOW)
     expect(r.reason).toMatch(/^insufficient_videos/)
+  })
+})
+
+describe('matchesContentFarmPattern', () => {
+  it('matches breastfeeding-positions content-farm pattern', () => {
+    expect(matchesContentFarmPattern('Best Breastfeeding Positions for New Mothers')).toBe(true)
+    expect(matchesContentFarmPattern('Breastfeeding Vlogs / Mom And Baby In The Bedroom')).toBe(true)
+    expect(matchesContentFarmPattern('Mom and Baby Breastfeeding 2026')).toBe(true)
+  })
+
+  it('does NOT match clinical/educational lactation content (no exploit pattern)', () => {
+    // We want to keep real lactation educators — only the exploit pattern is blacklisted.
+    expect(matchesContentFarmPattern('Lactation Consultant Q&A: Common Concerns')).toBe(false)
+    expect(matchesContentFarmPattern('How to Increase Milk Supply Naturally')).toBe(false)
+  })
+
+  it('matches reaction / clip aggregator titles', () => {
+    expect(matchesContentFarmPattern('Funny Reaction Compilation')).toBe(true)
+    expect(matchesContentFarmPattern('Best Fail Moments 2026')).toBe(true)
+    expect(matchesContentFarmPattern('Funniest Win Compilation')).toBe(true)
+    expect(matchesContentFarmPattern('TikTok Compilation #5')).toBe(true)
+    expect(matchesContentFarmPattern('Shorts Compilation Best Of')).toBe(true)
+    expect(matchesContentFarmPattern('Clip Compilation Highlights')).toBe(true)
+  })
+
+  it('matches ASMR / satisfying farms', () => {
+    expect(matchesContentFarmPattern('ASMR Eating Show')).toBe(true)
+    expect(matchesContentFarmPattern('Satisfying Compilation #12')).toBe(true)
+  })
+
+  it('matches "Funniest 50 Moments" celebrity-clip aggregators', () => {
+    expect(matchesContentFarmPattern('Funniest 50 Moments of LeBron')).toBe(true)
+    expect(matchesContentFarmPattern('Top 100 Moments of 2026')).toBe(true)
+  })
+
+  it('does NOT match legitimate creator titles', () => {
+    expect(matchesContentFarmPattern('How to Build an AI Automation Agency')).toBe(false)
+    expect(matchesContentFarmPattern('Dark History of Highway 101')).toBe(false)
+    expect(matchesContentFarmPattern('Costco Deals You NEED To Buy Right Now')).toBe(false)
+    expect(matchesContentFarmPattern('Things I Wish I Knew Before Starting KDP')).toBe(false)
+    expect(matchesContentFarmPattern('Deconstructing a Full Track from Scratch')).toBe(false)
+  })
+
+  it('handles empty / null titles defensively', () => {
+    expect(matchesContentFarmPattern('')).toBe(false)
+  })
+})
+
+describe('isPremiumSpikeChannel — content-farm rejection', () => {
+  it('rejects an otherwise-premium channel whose qualifying videos match the blacklist', () => {
+    // Channel passes EVERY numeric gate (subs, VPS, qualify, spike) but
+    // qualifying titles match the breastfeeding-tutorial farm pattern.
+    const channel: PremiumSpikeChannelInput = { contentType: 'longform', subscriberCount: 6_000 }
+    const exploit = (views: number, daysOld: number, title: string): VideoData => makeVideo({
+      viewCount: views,
+      publishedAt: daysAgo(daysOld),
+      durationSeconds: 600,
+      title,
+    })
+    const r = isPremiumSpikeChannel(channel, [
+      exploit(260_000, 1, 'Best Breastfeeding Positions for New Mothers'),
+      exploit(200_000, 4, 'New Moms Guide to Breastfeeding Easy Tips'),
+      exploit(80_000, 7, 'How to Breastfeed Correctly No Pain'),
+      exploit(15_000, 14, 'Breastfeeding Vlogs Mom and Baby Bedroom'),
+      exploit(12_000, 21, 'Mom and Baby Breastfeeding Routine'),
+    ], NOW)
+    expect(r.isPremium).toBe(false)
+    expect(r.reason).toMatch(/^content_farm_title/)
+  })
+
+  it('still flags premium for legitimate niche channels with strong videos', () => {
+    // Same numeric profile, but titles are legitimate niche content.
+    const channel: PremiumSpikeChannelInput = { contentType: 'longform', subscriberCount: 6_000 }
+    const legit = (views: number, daysOld: number, title: string): VideoData => makeVideo({
+      viewCount: views,
+      publishedAt: daysAgo(daysOld),
+      durationSeconds: 600,
+      title,
+    })
+    const r = isPremiumSpikeChannel(channel, [
+      legit(260_000, 1, 'How I Built an AI Automation Agency in 30 Days'),
+      legit(200_000, 4, 'My First $10k from n8n Workflows'),
+      legit(80_000, 7, 'Claude Code Tutorial: Real Project Walkthrough'),
+      legit(15_000, 14, 'Behind the Scenes: Client Project'),
+      legit(12_000, 21, 'Old vlog with weak title'),
+    ], NOW)
+    expect(r.isPremium).toBe(true)
+    expect(r.reason).toBe('premium')
   })
 })

@@ -46,6 +46,55 @@ export const SHORTS_QUALIFY_MIN_HITS = parseInt(envOrDefault('PREMIUM_SH_QUALIFY
 export const SPIKE_MULTIPLIER_MIN = parseFloat(envOrDefault('PREMIUM_SPIKE_MIN', '3'))
 export const SPIKE_BONUS_THRESHOLD = parseFloat(envOrDefault('PREMIUM_SPIKE_BONUS', '2'))
 
+// ─── Title-pattern content-farm blacklist ─────────────────────────────
+// These regex patterns match titles characteristic of channels that:
+//   - game the YouTube algorithm via softcore content disguised as educational
+//   - aggregate clips/reactions/compilations from other creators
+//   - serve "satisfying" / "fails" / "funny moments" content that holds no
+//     niche-actionable value for a legitimate creator
+//
+// A premium-classified channel where ANY of its qualifying-window videos
+// matches one of these patterns is downgraded to non-premium with reason
+// 'content_farm_title'. We also use the same matcher in /discover to skip
+// search hits matching these patterns before they ever reach the watchlist.
+//
+// Patterns are intentionally specific — `/breastfeed/i` would falsely flag a
+// legitimate lactation consultant, but `/breastfeeding (positions|vlog|in the
+// (bedroom|room))/i` reliably catches the exploitative-tutorial pattern.
+//
+// Add new patterns conservatively. False negatives (junk getting through)
+// are recoverable — false positives (rejecting a real premium creator) are
+// harder to detect and silently degrade output quality.
+export const TITLE_BLACKLIST: RegExp[] = [
+  // Exploitative parenting/body content disguised as tutorials.
+  /breastfeeding (positions|vlog|in the (bedroom|room))/i,
+  /(mom|mother)\s?and\s?baby breastfeeding/i,
+  /postpartum body|pregnancy belly|baby bump (size|growth)/i,
+
+  // Reaction / clip aggregators.
+  /reaction (compilation|video|montage|moments)/i,
+  /(funny|epic|fail|win)\s+(moments|compilation|montage)/i,
+  /\b(tiktok|shorts)\s+compilation/i,
+  /\bclips?\s+(compilation|montage|of\s+the|farm)/i,
+
+  // ASMR/mukbang/satisfying farms (algorithm-gaming, no creator-actionable niche).
+  /\basmr\s+(eating|food|cooking|mukbang)/i,
+  /satisfying\s+(compilation|clips|moments)/i,
+
+  // Generic celebrity-clip aggregator pattern.
+  /\b(funniest|best|top)\s+\d+\s+moments\b/i,
+]
+
+/**
+ * True if `title` matches any content-farm pattern. Used by /scan and
+ * /discover to filter out algorithm-gaming junk regardless of how strong
+ * the spike/VPS signal looks on paper.
+ */
+export function matchesContentFarmPattern(title: string): boolean {
+  if (!title) return false
+  return TITLE_BLACKLIST.some(re => re.test(title))
+}
+
 // Read env var with default fallback. Guarded so this module also works in
 // non-Deno environments (e.g. ts-jest in src/lib/scanner tests).
 function envOrDefault(name: string, fallback: string): string {
@@ -228,6 +277,26 @@ export function isPremiumSpikeChannel(
       isPremium: false,
       score: 0,
       reason: `below_qualify_threshold (${hits.length}/${QUALIFY_WINDOW})`,
+      qualifyingVideoCount: hits.length,
+      vpsRecentAvg: round2(vpsRecentAvg),
+      vpsOlderMedian: round2(vpsOlderMedian),
+      spikeMultiplier: round2(spikeMultiplier),
+    }
+  }
+
+  // Content-farm gate. Channels gaming the algorithm via softcore-tutorial /
+  // reaction-compilation / clip-farm patterns will pass every numeric gate
+  // (subs, VPS, spike, qualify count) because the algorithm REWARDS that
+  // content with views — but they hold zero niche-actionable value for our
+  // target user (a legitimate creator picking a niche to enter).
+  // We reject if ANY qualifying video matches the blacklist; one match in
+  // the recent window is signal enough that this is the channel's pattern.
+  const blacklistedHit = qualifyingPool.find(v => matchesContentFarmPattern(v.title))
+  if (blacklistedHit) {
+    return {
+      isPremium: false,
+      score: 0,
+      reason: `content_farm_title (${blacklistedHit.title.slice(0, 60)})`,
       qualifyingVideoCount: hits.length,
       vpsRecentAvg: round2(vpsRecentAvg),
       vpsOlderMedian: round2(vpsOlderMedian),

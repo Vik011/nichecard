@@ -10,6 +10,7 @@ import {
   getVideoStatsBatch,
   getYoutubeKeys,
 } from '../_shared/youtube.ts'
+import { matchesContentFarmPattern } from '../_shared/premiumSpike.ts'
 import type { SeedKeyword } from '../_shared/types.ts'
 
 const SEEDS_PER_RUN = parseInt(Deno.env.get('SEEDS_PER_RUN') ?? '4', 10)
@@ -120,13 +121,19 @@ Deno.serve(async (_req: Request) => {
             Date.now() - exp.publishedAfterDays * 24 * 60 * 60 * 1000
           ).toISOString()
 
-          const hits = await searchVideosByKeyword(youtubeKeys, {
+          const rawHits = await searchVideosByKeyword(youtubeKeys, {
             q: seed.term,
             publishedAfter,
             videoDuration: exp.videoDuration,
             regionCode: exp.regionCode,
             maxResults: 25,
           })
+
+          // Content-farm title filter — strip hits that match the blacklist
+          // BEFORE they influence channel selection. Without this, a single
+          // softcore-tutorial-style hit on a real niche channel would pull
+          // that channel into the watchlist via the high-VPS hit.
+          const hits = rawHits.filter(h => !matchesContentFarmPattern(h.title))
 
           const candidateIds = [...new Set(hits.map(h => h.channelId))]
             .filter(id => !existingIds.has(id))
