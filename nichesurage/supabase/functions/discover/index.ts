@@ -24,11 +24,13 @@ interface SeedExpansion {
   publishedAfterDays: number
   maxSubs: number
   maxAgeMonths: number
-  regionCode: 'US' | 'DE'
+  regionCode: 'US'
 }
 
 function expand(seed: SeedKeyword): SeedExpansion[] {
-  const region = seed.language === 'de' ? 'DE' : 'US'
+  // Sprint A.8: scanner is EN-only. The seed query already filters
+  // language='en' so a non-EN seed shouldn't reach here, but we hardcode
+  // regionCode='US' anyway to be defensive.
   const types: ('shorts' | 'longform')[] =
     seed.content_type === 'both' ? ['shorts', 'longform'] : [seed.content_type as 'shorts' | 'longform']
 
@@ -43,7 +45,7 @@ function expand(seed: SeedKeyword): SeedExpansion[] {
     publishedAfterDays: t === 'shorts' ? 2 : 14,
     maxSubs: t === 'shorts' ? MAX_SUBS_SHORTS : MAX_SUBS_LONGFORM,
     maxAgeMonths: t === 'shorts' ? MAX_AGE_MONTHS_SHORTS : MAX_AGE_MONTHS_LONGFORM,
-    regionCode: region,
+    regionCode: 'US',
   }))
 }
 
@@ -65,6 +67,8 @@ Deno.serve(async (_req: Request) => {
       .from('seed_keywords')
       .select('*')
       .eq('is_active', true)
+      // Sprint A.8: EN-only. DE seeds were soft-deleted via 0021.
+      .eq('language', 'en')
       .order('last_used_at', { ascending: true, nullsFirst: true })
       .order('priority', { ascending: false })
       .limit(SEEDS_PER_RUN)
@@ -117,7 +121,9 @@ Deno.serve(async (_req: Request) => {
               channel_name: channel.channelName,
               niche_label: '',                       // filled by clustering pipeline later
               content_type: exp.contentType,
-              language: seed.language,
+              // Sprint A.8: hardcoded 'en'. Seed query already filters to EN
+              // but we don't trust seed.language at write-time — defensive.
+              language: 'en',
               seed_keyword: seed.term,
             })
             if (error) {

@@ -1,8 +1,16 @@
 // supabase/functions/scan/index.ts
-// Sonar scan: hydrate every watchlisted channel, compute outlier_ratio
-// (best video viewCount in window / subscriberCount), and persist a row only
-// if ratio >= OUTLIER_DB_FLOOR. Legacy fields (spike_multiplier, opportunity_score)
-// kept populated for backward compat with the existing /discover UI.
+//
+// Sprint A.8 update — scan now does TWO things per channel:
+//
+//   1. Legacy outlier_ratio (kept) — feeds Basic-tier /discover so the UI
+//      always has content. Persists when ratio ≥ OUTLIER_DB_FLOOR.
+//   2. Premium spike check (new) — strict per-format gates from
+//      _shared/premiumSpike. Sets is_premium / premium_score / premium_reason
+//      etc. Premium signal is independent of legacy ratio: a channel may be
+//      premium with a low legacy ratio (we still persist), or have a high
+//      legacy ratio but fail premium (we still persist, premium=false).
+//
+// Also: EN-only filter (DE rows soft-deleted via 0021).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getChannelStats, getRecentVideos, getYoutubeKeys } from '../_shared/youtube.ts'
 import {
@@ -16,6 +24,7 @@ import {
   computeCompetitionScore,
   findOutlier,
 } from '../_shared/metrics.ts'
+import { isPremiumSpikeChannel } from '../_shared/premiumSpike.ts'
 import type { WatchlistChannel } from '../_shared/types.ts'
 
 const OUTLIER_DB_FLOOR = parseFloat(Deno.env.get('OUTLIER_DB_FLOOR') ?? '2')
@@ -35,6 +44,8 @@ Deno.serve(async (_req: Request) => {
       .from('channels_watchlist')
       .select('*')
       .eq('is_active', true)
+      // Sprint A.8: scanner is EN-only. DE rows were soft-deleted via 0021.
+      .eq('language', 'en')
 
     if (fetchError) throw fetchError
     if (!channels || channels.length === 0) {
@@ -65,8 +76,29 @@ Deno.serve(async (_req: Request) => {
         // content often peaks 1-2 weeks after upload).
         const windowHours = channel.content_type === 'shorts' ? 48 : 336
         const outlier = findOutlier(videos, stats.subscriberCount, windowHours)
-        if (outlier.ratio < OUTLIER_DB_FLOOR) {
-          // Below DB floor — drop on the floor (don't pollute scan_results).
+
+        // Sprint A.8: premium spike check runs in parallel to legacy outlier.
+        // We persist if EITHER signal qualifies — legacy ratio above floor OR
+        // premium check passed. Premium can pass on a channel whose 48h/14d
+        // best-video ratio is low (e.g. a longform channel with consistent
+        // 10x VPS across 5 videos but no single jackpot video).
+        const premium = isPremiumSpikeChannel(
+          {
+            contentType: channel.content_type,
+            subscriberCount: stats.subscriberCount,
+          },
+          videos,
+        )
+
+        if (outlier.ratio < OUTLIER_DB_FLOOR && !premium.isPremium) {
+          // Neither signal qualifies — drop, don't pollute scan_results.
+          console.log(JSON.stringify({
+            channelId: channel.youtube_channel_id,
+            isPremium: false,
+            score: premium.score,
+            reason: premium.reason || 'below_outlier_floor',
+            outlierRatio: outlier.ratio,
+          }))
           continue
         }
 
@@ -122,6 +154,15 @@ Deno.serve(async (_req: Request) => {
           avg_view_duration_pct: null,
           search_volume: null,
           competition_score: competitionScore,
+
+          // Sprint A.8 — premium spike fields.
+          is_premium: premium.isPremium,
+          premium_score: premium.score,
+          premium_reason: premium.reason,
+          qualifying_video_count: premium.qualifyingVideoCount,
+          vps_recent_avg: premium.vpsRecentAvg,
+          vps_older_median: premium.vpsOlderMedian,
+          spike_multiplier_recent: premium.spikeMultiplier,
         })
 
         if (insertError) {
@@ -129,6 +170,15 @@ Deno.serve(async (_req: Request) => {
           continue
         }
         persisted++
+
+        // Audit log so we can read back acceptance rate from edge logs.
+        console.log(JSON.stringify({
+          channelId: channel.youtube_channel_id,
+          isPremium: premium.isPremium,
+          score: premium.score,
+          reason: premium.reason,
+          outlierRatio: outlier.ratio,
+        }))
 
         await supabase
           .from('channels_watchlist')

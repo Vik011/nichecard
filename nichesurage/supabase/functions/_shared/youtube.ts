@@ -3,6 +3,25 @@ import type { YouTubeChannelData, VideoData, VideoSearchHit } from './types.ts'
 
 const BASE = 'https://www.googleapis.com/youtube/v3'
 
+/**
+ * Parse YouTube ISO-8601 duration like "PT4M13S", "PT1H2M30S", "PT45S" → seconds.
+ *
+ * Returns 0 for unparseable / missing input — callers downstream
+ * (premiumSpike.classifyVideoType) treat 0 as "shorts" which is the safer
+ * mis-classification (we'd rather false-negative an unknown video than mark
+ * it longform without evidence).
+ *
+ * Sprint A.8: added when /scan started filtering channel video pools by
+ * format-matching duration.
+ */
+export function parseIsoDuration(s: string | undefined | null): number {
+  if (!s) return 0
+  const m = s.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/)
+  if (!m) return 0
+  const [, h, mi, se] = m
+  return (parseInt(h ?? '0', 10) * 3600) + (parseInt(mi ?? '0', 10) * 60) + parseInt(se ?? '0', 10)
+}
+
 // Read primary + optional fallback YouTube API key from env.
 // Order matters: primary key is tried first; on quota-exceeded (403 + "quota"
 // in body) we transparently retry with the secondary key.
@@ -141,7 +160,10 @@ export async function getRecentVideos(
   const buildVideosUrl = (key: string) => {
     const url = new URL(`${BASE}/videos`)
     url.searchParams.set('key', key)
-    url.searchParams.set('part', 'snippet,statistics')
+    // Sprint A.8: contentDetails added so we can read each video's duration
+    // (ISO-8601) and bucket it as shorts/longform inside premiumSpike.
+    // Same videos.list call — no extra request, no quota cost.
+    url.searchParams.set('part', 'snippet,statistics,contentDetails')
     url.searchParams.set('id', videoIds.join(','))
     return url
   }
@@ -153,7 +175,8 @@ export async function getRecentVideos(
     id: string
     snippet: { title: string; description?: string; publishedAt: string }
     statistics: { viewCount?: string; likeCount?: string; commentCount?: string }
-  }) => ({
+    contentDetails?: { duration?: string }
+  }): VideoData => ({
     videoId: item.id,
     title: item.snippet.title,
     description: (item.snippet.description ?? '').slice(0, 240),
@@ -161,7 +184,8 @@ export async function getRecentVideos(
     likeCount: parseInt(item.statistics.likeCount ?? '0', 10),
     commentCount: parseInt(item.statistics.commentCount ?? '0', 10),
     publishedAt: item.snippet.publishedAt,
-  })).sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+    durationSeconds: parseIsoDuration(item.contentDetails?.duration),
+  })).sort((a: VideoData, b: VideoData) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
 }
 
 // Sonar: keyword-driven search returning videos + their channelIds.
