@@ -12,7 +12,15 @@ import { FeaturesSection } from './FeaturesSection'
 import { PricingSection } from './PricingSection'
 import { TierMatrix } from './TierMatrix'
 import { FaqSection } from './FaqSection'
-import { TestimonialsSection } from './TestimonialsSection'
+// TestimonialsSection is intentionally NOT mounted on the landing page —
+// the placeholder quotes read like AI-generated marketing copy and savvy
+// visitors smell that out, which hurts trust more than fake social proof
+// helps. The component + copy.ts entries are kept so we can re-mount once
+// we have real testimonials from the founder's 25k-member Discord
+// community of YouTube creators (which the founder has already started
+// soliciting). Until then, the landing flow goes:
+// Hero → AppPreview → PainSolution → Features → Pricing → TierMatrix → FAQ → FinalCTA.
+// import { TestimonialsSection } from './TestimonialsSection'
 import { FinalCTASection } from './FinalCTASection'
 import { LandingFooter } from './LandingFooter'
 import { Reveal } from '@/components/ui/Reveal'
@@ -37,7 +45,7 @@ export function LandingPage({ niches, radar }: LandingPageProps) {
       <Reveal><PricingSection copy={copy} /></Reveal>
       <Reveal><TierMatrix copy={copy} /></Reveal>
       <Reveal><FaqSection copy={copy} /></Reveal>
-      <Reveal><TestimonialsSection copy={copy} /></Reveal>
+      {/* <Reveal><TestimonialsSection copy={copy} /></Reveal> — see import comment */}
       <Reveal><FinalCTASection copy={copy} isLoggedIn={isLoggedIn} /></Reveal>
       <LandingFooter copy={copy} lang={lang} onLangChange={setLang} />
     </div>

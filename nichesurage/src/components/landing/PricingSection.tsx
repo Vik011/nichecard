@@ -11,7 +11,12 @@ interface PricingSectionProps {
 }
 
 export function PricingSection({ copy }: PricingSectionProps) {
-  const [billing, setBilling] = useState<Billing>('yearly')
+  // Default to monthly so first-time visitors anchor on the lower per-tier
+  // numbers (€9 / €19 monthly read very differently than €90 / €190 yearly,
+  // even though the yearly price is mathematically a discount). Users who
+  // care about the savings will toggle to yearly themselves; the "Save 17%"
+  // badge on the toggle does the heavy lifting there.
+  const [billing, setBilling] = useState<Billing>('monthly')
 
   const tiers = [
     {

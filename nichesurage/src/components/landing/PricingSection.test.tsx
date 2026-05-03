@@ -17,11 +17,11 @@ describe('PricingSection', () => {
     expect(screen.getByText(copy.pricingPremium)).toBeInTheDocument()
   })
 
-  it('renders tier prices (yearly default)', () => {
+  it('renders tier prices (monthly default — psychological anchoring)', () => {
     render(<PricingSection copy={copy} />)
     expect(screen.getAllByText(copy.pricingFreePrice).length).toBeGreaterThan(0)
-    expect(screen.getAllByText(copy.pricingBasicYearlyPrice).length).toBeGreaterThan(0)
-    expect(screen.getAllByText(copy.pricingPremiumYearlyPrice).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(copy.pricingBasicPrice).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(copy.pricingPremiumPrice).length).toBeGreaterThan(0)
   })
 
   it('renders all CTA buttons', () => {
@@ -31,11 +31,11 @@ describe('PricingSection', () => {
     expect(screen.getByText(copy.pricingCtaPremium)).toBeInTheDocument()
   })
 
-  it('CTA buttons link to correct hrefs (yearly default)', () => {
+  it('CTA buttons link to correct hrefs (monthly default)', () => {
     render(<PricingSection copy={copy} />)
     expect(screen.getByText(copy.pricingCtaFree).closest('a')).toHaveAttribute('href', '/login?plan=free')
-    expect(screen.getByText(copy.pricingCtaBasic).closest('a')).toHaveAttribute('href', '/login?plan=basic&billing=yearly')
-    expect(screen.getByText(copy.pricingCtaPremium).closest('a')).toHaveAttribute('href', '/login?plan=premium&billing=yearly')
+    expect(screen.getByText(copy.pricingCtaBasic).closest('a')).toHaveAttribute('href', '/login?plan=basic&billing=monthly')
+    expect(screen.getByText(copy.pricingCtaPremium).closest('a')).toHaveAttribute('href', '/login?plan=premium&billing=monthly')
   })
 
   it('renders all free tier features', () => {
@@ -71,38 +71,38 @@ describe('PricingSection', () => {
     expect(cards.length).toBeGreaterThan(0)
   })
 
-  it('toggle defaults to Yearly', () => {
+  it('toggle defaults to Monthly (psychological anchoring on lower numbers)', () => {
     render(<PricingSection copy={copy} />)
-    const yearlyBtn = screen.getByRole('button', { name: new RegExp(copy.pricingToggleYearly, 'i') })
-    expect(yearlyBtn).toHaveAttribute('aria-pressed', 'true')
+    const monthlyBtn = screen.getByRole('button', { name: new RegExp(copy.pricingToggleMonthly, 'i') })
+    expect(monthlyBtn).toHaveAttribute('aria-pressed', 'true')
   })
 
-  it('shows yearly prices by default', () => {
+  it('shows monthly prices by default', () => {
     render(<PricingSection copy={copy} />)
-    expect(screen.getByText(copy.pricingBasicYearlyPrice)).toBeInTheDocument()
-    expect(screen.getByText(copy.pricingPremiumYearlyPrice)).toBeInTheDocument()
-  })
-
-  it('shows monthly prices after switching to Monthly', () => {
-    render(<PricingSection copy={copy} />)
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(copy.pricingToggleMonthly, 'i') }))
     expect(screen.getByText(copy.pricingBasicPrice)).toBeInTheDocument()
     expect(screen.getByText(copy.pricingPremiumPrice)).toBeInTheDocument()
   })
 
-  it('CTA links include billing=yearly by default for paid plans', () => {
+  it('shows yearly prices after switching to Yearly', () => {
     render(<PricingSection copy={copy} />)
-    expect(screen.getByText(copy.pricingCtaBasic).closest('a'))
-      .toHaveAttribute('href', '/login?plan=basic&billing=yearly')
-    expect(screen.getByText(copy.pricingCtaPremium).closest('a'))
-      .toHaveAttribute('href', '/login?plan=premium&billing=yearly')
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(copy.pricingToggleYearly, 'i') }))
+    expect(screen.getByText(copy.pricingBasicYearlyPrice)).toBeInTheDocument()
+    expect(screen.getByText(copy.pricingPremiumYearlyPrice)).toBeInTheDocument()
   })
 
-  it('CTA links switch to billing=monthly when Monthly is selected', () => {
+  it('CTA links include billing=monthly by default for paid plans', () => {
     render(<PricingSection copy={copy} />)
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(copy.pricingToggleMonthly, 'i') }))
     expect(screen.getByText(copy.pricingCtaBasic).closest('a'))
       .toHaveAttribute('href', '/login?plan=basic&billing=monthly')
+    expect(screen.getByText(copy.pricingCtaPremium).closest('a'))
+      .toHaveAttribute('href', '/login?plan=premium&billing=monthly')
+  })
+
+  it('CTA links switch to billing=yearly when Yearly is selected', () => {
+    render(<PricingSection copy={copy} />)
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(copy.pricingToggleYearly, 'i') }))
+    expect(screen.getByText(copy.pricingCtaBasic).closest('a'))
+      .toHaveAttribute('href', '/login?plan=basic&billing=yearly')
   })
 
   it('Free CTA always links to /login?plan=free without billing param', () => {
