@@ -160,14 +160,47 @@ export async function GET(request: Request) {
     }
     return NextResponse.json(resp)
   } catch (err) {
+    // Build a richly-typed diagnostic. Vercel serverless surface differs from
+    // local — `error.code` (ENOENT, EACCES, EPIPE) tells us *why* spawn failed,
+    // which is the actual blocker when yt-dlp can't even start.
+    const e = err as Record<string, unknown> | null
     const message = err instanceof Error ? err.message : String(err)
+    const code = e && typeof e.code === 'string' ? e.code : null
+    const errno = e && typeof e.errno === 'number' ? e.errno : null
+    const syscall = e && typeof e.syscall === 'string' ? e.syscall : null
+    const errPath = e && typeof e.path === 'string' ? e.path : null
     const stderr =
-      err && typeof err === 'object' && 'stderr' in err ? String((err as { stderr: unknown }).stderr).slice(0, 500) : ''
-    const resp: SpikeResponse = {
+      e && typeof e.stderr === 'string' && e.stderr.length > 0 ? e.stderr.slice(0, 500) : null
+    const stdout =
+      e && typeof e.stdout === 'string' && e.stdout.length > 0 ? e.stdout.slice(0, 200) : null
+    const resp: SpikeResponse & {
+      diag?: {
+        message: string
+        code: string | null
+        errno: number | null
+        syscall: string | null
+        path: string | null
+        stderr: string | null
+        stdout: string | null
+        cwd: string
+        ytdlDir: string | null
+      }
+    } = {
       ...baseResp,
       ok: false,
       durationMs: Date.now() - startedAt,
-      error: stderr ? `${message} | stderr: ${stderr}` : message.slice(0, 1000),
+      error: message.slice(0, 200),
+      diag: {
+        message: message.slice(0, 500),
+        code,
+        errno,
+        syscall,
+        path: errPath,
+        stderr,
+        stdout,
+        cwd: process.cwd(),
+        ytdlDir: process.env.YOUTUBE_DL_DIR ?? null,
+      },
     }
     return NextResponse.json(resp, { status: 200 }) // 200 — caller inspects `ok`
   }
