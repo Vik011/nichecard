@@ -33,22 +33,21 @@ export async function fetchRadarPings(): Promise<RadarSnapshot> {
   // retention (spike rows live 60d) and reliably contains clustered material.
   const sincePings = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-  // 1) snapshot of recent outlier pings — we want the freshest 12 so the
-  //    radar feed has variety when it loops.
-  //
-  //    Filter cluster_id IS NOT NULL at the query level: a hero ping
-  //    without an AI-generated cluster label is theatre with no story
-  //    ("53.0× outlier · Forming cluster" reads as half-finished). Pre-
-  //    cluster orphans wait for the next cluster-outliers cron run before
-  //    they're eligible for this feed.
+  // 1) snapshot of recent outlier pings — fetch a wider candidate pool
+  //    (50) so we have headroom after dropping unclustered rows clientside.
+  //    All filtering happens after fetch — earlier attempts at a SQL-level
+  //    `cluster_id IS NOT NULL` filter via `.not('cluster_id', 'is', null)`
+  //    appeared to interact poorly with the niche_clusters embedded select
+  //    (toast feed kept rendering empty in production despite plenty of
+  //    labeled rows in the DB). Doing it clientside is identical in result
+  //    and removes the moving part.
   const { data: rows, error } = await supabase
     .from('scan_results_latest')
     .select('id, outlier_ratio, language, content_type, niche_clusters(label)')
     .eq('is_spike', true)
     .gte('scanned_at', sincePings)
-    .not('cluster_id', 'is', null)
     .order('outlier_ratio', { ascending: false })
-    .limit(12)
+    .limit(50)
 
   if (error || !rows) {
     if (error) console.error('[fetchRadarPings]', error.message)
@@ -63,11 +62,11 @@ export async function fetchRadarPings(): Promise<RadarSnapshot> {
     contentType: row.content_type === 'longform' ? 'longform' : 'shorts',
   }))
 
-  // Defence in depth — query already filters cluster_id IS NOT NULL, but
-  // a clustered row could in principle have a null label if labeling failed
-  // halfway. Drop those too. Empty array is preferred over a "Forming
-  // cluster" placeholder in the hero spot.
-  const pings = allPings.filter(p => p.clusterLabel !== null)
+  // Strict label filter, then trim back down to 12 for the rotation feed.
+  // Empty array is preferred over a "Forming cluster" placeholder in the
+  // hero spot — but with a 50-row candidate pool over a 7-day window we
+  // virtually never hit zero.
+  const pings = allPings.filter(p => p.clusterLabel !== null).slice(0, 12)
 
   // 2) total count of channels with a spike in the last 24h (for the
   //    "Live · N channels in last 24h" counter — kept at 24h because the
