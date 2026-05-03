@@ -5,7 +5,12 @@ export function canViewChannelDetails(tier: UserTier): boolean {
 }
 
 export function canUseAIFeatures(tier: UserTier): boolean {
-  return tier === 'premium'
+  // Sprint A.7 widened this from premium-only to basic+premium. Both tiers
+  // can hit the AI endpoints; the per-tier daily quota is enforced server-
+  // side by checkAiQuota() in lib/tier/aiUsage.ts (free=0, basic=1,
+  // premium=∞). FREE users still see the locked teaser when this returns
+  // false.
+  return tier === 'basic' || tier === 'premium'
 }
 
 export function getSubscriberRange(tier: UserTier, count: number): string {

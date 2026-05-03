@@ -25,16 +25,38 @@ describe('AIContentAngles', () => {
     expect(upgradeLink.getAttribute('href')).toBe('/pricing')
   })
 
-  it('renders locked teaser for basic tier (also non-premium)', () => {
-    render(<AIContentAngles scanResultId="scan-1" userTier="basic" copy={COPY.en} />)
-    expect(screen.getByText(/Premium feature/i)).toBeTruthy()
-  })
-
-  it('does NOT call fetch when user is not premium', () => {
+  it('does NOT call fetch for free tier (locked teaser path)', () => {
     const fetchSpy = jest.fn()
     global.fetch = fetchSpy as unknown as typeof fetch
     render(<AIContentAngles scanResultId="scan-1" userTier="free" copy={COPY.en} />)
     expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('Sprint A.7: basic tier fetches like premium and renders 5 angles', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ angles: mockAngles, cached: false }),
+    }) as unknown as typeof fetch
+
+    render(<AIContentAngles scanResultId="scan-1" userTier="basic" copy={COPY.en} />)
+    await waitFor(() => {
+      expect(screen.getAllByTestId('angle-card')).toHaveLength(5)
+    })
+  })
+
+  it('Sprint A.7: basic tier shows quota-exhausted UI on 429 daily_limit', async () => {
+    const resetAt = new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString()
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: async () => ({ error: 'daily_limit', tier: 'basic', usedToday: 1, limit: 1, resetAt }),
+    }) as unknown as typeof fetch
+
+    render(<AIContentAngles scanResultId="scan-1" userTier="basic" copy={COPY.en} />)
+    await waitFor(() => {
+      expect(screen.getByText(/Daily deep-dive used/i)).toBeTruthy()
+    })
+    expect(screen.getByRole('link', { name: /upgrade to premium/i })).toBeTruthy()
   })
 
   it('fetches and renders 5 angle cards for premium tier', async () => {

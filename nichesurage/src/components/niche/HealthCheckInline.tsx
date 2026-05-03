@@ -6,6 +6,7 @@ import { Heartbeat, LockSimple } from '@phosphor-icons/react/dist/ssr'
 import type { UserTier } from '@/lib/types'
 import type { CopyKeys } from '@/components/landing/copy'
 import { canUseAIFeatures } from '@/lib/tier'
+import { AiQuotaExhausted } from './AiQuotaExhausted'
 
 interface HealthCheckInlineProps {
   scanResultId: string
@@ -30,6 +31,9 @@ type LoadState =
   | { kind: 'loading' }
   | { kind: 'error'; message: string }
   | { kind: 'ready'; data: HealthCheckResponse }
+  // Sprint A.7 — daily AI quota hit. Distinct from 'error' because the UI
+  // surfaces the reset countdown + upgrade CTA, not a generic retry.
+  | { kind: 'quota_exhausted'; resetAt: Date }
 
 const STAGE_INTERVAL_MS = 6000
 
@@ -61,9 +65,12 @@ export function HealthCheckInline({ scanResultId, userTier, copy }: HealthCheckI
         const res = await fetch(`/api/health-check/${encodeURIComponent(scanResultId)}`)
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))
-          if (!cancelled) {
-            setState({ kind: 'error', message: body?.error ?? `Request failed (${res.status})` })
+          if (cancelled) return
+          if (res.status === 429 && body?.error === 'daily_limit' && body?.resetAt) {
+            setState({ kind: 'quota_exhausted', resetAt: new Date(body.resetAt) })
+            return
           }
+          setState({ kind: 'error', message: body?.error ?? `Request failed (${res.status})` })
           return
         }
         const data = (await res.json()) as HealthCheckResponse
@@ -78,6 +85,10 @@ export function HealthCheckInline({ scanResultId, userTier, copy }: HealthCheckI
 
   if (!allowed) {
     return <LockedTeaser copy={copy} />
+  }
+
+  if (state.kind === 'quota_exhausted') {
+    return <AiQuotaExhausted resetAt={state.resetAt} copy={copy} />
   }
 
   return (

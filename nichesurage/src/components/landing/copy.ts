@@ -32,6 +32,11 @@ export const COPY = {
       'Premium reveals every niche our scanner finds, plus unlimited AI deep-dives. Go Premium to keep digging.',
     upsellCtaBasic: 'Upgrade to Premium',
     upsellSecondary: 'Maybe later',
+    // AI quota exhausted UI (BASIC after running their 1 daily deep-dive)
+    aiQuotaUsedTitle: 'Daily deep-dive used',
+    aiQuotaUsedBody:
+      "You've used your 1 AI deep-dive for today. The quota resets in {hours}. Upgrade to Premium for unlimited deep-dives.",
+    aiQuotaUpgradeCta: 'Upgrade to Premium',
     discoverSearchingBtn: 'Searching…',
     discoverEmptyTitle: 'No niches match these filters',
     discoverEmptyBody: 'Try widening the subscriber range or relaxing the channel age filter.',
@@ -277,6 +282,11 @@ export const COPY = {
       'Premium zeigt jede Nische, die unser Scanner findet, plus unbegrenzte KI-Analysen. Premium für die volle Tiefe.',
     upsellCtaBasic: 'Auf Premium upgraden',
     upsellSecondary: 'Vielleicht später',
+    // KI-Tageskontingent verbraucht (BASIC nach 1 täglicher Analyse)
+    aiQuotaUsedTitle: 'Tägliche Analyse verbraucht',
+    aiQuotaUsedBody:
+      'Du hast deine 1 KI-Analyse für heute genutzt. Reset in {hours}. Upgrade auf Premium für unbegrenzte Analysen.',
+    aiQuotaUpgradeCta: 'Auf Premium upgraden',
     discoverSearchingBtn: 'Suche…',
     discoverEmptyTitle: 'Keine Nischen für diese Filter gefunden',
     discoverEmptyBody: 'Erweitere den Abonnenten-Bereich oder lockere den Kanal-Alter-Filter.',

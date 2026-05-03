@@ -7,6 +7,7 @@ import type { ContentAngle, UserTier } from '@/lib/types'
 import type { CopyKeys } from '@/components/landing/copy'
 import { canUseAIFeatures } from '@/lib/tier'
 import { captureClient } from '@/lib/analytics/posthog-client'
+import { AiQuotaExhausted } from './AiQuotaExhausted'
 
 const STAGE_INTERVAL_MS = 6500
 
@@ -20,6 +21,8 @@ type LoadState =
   | { kind: 'loading' }
   | { kind: 'error'; message: string }
   | { kind: 'ready'; angles: ContentAngle[] }
+  // Sprint A.7 — see HealthCheckInline for the same shape.
+  | { kind: 'quota_exhausted'; resetAt: Date }
 
 const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-indigo'
 
@@ -36,9 +39,12 @@ export function AIContentAngles({ scanResultId, userTier, copy }: AIContentAngle
         const res = await fetch(`/api/content-angles/${encodeURIComponent(scanResultId)}`)
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))
-          if (!cancelled) {
-            setState({ kind: 'error', message: body?.error ?? `Request failed (${res.status})` })
+          if (cancelled) return
+          if (res.status === 429 && body?.error === 'daily_limit' && body?.resetAt) {
+            setState({ kind: 'quota_exhausted', resetAt: new Date(body.resetAt) })
+            return
           }
+          setState({ kind: 'error', message: body?.error ?? `Request failed (${res.status})` })
           return
         }
         const data = (await res.json()) as { angles: ContentAngle[] }
@@ -53,6 +59,10 @@ export function AIContentAngles({ scanResultId, userTier, copy }: AIContentAngle
 
   if (!allowed) {
     return <LockedTeaser copy={copy} userTier={userTier} />
+  }
+
+  if (state.kind === 'quota_exhausted') {
+    return <AiQuotaExhausted resetAt={state.resetAt} copy={copy} />
   }
 
   return (
