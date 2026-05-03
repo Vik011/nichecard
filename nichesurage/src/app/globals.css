@@ -165,6 +165,47 @@ body {
     background-size: 200% 100%;
     animation: shimmer 1.8s linear infinite;
   }
+
+  /* ---------- Hero radar atmospherics ---------- */
+
+  /* Detection pulse — concentric ring that emanates from the radar centre.
+     One pulse every 6.5s feels deliberate (the radar "found something"),
+     in contrast to the constant ping/twinkle dot soup of the earlier pass. */
+  .detection-pulse {
+    animation: detection-pulse 6.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  }
+  @keyframes detection-pulse {
+    0%   { transform: translate(-50%, -50%) scale(0);     opacity: 0;   }
+    8%   {                                                  opacity: 0.55;}
+    100% { transform: translate(-50%, -50%) scale(14);    opacity: 0;   }
+  }
+
+  /* Hero scan line — thin gradient line that sweeps top-to-bottom across the
+     hero section every 10s. Subtle indigo→cyan tint, only shows briefly so it
+     reads as ambient telemetry, not a constant moving element. */
+  .scan-line {
+    position: absolute;
+    inset-inline: 0;
+    height: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(124, 131, 240, 0.55) 35%,
+      rgba(34, 211, 238, 0.7) 50%,
+      rgba(124, 131, 240, 0.55) 65%,
+      transparent 100%
+    );
+    box-shadow: 0 0 16px rgba(34, 211, 238, 0.35);
+    animation: scan-line-sweep 10s linear infinite;
+  }
+  @keyframes scan-line-sweep {
+    0%   { top: -2%;   opacity: 0;   }
+    5%   {              opacity: 1;   }
+    50%  { top: 50%;   opacity: 1;   }
+    95%  {              opacity: 0.6; }
+    100% { top: 102%;  opacity: 0;   }
+  }
 }
 
 /* ---------- Accessibility & mobile motion fallbacks ---------- */

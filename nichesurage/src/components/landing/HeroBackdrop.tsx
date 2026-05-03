@@ -1,8 +1,8 @@
 'use client'
 
-// HeroBackdrop layers the live-radar visual behind the hero copy and floats
-// the live counter + rotating "channel discovered" toast as overlays. The
-// hero text reads on top; the radar gives the section its identity.
+// HeroBackdrop layers the live radar visual behind the hero copy and floats
+// telemetry overlays in three corners (top-left, bottom-left, bottom-right)
+// to balance the hero stage. Hero text reads on top.
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -36,32 +36,34 @@ export function HeroBackdrop({ copy, pings, channelsLast24h }: HeroBackdropProps
 
   return (
     <>
-      {/* Layer 0 — radar dish, centered behind the hero copy. Lives at low
-          opacity and gets faded at its edges by a radial gradient mask
-          (Layer 1) so the headline reads cleanly. */}
+      {/* Layer 0 — radar dish, centered behind the hero copy. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 flex items-center justify-center"
       >
-        <div className="opacity-60 mix-blend-screen">
+        <div className="opacity-[0.55]">
           <RadarVisual />
         </div>
       </div>
 
-      {/* Layer 1 — radial fade so the radar feathers into the page bg
-          instead of having a hard circular edge. */}
+      {/* Layer 1 — radial fade so the radar feathers into the page bg. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(circle at center, transparent 30%, rgba(6,9,16,0.55) 60%, rgba(6,9,16,0.95) 85%)',
+            'radial-gradient(circle at center, transparent 22%, rgba(6,9,16,0.55) 60%, rgba(6,9,16,0.95) 88%)',
         }}
       />
 
-      {/* Layer 2 — floating live counter, top-right of hero on desktop.
-          Hidden on mobile to preserve hero readability. */}
-      <div className="hidden md:flex absolute top-8 right-8 z-20 items-center gap-2 bg-charcoal-900/70 backdrop-blur-md gborder rounded-full px-4 py-2">
+      {/* Layer 2 — ambient horizontal scan line that sweeps top→bottom every
+          10s. Subtle "system is online" telemetry without constant motion. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden">
+        <div className="scan-line" />
+      </div>
+
+      {/* Layer 3 — TOP-LEFT: floating LIVE counter chip. */}
+      <div className="hidden md:flex absolute top-8 left-8 z-20 items-center gap-2 bg-charcoal-900/70 backdrop-blur-md gborder rounded-full px-4 py-2 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]">
         <span aria-hidden="true" className="relative flex h-1.5 w-1.5">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
@@ -74,10 +76,13 @@ export function HeroBackdrop({ copy, pings, channelsLast24h }: HeroBackdropProps
         </span>
       </div>
 
-      {/* Layer 3 — floating "channel discovered" notification, bottom-right
-          of hero on desktop. Slides in/out as pings rotate. */}
+      {/* Layer 4 — BOTTOM-LEFT: next-scan countdown. Dopamine driver — gives
+          the visitor a reason to wait or come back. */}
+      <NextScanCountdown copy={copy} />
+
+      {/* Layer 5 — BOTTOM-RIGHT: floating "channel discovered" notification. */}
       <div
-        className="hidden md:block absolute bottom-8 right-8 z-20 w-[280px] min-h-[96px]"
+        className="hidden md:block absolute bottom-8 right-8 z-20 w-[300px] min-h-[100px]"
         aria-live="polite"
         aria-atomic="true"
       >
@@ -120,19 +125,43 @@ export function HeroBackdrop({ copy, pings, channelsLast24h }: HeroBackdropProps
   )
 }
 
-// Stable pseudo-random scatter for the micro-twinkle layer. Stable across
-// renders so the staggered animation rhythm doesn't reset.
-const TWINKLE_POSITIONS: Array<{ top: string; left: string; delay: string; duration: string }> = [
-  { top: '14%', left: '38%', delay: '0s',   duration: '3.1s' },
-  { top: '20%', left: '70%', delay: '1.4s', duration: '3.6s' },
-  { top: '32%', left: '22%', delay: '0.7s', duration: '2.8s' },
-  { top: '50%', left: '12%', delay: '2.2s', duration: '3.3s' },
-  { top: '58%', left: '88%', delay: '0.3s', duration: '3.0s' },
-  { top: '74%', left: '24%', delay: '1.8s', duration: '3.5s' },
-  { top: '82%', left: '54%', delay: '0.9s', duration: '2.9s' },
-  { top: '88%', left: '78%', delay: '2.6s', duration: '3.4s' },
-]
+// Bottom-left telemetry overlay: live countdown to the top of the next hour
+// (when the hourly-scan cron fires). Re-renders every second.
+function NextScanCountdown({ copy }: { copy: CopyKeys }) {
+  const [now, setNow] = useState<Date | null>(null)
 
+  useEffect(() => {
+    setNow(new Date())
+    const t = window.setInterval(() => setNow(new Date()), 1000)
+    return () => window.clearInterval(t)
+  }, [])
+
+  if (!now) return null
+
+  // Time remaining until top of next hour.
+  const remainingMs =
+    (60 - now.getMinutes()) * 60 * 1000 -
+    now.getSeconds() * 1000 -
+    now.getMilliseconds()
+  const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+
+  return (
+    <div className="hidden md:flex absolute bottom-8 left-8 z-20 flex-col gap-1 bg-charcoal-900/70 backdrop-blur-md gborder rounded-2xl px-4 py-3 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]">
+      <span className="text-slate-500 text-[9px] font-semibold uppercase tracking-[0.22em]">
+        {copy.heroNextScanLabel}
+      </span>
+      <span className="text-slate-100 text-base font-semibold tabular-nums tracking-tight">
+        {copy.heroNextScanFormat(minutes, seconds)}
+      </span>
+    </div>
+  )
+}
+
+// Three strategic detection dots — placed on different ring radii so the
+// composition reads as "depth", not as a flat scatter. One bright outer
+// (rose), one mid (cyan), one inner (indigo). Slow, distinct rhythms.
 const PING_POSITIONS: Array<{
   top: string
   left: string
@@ -140,62 +169,50 @@ const PING_POSITIONS: Array<{
   color: string
   delay: string
   duration: string
+  glow: string
 }> = [
-  { top: '22%', left: '64%', size: 'w-2 h-2',     color: 'bg-rose-400',     delay: '0s',   duration: '2.2s' },
-  { top: '60%', left: '34%', size: 'w-1.5 h-1.5', color: 'bg-rose-400/90',  delay: '0.9s', duration: '2.4s' },
-  { top: '40%', left: '82%', size: 'w-1.5 h-1.5', color: 'bg-rose-400',     delay: '1.6s', duration: '2.0s' },
-  { top: '76%', left: '60%', size: 'w-1 h-1',     color: 'bg-rose-300/90',  delay: '0.4s', duration: '2.6s' },
-  { top: '36%', left: '28%', size: 'w-1.5 h-1.5', color: 'bg-glow-cyan',    delay: '1.1s', duration: '2.3s' },
-  { top: '70%', left: '76%', size: 'w-1 h-1',     color: 'bg-glow-cyan/85', delay: '0.6s', duration: '2.1s' },
-  { top: '46%', left: '38%', size: 'w-1 h-1',     color: 'bg-glow-indigo',  delay: '1.9s', duration: '2.7s' },
-  { top: '54%', left: '64%', size: 'w-1 h-1',     color: 'bg-glow-indigo',  delay: '0.2s', duration: '2.5s' },
-  { top: '18%', left: '50%', size: 'w-1 h-1',     color: 'bg-rose-300/70',  delay: '2.0s', duration: '2.8s' },
-  { top: '84%', left: '40%', size: 'w-1 h-1',     color: 'bg-rose-300/70',  delay: '1.3s', duration: '2.9s' },
+  { top: '24%', left: '68%', size: 'w-2.5 h-2.5', color: 'bg-rose-400',     delay: '0s',   duration: '3.2s', glow: '0 0 18px rgba(251,113,133,0.9)' },
+  { top: '64%', left: '30%', size: 'w-2 h-2',     color: 'bg-glow-cyan',    delay: '1.4s', duration: '3.6s', glow: '0 0 14px rgba(34,211,238,0.85)' },
+  { top: '46%', left: '78%', size: 'w-1.5 h-1.5', color: 'bg-glow-indigo',  delay: '2.7s', duration: '3.0s', glow: '0 0 12px rgba(124,131,240,0.85)' },
 ]
 
 function RadarVisual() {
   return (
     <div className="relative w-[36rem] h-[36rem] sm:w-[44rem] sm:h-[44rem] md:w-[52rem] md:h-[52rem]">
-      {/* Concentric rings — denser, brighter on the outer edge so the radar
-          reads from a distance even at 60% opacity. */}
-      <div className="absolute inset-0     rounded-full border border-glow-indigo/30" />
-      <div className="absolute inset-12    rounded-full border border-glow-indigo/25" />
-      <div className="absolute inset-24    rounded-full border border-glow-indigo/22" />
+      {/* Concentric rings — slightly brighter than the previous pass so the
+          radar reads at 55% opacity without mix-blend tricks. */}
+      <div className="absolute inset-0       rounded-full border border-glow-indigo/35" />
+      <div className="absolute inset-12      rounded-full border border-glow-indigo/30" />
+      <div className="absolute inset-24      rounded-full border border-glow-indigo/24" />
       <div className="absolute inset-[144px] rounded-full border border-glow-indigo/18" />
       <div className="absolute inset-[192px] rounded-full border border-glow-indigo/14" />
 
       {/* Crosshairs */}
-      <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-glow-indigo/15 to-transparent" />
-      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-glow-indigo/15 to-transparent" />
+      <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-glow-indigo/18 to-transparent" />
+      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-glow-indigo/18 to-transparent" />
 
-      {/* Sweep arm */}
+      {/* Sweep arm — narrower trail (40°) and slower duration (8s via inline
+          override) so the radar feels deliberate, not anxious. */}
       <div
         aria-hidden
         className="absolute inset-0 rounded-full animate-sonar-sweep motion-reduce:animate-none"
         style={{
           background:
-            'conic-gradient(from 0deg, rgba(124,131,240,0) 0deg, rgba(124,131,240,0.6) 50deg, rgba(124,131,240,0) 110deg, rgba(124,131,240,0) 360deg)',
+            'conic-gradient(from 0deg, rgba(124,131,240,0) 0deg, rgba(124,131,240,0.55) 40deg, rgba(124,131,240,0) 90deg, rgba(124,131,240,0) 360deg)',
           maskImage: 'radial-gradient(circle, black 50%, transparent 100%)',
           WebkitMaskImage: 'radial-gradient(circle, black 50%, transparent 100%)',
+          animationDuration: '8s',
         }}
       />
 
-      {/* Micro-twinkle layer */}
-      {TWINKLE_POSITIONS.map((p, i) => (
-        <span
-          key={`twinkle-${i}`}
-          aria-hidden
-          className="absolute w-px h-px rounded-full bg-glow-indigo/60 animate-pulse motion-reduce:animate-none"
-          style={{
-            top: p.top,
-            left: p.left,
-            animationDelay: p.delay,
-            animationDuration: p.duration,
-          }}
-        />
-      ))}
+      {/* Detection pulse — single concentric ring that emanates from centre
+          every 6.5s. The radar "found something." */}
+      <span
+        aria-hidden
+        className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full border border-glow-cyan detection-pulse motion-reduce:hidden"
+      />
 
-      {/* Detection dots */}
+      {/* Three strategic detection dots */}
       {PING_POSITIONS.map((p, i) => (
         <span
           key={`ping-${i}`}
@@ -206,12 +223,7 @@ function RadarVisual() {
             left: p.left,
             animationDelay: p.delay,
             animationDuration: p.duration,
-            boxShadow:
-              p.color.includes('rose')
-                ? '0 0 12px rgba(251,113,133,0.85)'
-                : p.color.includes('cyan')
-                ? '0 0 10px rgba(34,211,238,0.7)'
-                : '0 0 10px rgba(124,131,240,0.7)',
+            boxShadow: p.glow,
           }}
         />
       ))}

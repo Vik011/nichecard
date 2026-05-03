@@ -50,15 +50,13 @@ export async function fetchRadarPings(): Promise<RadarSnapshot> {
     contentType: row.content_type === 'longform' ? 'longform' : 'shorts',
   }))
 
-  // Hero spot is performance theater — every ping needs a story. Strict rules:
-  //   1. ratio >= 50× WITHOUT a cluster label → drop. Big numbers without a
-  //      "this is what the niche is" line read as buggy / half-baked, not
-  //      premium.
-  //   2. Otherwise prefer labeled pings; allow unlabeled ones with smaller
-  //      ratios in only when the labeled pool is too thin.
-  const survivors = allPings.filter(p => !(p.outlierRatio >= 50 && p.clusterLabel === null))
-  const labeled = survivors.filter(p => p.clusterLabel !== null)
-  const pings = labeled.length >= 4 ? labeled : survivors
+  // Hero spot is performance theater — every ping needs a cluster label as
+  // its narrative. Without one ("Forming cluster" placeholder), even a
+  // dramatic ratio reads as half-baked. Strict: drop ALL unlabeled pings.
+  // If we're left with too few, fall back to unlabeled to avoid an empty
+  // radar — but that fallback is the rare degenerate case.
+  const labeled = allPings.filter(p => p.clusterLabel !== null)
+  const pings = labeled.length >= 1 ? labeled : allPings
 
   // 2) total count of channels with a spike in the last 24h (for the
   //    "Live · N channels in last 24h" counter).

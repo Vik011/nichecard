@@ -57,4 +57,12 @@ describe('HeroBackdrop', () => {
     expect(screen.getByText(/47 Kanäle in den letzten 24 Stunden entdeckt/)).toBeInTheDocument()
     expect(screen.getByText(/Kanal entdeckt/)).toBeInTheDocument()
   })
+
+  it('renders the "Next scan in" countdown overlay anchored to the top of the next hour', () => {
+    // Pin clock to xx:47:18 — countdown should read "12m 42s" until top of hour.
+    jest.setSystemTime(new Date('2026-05-03T10:47:18.000Z'))
+    render(<HeroBackdrop copy={COPY.en} pings={samplePings} channelsLast24h={47} />)
+    expect(screen.getByText(/Next scan in/i)).toBeInTheDocument()
+    expect(screen.getByText('12m 42s')).toBeInTheDocument()
+  })
 })

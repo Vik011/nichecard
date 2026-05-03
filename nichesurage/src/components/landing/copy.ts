@@ -107,11 +107,15 @@ export const COPY = {
     relatedHeading: 'Niches in the same lane',
     relatedEmpty: 'No similar niches found right now.',
 
+    heroEyebrow: 'YouTube niche intelligence',
     heroHeadline: "I built this because YouTube research was eating my weekends.",
     heroSub: "SurgeNiche scans 230+ small channels every hour and flags the ones spiking before anyone else notices. No keyword guessing, no copy-paste tactics — just the small accounts that started moving.",
     heroBadge: '47 channels spiked in the last hour',
     heroCta: 'Try it free',
     heroCta2: 'How it works',
+    heroNextScanLabel: 'Next scan in',
+    heroNextScanFormat: (m: number, s: number) =>
+      `${m}m ${s.toString().padStart(2, '0')}s`,
 
     radarLive: 'Live',
     radarPingPrefix: 'Channel discovered',
@@ -333,11 +337,15 @@ export const COPY = {
     relatedHeading: 'Nischen in derselben Spur',
     relatedEmpty: 'Aktuell keine ähnlichen Nischen.',
 
+    heroEyebrow: 'YouTube-Nischen-Intelligenz',
     heroHeadline: "Ich habe das gebaut, weil YouTube-Recherche meine Wochenenden gefressen hat.",
     heroSub: "SurgeNiche scannt stündlich 230+ kleine Kanäle und markiert die, die zu steigen beginnen — bevor es jemand anderes bemerkt. Kein Keyword-Raten, keine Copy-Paste-Taktik.",
     heroBadge: '47 Kanäle sind in der letzten Stunde gestiegen',
     heroCta: 'Kostenlos ausprobieren',
     heroCta2: 'Wie es funktioniert',
+    heroNextScanLabel: 'Nächster Scan in',
+    heroNextScanFormat: (m: number, s: number) =>
+      `${m}m ${s.toString().padStart(2, '0')}s`,
 
     radarLive: 'Live',
     radarPingPrefix: 'Kanal entdeckt',
