@@ -26,8 +26,8 @@ export function PainSolutionSection({ copy }: PainSolutionSectionProps) {
               ))}
             </ul>
           </div>
-          {/* Right: With NicheSurge */}
-          <div className="relative glass glass-violet rounded-xl p-8 border-indigo-800/0">
+          {/* Right: With SurgeNiche */}
+          <div className="relative glass glass-glow rounded-xl p-8 border-indigo-800/0">
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.18em] text-glow-indigo mb-6">
               {copy.solutionTitle}
             </h3>

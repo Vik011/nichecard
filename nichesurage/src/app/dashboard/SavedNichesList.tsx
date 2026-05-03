@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import { NicheCard } from '@/components/niche/NicheCard'
-import { unsaveNiche } from '@/lib/supabase/savedNiches'
+import { StaggerList } from '@/components/ui/StaggerList'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { EmptyMagnifier } from '@/components/ui/illustrations/EmptyMagnifier'
 import type { NicheCardData, UserTier } from '@/lib/types'
 
 interface SavedNichesListProps {
@@ -21,21 +23,20 @@ export function SavedNichesList({ initialNiches, userTier }: SavedNichesListProp
 
   if (niches.length === 0) {
     return (
-      <div className="text-center py-20">
-        <p className="text-slate-400 text-lg mb-2">No saved niches yet.</p>
-        <p className="text-slate-600 text-sm">
-          Go to{' '}
-          <a href="/discover/shorts" className="text-indigo-400 hover:text-indigo-300 underline">
-            Discover
-          </a>{' '}
-          and star niches you want to track.
-        </p>
-      </div>
+      <EmptyState
+        illustration={<EmptyMagnifier size={96} />}
+        title="No saved niches yet"
+        body="Bookmark niches from Discover to track them here."
+        cta={{ label: 'Open Discover', href: '/discover?type=shorts' }}
+      />
     )
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <StaggerList
+      key={niches.length}
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+    >
       {niches.map((niche, i) => (
         <NicheCard
           key={niche.id}
@@ -47,6 +48,6 @@ export function SavedNichesList({ initialNiches, userTier }: SavedNichesListProp
           onBookmarkToggle={handleBookmarkToggle}
         />
       ))}
-    </div>
+    </StaggerList>
   )
 }

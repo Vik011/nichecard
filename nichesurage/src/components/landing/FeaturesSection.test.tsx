@@ -48,4 +48,21 @@ describe('FeaturesSection', () => {
     const premiumCount = copy.features.filter(f => f.tier === 'premium').length
     expect(screen.getAllByText(copy.featuresPremiumBadge).length).toBe(premiumCount)
   })
+
+  it('renders Health Check feature with Live status badge', () => {
+    render(<FeaturesSection copy={copy} />)
+    const healthCheck = copy.features.find(f => f.icon === 'heartbeat')
+    expect(healthCheck).toBeDefined()
+    expect(screen.getByText(healthCheck!.title)).toBeInTheDocument()
+    const status = screen.getByTestId('feature-status-heartbeat')
+    expect(status).toHaveTextContent(copy.featuresStatusLive)
+  })
+
+  it('renders Soon status on Clone & Twist + Early Warning Alerts', () => {
+    render(<FeaturesSection copy={copy} />)
+    const cloneStatus = screen.getByTestId('feature-status-trend-up')
+    const alertsStatus = screen.getByTestId('feature-status-bell')
+    expect(cloneStatus).toHaveTextContent(copy.featuresStatusSoon)
+    expect(alertsStatus).toHaveTextContent(copy.featuresStatusSoon)
+  })
 })

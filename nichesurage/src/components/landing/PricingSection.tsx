@@ -1,6 +1,8 @@
 'use client'
 import { useState } from 'react'
 import type { CopyKeys } from './copy'
+import { MotionCard } from '@/components/ui/MotionCard'
+import { captureClient } from '@/lib/analytics/posthog-client'
 
 type Billing = 'monthly' | 'yearly'
 
@@ -81,7 +83,7 @@ export function PricingSection({ copy }: PricingSectionProps) {
               onClick={() => setBilling('yearly')}
               className={
                 billing === 'yearly'
-                  ? 'px-5 py-2 rounded-full text-sm font-semibold bg-gradient-to-br from-glow-indigo to-glow-violet text-white transition-all flex items-center gap-2'
+                  ? 'px-5 py-2 rounded-full text-sm font-semibold bg-gradient-to-br from-brand-indigo to-brand-indigo-bright text-white transition-all flex items-center gap-2'
                   : 'px-5 py-2 rounded-full text-sm font-semibold text-slate-400 hover:text-slate-200 transition-all flex items-center gap-2'
               }
             >
@@ -103,13 +105,13 @@ export function PricingSection({ copy }: PricingSectionProps) {
               : `/login?plan=${tier.plan}&billing=${billing}`
 
             return (
-              <div
+              <MotionCard
                 key={tier.plan}
                 className={
                   tier.highlight
                     ? 'relative glass rounded-2xl p-8 ring-1 ring-glow-indigo/40'
                     : tier.isPremium
-                    ? 'relative glass glass-violet rounded-2xl p-8'
+                    ? 'relative glass glass-glow rounded-2xl p-8'
                     : 'relative gborder bg-charcoal-900 rounded-2xl p-8'
                 }
               >
@@ -119,7 +121,7 @@ export function PricingSection({ copy }: PricingSectionProps) {
                   </span>
                 )}
                 {tier.isPremium && (
-                  <span className="absolute -top-3 right-6 text-[10px] font-semibold tracking-[0.22em] text-glow-violet uppercase bg-charcoal-900 px-3">
+                  <span className="absolute -top-3 right-6 text-[10px] font-semibold tracking-[0.22em] text-glow-indigo uppercase bg-charcoal-900 px-3">
                     {copy.pricingBestValueBadge}
                   </span>
                 )}
@@ -143,15 +145,16 @@ export function PricingSection({ copy }: PricingSectionProps) {
                 </ul>
                 <a
                   href={href}
+                  onClick={() => captureClient('pricing_cta_clicked', { plan: tier.plan, billing })}
                   className={
                     tier.highlight
-                      ? 'block w-full text-center py-3 px-4 rounded-xl font-semibold bg-gradient-to-br from-glow-indigo to-glow-violet text-white hover:brightness-110 transition-all shadow-[0_8px_24px_-8px_rgba(124,131,240,0.45)]'
+                      ? 'block w-full text-center py-3 px-4 rounded-xl font-semibold bg-gradient-to-br from-brand-indigo to-brand-indigo-bright text-white hover:brightness-110 hover:shadow-glow-cyan transition-all shadow-[0_8px_24px_-8px_rgba(124,131,240,0.45)]'
                       : 'block w-full text-center py-3 px-4 rounded-xl font-semibold gborder bg-charcoal-800 text-slate-200 hover:bg-charcoal-700 transition-colors'
                   }
                 >
                   {tier.cta}
                 </a>
-              </div>
+              </MotionCard>
             )
           })}
         </div>

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { mapRow } from '@/lib/supabase/queries'
 import { SavedNichesList } from './SavedNichesList'
+import { ManageSubscriptionButton } from './ManageSubscriptionButton'
 import type { DbScanResult, UserTier } from '@/lib/types'
 
 export default async function DashboardPage() {
@@ -12,7 +13,7 @@ export default async function DashboardPage() {
   const [profileResult, savedResult] = await Promise.all([
     supabase
       .from('users')
-      .select('email, tier')
+      .select('email, tier, stripe_subscription_id')
       .eq('id', user.id)
       .single(),
     supabase
@@ -25,6 +26,7 @@ export default async function DashboardPage() {
   const profile = profileResult.data
   const tier = (profile?.tier ?? 'free') as UserTier
   const email = profile?.email ?? user.email ?? ''
+  const hasSubscription = Boolean(profile?.stripe_subscription_id)
 
   const savedNiches = (savedResult.data ?? []).map(item =>
     mapRow(item.scan_results as unknown as DbScanResult)
@@ -37,9 +39,9 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-2xl mx-auto">
+    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-8 max-w-2xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold">My Saved Niches</h1>
           <p className="text-slate-500 text-sm mt-0.5">{email}</p>
@@ -50,17 +52,20 @@ export default async function DashboardPage() {
           </span>
           {tier !== 'premium' && (
             <a
-              href="/login"
+              href="/#pricing"
               className="block text-xs text-indigo-400 hover:text-indigo-300 mt-1.5"
             >
               Upgrade →
             </a>
           )}
+          {hasSubscription && (
+            <ManageSubscriptionButton />
+          )}
         </div>
       </div>
 
       {/* Saved count */}
-      <p className="text-slate-500 text-sm mb-5">
+      <p className="text-slate-500 text-sm mb-5 max-w-2xl mx-auto">
         {savedNiches.length === 0
           ? 'No saved niches'
           : `${savedNiches.length} saved niche${savedNiches.length === 1 ? '' : 's'}`}

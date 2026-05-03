@@ -4,12 +4,35 @@ export type {
   ContentLanguage,
   ContentType,
   BillingInterval,
+  SubscriptionStatus,
   DbUser,
   DbScanResult,
+  DbNicheHealthCheck,
 } from './database'
 import type { ViralityRating, ContentLanguage, ContentType } from './database'
 
 export type ChannelAge = '1month' | '3months' | '6months' | '1year' | 'any'
+export type SortBy = 'score' | 'newest'
+
+export interface SpikePoint {
+  day: string
+  spikeX: number
+}
+
+export interface ChannelVideo {
+  id: string
+  title: string
+  thumbnail: string
+  viewCount: number
+  publishedAt: string
+}
+
+export interface ContentAngle {
+  title: string
+  hook: string
+  format: 'shorts' | 'longform'
+  why: string
+}
 
 export interface SearchFilters {
   contentType: ContentType
@@ -17,13 +40,16 @@ export interface SearchFilters {
   subscriberMax: number
   channelAge: ChannelAge
   onlyRecentlyViral: boolean
+  sortBy: SortBy
 }
 
 interface BaseNicheCardData {
   id: string
+  youtubeChannelId: string
   contentType: ContentType
   channelCreatedAt: string
   videoCount: number
+  subscriberCount: number
   subscriberRange: string
   spikeMultiplier: number
   opportunityScore: number
@@ -37,6 +63,22 @@ interface BaseNicheCardData {
   engagementRate?: number
   // landing page only
   trending?: boolean
+  // Sonar
+  outlierRatio?: number
+  isSpike?: boolean
+  outlierVideoTitle?: string
+  outlierVideoViews?: number
+  clusterId?: string
+  clusterLabel?: string
+  seedKeyword?: string
+}
+
+export interface TrendingCluster {
+  id: string
+  label: string
+  memberCount: number
+  language: ContentLanguage | null
+  contentType: 'shorts' | 'longform' | 'both' | null
 }
 
 export interface ShortsNicheCardData extends BaseNicheCardData {

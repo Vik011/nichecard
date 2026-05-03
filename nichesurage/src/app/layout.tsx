@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Suspense } from "react";
 import "./globals.css";
 import { UserProvider } from "@/lib/context/UserContext";
+import { AmbientBackground } from "@/components/layout/AmbientBackground";
+import { PosthogProvider } from "@/components/providers/PosthogProvider";
+import { CookieBanner } from "@/components/ui/CookieBanner";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -15,18 +19,24 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "NicheSurge — Find YouTube Niches Before They Explode",
+  metadataBase: new URL("https://surgeniche.com"),
+  title: {
+    default: "SurgeNiche — Find YouTube Niches Before They Explode",
+    template: "%s — SurgeNiche",
+  },
   description:
     "AI-powered YouTube niche discovery. Hourly scans of 230+ channels. Opportunity scores, viral spike detection, and Shorts + Longform discovery.",
   openGraph: {
-    title: "NicheSurge — Find YouTube Niches Before They Explode",
+    title: "SurgeNiche — Find YouTube Niches Before They Explode",
     description: "AI-powered opportunity scanner. Real data, updated hourly.",
-    siteName: "NicheSurge",
+    siteName: "SurgeNiche",
+    url: "https://surgeniche.com",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "NicheSurge — Find YouTube Niches Before They Explode",
+    site: "@surgeniche",
+    title: "SurgeNiche — Find YouTube Niches Before They Explode",
     description: "AI-powered opportunity scanner. Real data, updated hourly.",
   },
 };
@@ -39,9 +49,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-carbon-950 text-slate-100`}
       >
-        <UserProvider>{children}</UserProvider>
+        <AmbientBackground />
+        <Suspense fallback={null}>
+          <PosthogProvider />
+        </Suspense>
+        <div className="relative z-10">
+          <UserProvider>{children}</UserProvider>
+          <CookieBanner />
+        </div>
       </body>
     </html>
   );

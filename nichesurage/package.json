@@ -12,12 +12,19 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.91.1",
     "@phosphor-icons/react": "^2.1.10",
+    "@sentry/nextjs": "^10.51.0",
+    "@stripe/stripe-js": "^9.4.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.104.1",
+    "framer-motion": "^12.38.0",
     "next": "14.2.35",
+    "posthog-js": "^1.372.6",
+    "posthog-node": "^5.33.0",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "stripe": "^22.1.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

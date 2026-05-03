@@ -14,7 +14,7 @@ export function LandingFooter({ copy, lang, onLangChange }: LandingFooterProps) 
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
           <div className="flex flex-col gap-2">
-            <span className="text-slate-100 font-semibold text-lg">NicheSurge</span>
+            <span className="text-slate-100 font-semibold text-lg">SurgeNiche</span>
             <p className="text-slate-500 text-sm max-w-xs">{copy.footerTagline}</p>
           </div>
           <div className="flex flex-col gap-2">

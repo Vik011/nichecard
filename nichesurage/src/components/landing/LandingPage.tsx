@@ -1,40 +1,44 @@
 'use client'
-import { useState } from 'react'
 import type { NicheCardData } from '@/lib/types'
-import type { Lang } from './copy'
+import type { RadarSnapshot } from '@/lib/landing/fetchRadarPings'
 import { COPY } from './copy'
+import { useLang } from '@/lib/i18n/useLang'
+import { useUser } from '@/lib/context/UserContext'
 import { LandingNav } from './LandingNav'
 import { HeroSection } from './HeroSection'
-import { SocialProofBar } from './SocialProofBar'
 import { AppPreviewSection } from './AppPreviewSection'
 import { PainSolutionSection } from './PainSolutionSection'
 import { FeaturesSection } from './FeaturesSection'
 import { PricingSection } from './PricingSection'
+import { TierMatrix } from './TierMatrix'
+import { FaqSection } from './FaqSection'
 import { TestimonialsSection } from './TestimonialsSection'
 import { FinalCTASection } from './FinalCTASection'
 import { LandingFooter } from './LandingFooter'
-import { NoiseOverlay } from './NoiseOverlay'
+import { Reveal } from '@/components/ui/Reveal'
 
 interface LandingPageProps {
   niches: NicheCardData[]
+  radar: RadarSnapshot
 }
 
-export function LandingPage({ niches }: LandingPageProps) {
-  const [lang, setLang] = useState<Lang>('en')
+export function LandingPage({ niches, radar }: LandingPageProps) {
+  const [lang, setLang] = useLang()
   const copy = COPY[lang]
+  const { isLoggedIn } = useUser()
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-100">
-      <NoiseOverlay />
+    <div className="relative min-h-screen text-slate-100">
       <LandingNav copy={copy} lang={lang} onLangChange={setLang} />
-      <HeroSection copy={copy} />
-      <SocialProofBar copy={copy} />
-      <AppPreviewSection niches={niches} copy={copy} />
-      <PainSolutionSection copy={copy} />
-      <FeaturesSection copy={copy} />
-      <PricingSection copy={copy} />
-      <TestimonialsSection copy={copy} />
-      <FinalCTASection copy={copy} />
+      <HeroSection copy={copy} isLoggedIn={isLoggedIn} radar={radar} />
+      <Reveal><AppPreviewSection niches={niches} copy={copy} isLoggedIn={isLoggedIn} /></Reveal>
+      <Reveal><PainSolutionSection copy={copy} /></Reveal>
+      <Reveal><FeaturesSection copy={copy} /></Reveal>
+      <Reveal><PricingSection copy={copy} /></Reveal>
+      <Reveal><TierMatrix copy={copy} /></Reveal>
+      <Reveal><FaqSection copy={copy} /></Reveal>
+      <Reveal><TestimonialsSection copy={copy} /></Reveal>
+      <Reveal><FinalCTASection copy={copy} isLoggedIn={isLoggedIn} /></Reveal>
       <LandingFooter copy={copy} lang={lang} onLangChange={setLang} />
     </div>
   )

@@ -2,9 +2,10 @@ import type { CopyKeys } from './copy'
 
 interface FinalCTASectionProps {
   copy: CopyKeys
+  isLoggedIn?: boolean
 }
 
-export function FinalCTASection({ copy }: FinalCTASectionProps) {
+export function FinalCTASection({ copy, isLoggedIn = false }: FinalCTASectionProps) {
   return (
     <section className="relative py-28 px-6 overflow-hidden">
       <div
@@ -16,10 +17,10 @@ export function FinalCTASection({ copy }: FinalCTASectionProps) {
           {copy.ctaHeadline}
         </h2>
         <a
-          href="/login"
-          className="inline-block px-8 py-3.5 rounded-xl bg-gradient-to-br from-glow-indigo to-glow-violet text-white font-semibold shadow-[0_10px_30px_-8px_rgba(124,131,240,0.5)] hover:brightness-110 transition-all"
+          href={isLoggedIn ? '/discover/shorts' : '/login'}
+          className="inline-block px-8 py-3.5 rounded-xl bg-gradient-to-br from-brand-indigo to-brand-indigo-bright text-white font-semibold shadow-[0_10px_30px_-8px_rgba(124,131,240,0.5)] hover:brightness-110 hover:shadow-glow-cyan transition-all"
         >
-          {copy.ctaButton}
+          {isLoggedIn ? copy.navOpenApp : copy.ctaButton}
         </a>
       </div>
     </section>

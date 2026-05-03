@@ -13,7 +13,7 @@ const config: Config = {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/.next/',
-    '/supabase/', // Deno Edge Function tests — run with `deno test`, not Jest
+    '/supabase/functions/', // Deno Edge Function tests — run with `deno test`, not Jest
   ],
 }
 

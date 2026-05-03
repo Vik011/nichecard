@@ -1,4 +1,5 @@
 import type { CopyKeys } from './copy'
+import { MotionCard } from '@/components/ui/MotionCard'
 
 interface TestimonialsSectionProps {
   copy: CopyKeys
@@ -13,7 +14,7 @@ export function TestimonialsSection({ copy }: TestimonialsSectionProps) {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {copy.testimonials.map((t) => (
-            <div
+            <MotionCard
               key={t.handle}
               className="glass rounded-xl p-6 flex flex-col gap-5"
             >
@@ -35,7 +36,7 @@ export function TestimonialsSection({ copy }: TestimonialsSectionProps) {
                   )}
                 </div>
               </div>
-            </div>
+            </MotionCard>
           ))}
         </div>
       </div>
