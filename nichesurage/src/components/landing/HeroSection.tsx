@@ -11,7 +11,7 @@ interface HeroSectionProps {
 
 export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProps) {
   return (
-    <section className="relative overflow-hidden pt-32 pb-28 px-6 text-center min-h-[78vh] flex items-center">
+    <section className="relative overflow-hidden pt-32 pb-28 px-6 text-center min-h-[78vh]">
       <HeroBackdrop copy={copy} pings={radar.pings} channelsLast24h={radar.channelsLast24h} />
 
       {/* Bottom fade — softens the radar's hard edge into the next section
@@ -24,6 +24,11 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
         }}
       />
 
+      {/* Note: deliberately NOT using `flex items-center` on <section>. With
+          flex centering, even absolutely-positioned chips inside HeroBackdrop
+          ended up vertically centered alongside the hero copy. Plain block
+          layout + pt/pb gives the absolute corners their actual top/bottom
+          anchors back. */}
       <div className="relative z-10 max-w-2xl mx-auto w-full flex flex-col items-center">
         {/* Eyebrow — product positioning above the narrative headline. */}
         <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-glow-indigo mb-5">

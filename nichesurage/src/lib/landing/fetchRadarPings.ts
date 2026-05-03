@@ -29,11 +29,18 @@ export async function fetchRadarPings(): Promise<RadarSnapshot> {
 
   // 1) snapshot of recent outlier pings — we want the freshest 12 so the
   //    radar feed has variety when it loops.
+  //
+  //    Filter cluster_id IS NOT NULL at the query level: a hero ping
+  //    without an AI-generated cluster label is theatre with no story
+  //    ("53.0× outlier · Forming cluster" reads as half-finished). Pre-
+  //    cluster orphans wait for the next cluster-outliers cron run before
+  //    they're eligible for this feed.
   const { data: rows, error } = await supabase
     .from('scan_results_latest')
     .select('id, outlier_ratio, language, content_type, niche_clusters(label)')
     .eq('is_spike', true)
     .gte('scanned_at', since)
+    .not('cluster_id', 'is', null)
     .order('outlier_ratio', { ascending: false })
     .limit(12)
 
@@ -50,13 +57,11 @@ export async function fetchRadarPings(): Promise<RadarSnapshot> {
     contentType: row.content_type === 'longform' ? 'longform' : 'shorts',
   }))
 
-  // Hero spot is performance theater — every ping needs a cluster label as
-  // its narrative. Without one ("Forming cluster" placeholder), even a
-  // dramatic ratio reads as half-baked. Strict: drop ALL unlabeled pings.
-  // If we're left with too few, fall back to unlabeled to avoid an empty
-  // radar — but that fallback is the rare degenerate case.
-  const labeled = allPings.filter(p => p.clusterLabel !== null)
-  const pings = labeled.length >= 1 ? labeled : allPings
+  // Defence in depth — query already filters cluster_id IS NOT NULL, but
+  // a clustered row could in principle have a null label if labeling failed
+  // halfway. Drop those too. Empty array is preferred over a "Forming
+  // cluster" placeholder in the hero spot.
+  const pings = allPings.filter(p => p.clusterLabel !== null)
 
   // 2) total count of channels with a spike in the last 24h (for the
   //    "Live · N channels in last 24h" counter).
