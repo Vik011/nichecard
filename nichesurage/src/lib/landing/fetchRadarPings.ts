@@ -33,40 +33,64 @@ export async function fetchRadarPings(): Promise<RadarSnapshot> {
   // retention (spike rows live 60d) and reliably contains clustered material.
   const sincePings = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-  // 1) snapshot of recent outlier pings — fetch a wider candidate pool
-  //    (50) so we have headroom after dropping unclustered rows clientside.
-  //    All filtering happens after fetch — earlier attempts at a SQL-level
-  //    `cluster_id IS NOT NULL` filter via `.not('cluster_id', 'is', null)`
-  //    appeared to interact poorly with the niche_clusters embedded select
-  //    (toast feed kept rendering empty in production despite plenty of
-  //    labeled rows in the DB). Doing it clientside is identical in result
-  //    and removes the moving part.
-  const { data: rows, error } = await supabase
+  // 1) snapshot of recent outlier pings.
+  //    NOTE: we deliberately do NOT use a PostgREST embedded select like
+  //    `niche_clusters(label)` here. The /discover page uses that pattern
+  //    successfully but it queries with an authenticated browser client.
+  //    fetchRadarPings runs at build/revalidate time with the anon key via
+  //    createStaticClient, and the embedded join was returning an empty
+  //    result set in production despite labeled rows existing in the DB
+  //    (the parallel count query below — which doesn't traverse the join —
+  //    consistently returned non-zero, confirming anon CAN read scan_results
+  //    but the embed wasn't materializing). Two separate queries + a manual
+  //    Map join is identical in result and removes the moving part.
+  const { data: scanRows, error } = await supabase
     .from('scan_results_latest')
-    .select('id, outlier_ratio, language, content_type, niche_clusters(label)')
+    .select('id, outlier_ratio, language, content_type, cluster_id')
     .eq('is_spike', true)
     .gte('scanned_at', sincePings)
+    .not('cluster_id', 'is', null)
     .order('outlier_ratio', { ascending: false })
     .limit(50)
 
-  if (error || !rows) {
-    if (error) console.error('[fetchRadarPings]', error.message)
+  if (error || !scanRows) {
+    if (error) console.error('[fetchRadarPings] scans', error.message)
     return { pings: [], channelsLast24h: 0 }
   }
 
-  const allPings: RadarPing[] = (rows as RadarPingRow[]).map((row) => ({
+  // Hydrate cluster labels in a second query and build a lookup Map.
+  const clusterIds = Array.from(
+    new Set(scanRows.map((r) => (r as ScanRow).cluster_id).filter((id): id is string => !!id)),
+  )
+
+  const labelsById = new Map<string, string>()
+  if (clusterIds.length > 0) {
+    const { data: clusters, error: clusterErr } = await supabase
+      .from('niche_clusters')
+      .select('id, label')
+      .in('id', clusterIds)
+
+    if (clusterErr) {
+      console.error('[fetchRadarPings] clusters', clusterErr.message)
+    } else if (clusters) {
+      for (const c of clusters as Array<{ id: string; label: string | null }>) {
+        if (c.label) labelsById.set(c.id, c.label)
+      }
+    }
+  }
+
+  const allPings: RadarPing[] = (scanRows as ScanRow[]).map((row) => ({
     id: row.id,
     outlierRatio: Number(row.outlier_ratio ?? 0),
-    clusterLabel: extractClusterLabel(row.niche_clusters),
+    clusterLabel: row.cluster_id ? labelsById.get(row.cluster_id) ?? null : null,
     language: row.language ?? 'en',
     contentType: row.content_type === 'longform' ? 'longform' : 'shorts',
   }))
 
-  // Strict label filter, then trim back down to 12 for the rotation feed.
-  // Empty array is preferred over a "Forming cluster" placeholder in the
-  // hero spot — but with a 50-row candidate pool over a 7-day window we
-  // virtually never hit zero.
-  const pings = allPings.filter(p => p.clusterLabel !== null).slice(0, 12)
+  // Final label filter, then trim to 12 for the rotation feed. Empty array
+  // is preferred over a placeholder — but with a 50-row pool over 7 days
+  // and explicit cluster-id filter, we virtually never hit zero.
+  const pings = allPings.filter((p) => p.clusterLabel !== null).slice(0, 12)
 
   // 2) total count of channels with a spike in the last 24h (for the
   //    "Live · N channels in last 24h" counter — kept at 24h because the
@@ -87,20 +111,10 @@ export async function fetchRadarPings(): Promise<RadarSnapshot> {
   }
 }
 
-// Supabase nested-select returns the joined row as either an object or
-// an array depending on the relationship cardinality. Normalize both.
-type ClusterJoin = { label: string | null } | { label: string | null }[] | null
-
-interface RadarPingRow {
+interface ScanRow {
   id: string
   outlier_ratio: number | null
   language: string | null
   content_type: string | null
-  niche_clusters: ClusterJoin
-}
-
-function extractClusterLabel(join: ClusterJoin): string | null {
-  if (!join) return null
-  if (Array.isArray(join)) return join[0]?.label ?? null
-  return join.label ?? null
+  cluster_id: string | null
 }
