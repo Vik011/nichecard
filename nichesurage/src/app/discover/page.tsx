@@ -271,7 +271,11 @@ function DiscoverPageInner() {
       </div>
 
       {!TREND_ENGINE_BOOTSTRAPPED && mode !== 'hot' && (
-        <div className="mb-4 max-w-2xl mx-auto rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+        <div
+          role="status"
+          aria-live="polite"
+          className="mb-4 max-w-2xl mx-auto rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200"
+        >
           {copy.discoverBootstrapBanner}
         </div>
       )}

@@ -3,18 +3,18 @@ import { HotNowFilter } from './HotNowFilter'
 import { COPY } from '@/components/landing/copy'
 
 describe('HotNowFilter', () => {
-  it('renders three tabs and marks the active one with aria-selected=true', () => {
+  it('renders three buttons and marks the active one with aria-pressed=true', () => {
     render(<HotNowFilter mode="hot" onChange={() => {}} copy={COPY.en} />)
-    const tabs = screen.getAllByRole('tab')
-    expect(tabs).toHaveLength(3)
-    const active = tabs.find(t => t.getAttribute('aria-selected') === 'true')
+    const buttons = screen.getAllByRole('button')
+    expect(buttons).toHaveLength(3)
+    const active = buttons.find(b => b.getAttribute('aria-pressed') === 'true')
     expect(active?.textContent).toMatch(/Hot now/i)
   })
 
-  it('calls onChange with the new mode when a tab is clicked', () => {
+  it('calls onChange with the new mode when a button is clicked', () => {
     const onChange = jest.fn()
     render(<HotNowFilter mode="hot" onChange={onChange} copy={COPY.en} />)
-    fireEvent.click(screen.getByRole('tab', { name: /quality/i }))
+    fireEvent.click(screen.getByRole('button', { name: /quality/i }))
     expect(onChange).toHaveBeenCalledWith('quality')
   })
 })

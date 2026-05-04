@@ -152,6 +152,11 @@ async function fetchQualityNiches(
   return { data: (data ?? []).map(row => mapRow(row as ScanResultWithCluster)), error: null }
 }
 
+// Hot mode deliberately ignores `filters.sortBy` — the mode IS the sort
+// (max trend_score across recent video_metrics). The SearchFilters Sort
+// dropdown still renders in the parent UI when mode==='hot' but silently
+// no-ops; Phase 7B will hide it to avoid the inconsistency.
+// TODO(phase-7b): hide SearchFilters Sort control when mode==='hot'.
 async function fetchHotNiches(
   filters: SearchFilters,
   options: FetchNichesOptions,
@@ -173,12 +178,17 @@ async function fetchHotNiches(
   if (metricsErr) return { data: [], error: 'Search failed. Please try again.' }
   if (!metrics || metrics.length === 0) return { data: [], error: null }
 
+  // Filter dying rows out FIRST so a channel whose top-scored video is
+  // dying (but who also has a healthier video in the window) can still
+  // surface via the healthier video's score. Without this, the original
+  // scoreByChannel.has() check would skip the dying row, leaving the
+  // channel out entirely. (CQ review found the bug 2026-05-04.)
   const includeDying = options.includeDying ?? false
   const scoreByChannel = new Map<string, number>()
   for (const m of metrics) {
+    if (!includeDying && m.lifecycle_status === 'dying') continue
     const ch = String(m.channel_id)
     if (scoreByChannel.has(ch)) continue
-    if (!includeDying && m.lifecycle_status === 'dying') continue
     scoreByChannel.set(ch, Number(m.trend_score ?? 0))
     if (scoreByChannel.size >= HOT_MODE_CHANNEL_LIMIT) break
   }
