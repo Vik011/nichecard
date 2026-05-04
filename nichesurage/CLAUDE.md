@@ -302,3 +302,78 @@ After Phase 6 deploy + 24h of cron:
 - `SELECT count(*) FROM narrative_archetypes WHERE status='candidate' AND detection_count >= 3` may be 0–N (will surface in Phase 7 admin tile for human approval)
 
 If any of those return 0 after 24h, something is wired wrong — don't proceed to UI.
+
+---
+
+## Sprint B Phase 6 — Trend score formula (2026-05-04)
+
+Phases 6.1–6.9 + amendments A3 (lifecycle multiplier) and A5 (performanceRatio replaces breakoutRatio) shipped in commits `9d10b0d` + `c900528`.
+
+### Shipped
+
+| Sub-phase | Files | What it adds |
+|---|---|---|
+| 6.1–6.2 | `_shared/trendScore.ts` + tests | 0–100 weighted formula with exported `TREND_WEIGHTS` + `LIFECYCLE_MULTIPLIER` for no-redeploy tuning |
+| 6.7 / A5 | `_shared/expectedPerformance.ts` + tests | `expectedViews(subs, nicheRate, hours)` + `performanceRatio(actual, expected)` — replaces raw `breakoutRatio` (was over-rewarding tiny channels purely on views/subs) |
+| 6.3 | `scan/index.ts` fourth pass | Bulk-fetch `trend_cluster_members ⋈ trend_clusters(video_count)`, compute trend_score per video, UPDATE `video_metrics.trend_score`. try/catch wrapped, structured `scan_trend` log emitted. |
+| 6.4 | `scan/index.ts` legacy compat | `scan_results.is_premium` column does NOT exist (verified across 0001-0025); `isPremiumByTrend = max≥60` boolean is observable in `scan_trend` structured log instead. TODO(phase-7) to drop the comment when /discover migrates fully. |
+| 6.8 / A3 | `trendScore.ts` end-of-formula | `result = min(100, raw × LIFECYCLE_MULTIPLIER[status])` — emerging 1.30 / exploding 1.20 / peak 1.00 / saturated 0.70 / dying 0.40 |
+
+### Design decisions worth remembering
+
+1. **Exported tunable constants** (`TREND_WEIGHTS`, `LIFECYCLE_MULTIPLIER`, `TREND_READINESS_THRESHOLDS`) — Phase 9 production validation can re-tune weights without redeploying logic. The constants ARE the formula.
+2. **`expectedViews` units honesty** — the plan named the parameter `nicheMedianVps` ("views-per-subscriber-per-day") but in practice the only upstream value we have is `computeNicheBaseline()` = median views-per-hour across the niche. Formula stays exactly as A5 specifies (spec compliance), but docstring is now honest about the mismatch. The `clamp(log10(1+ratio), 0, 2)` term cap bounds the impact to ≤16 score points so the dimensional weirdness is not load-bearing. Phase 9 may revisit.
+3. **`likesPerHour` is in `TrendScoreInput` but unweighted** — forward-compat parameter for future tuning; comments are a stronger leading signal (lower base rate, higher engagement floor) so they get the engagement weight.
+4. **Per-video UPDATE loop, not bulk upsert** — matches Phase 5A novelty pass style; constants double per scan but DB cost is still negligible at ~20 channels × 20 videos. Phase 7+ may consolidate novelty + trend into one upsert per video if scale demands.
+
+### What `video_metrics.trend_score` represents (formula, fully expanded)
+
+```
+raw =
+  log10(1 + viewsPerHour)                       × 12
+  + clamp(velocityDelta, 0, 10)                  × 4
+  + clamp(viewAcceleration / 1000, 0, 20)        × 1
+  + log10(1 + commentsPerHour)                   × 8
+  + clamp(log10(1 + performanceRatio), 0, 2)     × 8
+  + clamp(noveltyScore, 0, 5)                    × 6
+  + (inReplicationCluster ? min(clusterSize, 20) × 2 : 0)
+trend_score = min(100, max(0, raw × LIFECYCLE_MULTIPLIER[status]))
+```
+
+A "modest" video (vph=50, no other signal) scores <10. A "hot exploding" video (vph=500, delta=5×, cph=50, perf=30, novelty=3, cluster of 8, exploding stage) scores >70 (would be ~95 before lifecycle multiplier; 95 × 1.20 caps at 100 in extreme case). Dying lifecycle suppresses by 0.40× — a hot but cooling video drops below 50 even with strong other signals.
+
+---
+
+## Sprint B Phase 7 — Trend UI surface + admin moderation (2026-05-04)
+
+Phases 7A–7C shipped in commits `cc155b5`, `162127e`, `e4db2aa`, `dc5f459` (cherry-pick from master), `c65bacd`.
+
+### Shipped (split across 3 sub-phases)
+
+| Sub-phase | Files | What it adds |
+|---|---|---|
+| 7A core | `discover/page.tsx`, `HotNowFilter.tsx`, `TrendBadge.tsx`, `NicheCard.tsx`, `fetchTrending.ts`, `queries.ts` (mode='hot' branch), `_/types/trend.ts`, copy.ts | `?mode=hot/quality/all` segmented filter, 🔥 TRENDING + 5-color lifecycle pill + cluster pill / 🚨 Cross-niche on cards, bootstrap calibration banner gated by `NEXT_PUBLIC_TREND_ENGINE_BOOTSTRAPPED` |
+| 7A polish | (same) | Dying-dedup race fix in `fetchHotNiches` (channel whose top-scored video is dying gets fallback to non-dying video instead of being dropped); a11y (aria-pressed instead of fake tablist, focus-visible rings, banner role="status") |
+| 7B | `discover/trending/page.tsx`, `TrendingClusterCard.tsx`, `fetchClusterFeed.ts`, `SearchFilters.tsx` (hide Sort in hot mode) | `/discover/trending` cluster-first feed; "Cross-niche waves" section above the regular grid for `is_mega_cluster=true`; category chip filter; click cluster → `/discover?cluster=<id>` drill-down |
+| 7C | `admin/page.tsx`, `admin/_actions.ts`, `TrendReadinessRow.tsx`, `ArchetypeModerationTable.tsx`, `lib/admin/queries.ts` (3 new exports) | Trend Engine Readiness panel (snapshots / embedding coverage / clusters formed with thresholds 5000 / 0.6 / 1, verdict banner tells admin when to flip the bootstrap flag); 4 new StatCards; Pending Archetypes table with Approve / Reject server actions (`requireAdmin` re-assert + `revalidatePath('/admin')` + idempotent `.eq('status','candidate')` guards) |
+
+### Design decisions worth remembering
+
+1. **Channel-keyed not video-keyed** — `fetchTrendingByChannel` aggregates `Map<youtubeChannelId, TrendData>` because `/discover` is channel-card-centric. Per-channel: `max(trend_score)` becomes the displayed score; `max(cluster_size)` across all the channel's surfaced videos becomes the cluster signal. This bridges the video-centric trend pipeline to the existing channel-centric UI without refactoring NicheCard.
+2. **`mode='all'` is the default** in `fetchNiches` — preserves legacy behavior for every existing call site that doesn't pass `mode`. Hot mode is opt-in via URL param.
+3. **Bootstrap flag is build-time, not runtime** — `NEXT_PUBLIC_TREND_ENGINE_BOOTSTRAPPED` is read once at module load. Flipping requires Vercel redeploy. Tradeoff: simpler than a feature-flag service, costs one redeploy when the engine warms up. Acceptable because the flip is a once-only event per environment.
+4. **`/admin` was missing from sprint-b-spike branch** — cherry-picked commit `73caad6` from master (10 files, 861 LOC). Conflict in `.env.local.example` resolved manually. The lift was clean since the admin commit was purely additive on master.
+5. **Archetype moderation is server-action POST forms with bound IDs** — no client-side fetch wrappers, no JSON serialization. Admin clicks button → form submits → server action runs → `revalidatePath('/admin')` → table re-renders with the row gone. Auth re-asserted in each action via `requireAdmin()` (defense-in-depth — never trust the page-level gate alone).
+
+### Production prerequisites BEFORE flipping the bootstrap flag
+
+1. Set `ADMIN_EMAILS=vikmartin.online@gmail.com` on Vercel (admin route fail-closed without it).
+2. Run the recategorize edge function once — 49 channels with NULL category, performanceRatio degrades to bounded-but-quirky behavior until each channel has a known category for niche-relative scoring.
+3. Wait 24-72h after deploy. Visit `/admin` → Trend Engine Readiness panel must show 3 green checkmarks: ≥5000 video_snapshots, ≥60% embedding coverage, ≥1 cluster formed.
+4. ONLY THEN: set `NEXT_PUBLIC_TREND_ENGINE_BOOTSTRAPPED=true` in Vercel env, redeploy. `/discover` will default to Hot mode, banner disappears.
+
+### Open follow-ups (queued, not blockers for ship)
+
+- **Phase 5b** (deferred): dynamic discovery loop — `/api/discovery/expand|promote|evict`. Tier-aware throttling, yt-dlp-driven universe expansion. Adds new candidate channels automatically when a video crosses score>70 or a cluster forms with ≥5 members. Phase 0 already validated yt-dlp on Vercel.
+- **Phase 8**: verification sweep + production validation prep (test sweep, admin tile audit, Sprint B summary in CLAUDE.md — partly already in this section).
+- **Phase 9** (post-deploy + 14d): Google Trends overlap check, manual sample of 5 random hot videos, tune `TREND_WEIGHTS` constants without redeploy if overlap < 40%.
