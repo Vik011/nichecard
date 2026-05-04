@@ -87,6 +87,11 @@ export const COPY = {
     discoverTrendingTopics: 'Trending topics',
     discoverTrendingEmpty: "We're still naming the first niches — fresh AI-labeled topics will appear here within 24h.",
     discoverScanningDeepWeb: 'Scanning the deep web…',
+    // Sprint B Phase 7A — Hot now / Quality / All segmented control
+    discoverModeHotLabel: 'Hot now',
+    discoverModeQualityLabel: 'Quality',
+    discoverModeAllLabel: 'All',
+    discoverBootstrapBanner: 'Trend engine is calibrating — full coverage activates within 48-72h. Switch to Quality mode for evergreen picks meanwhile.',
     discoverSpikingNow: 'Spiking Now',
 
     filterFormat: 'Format',
@@ -385,6 +390,11 @@ export const COPY = {
     discoverTrendingTopics: 'Trending-Themen',
     discoverTrendingEmpty: 'Wir benennen die ersten Nischen — frische KI-Labels erscheinen hier innerhalb von 24 Stunden.',
     discoverScanningDeepWeb: 'Durchsuche das tiefe Netz…',
+    // Sprint B Phase 7A — Hot now / Qualität / Alle Segmented Control
+    discoverModeHotLabel: 'Aktuell heiß',
+    discoverModeQualityLabel: 'Qualität',
+    discoverModeAllLabel: 'Alle',
+    discoverBootstrapBanner: 'Trend-Engine kalibriert — volle Abdeckung innerhalb 48-72h. Wechsel zu Qualitätsmodus für Evergreen-Picks.',
     discoverSpikingNow: 'Im Aufstieg',
 
     filterFormat: 'Format',
