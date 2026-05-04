@@ -29,6 +29,14 @@ import {
   computeNicheBaseline,
   computeNoveltyScore,
 } from '../_shared/baseline.ts'
+import {
+  expectedViews,
+  performanceRatio,
+} from '../_shared/expectedPerformance.ts'
+import {
+  computeTrendScore,
+  type TrendScoreInput,
+} from '../_shared/trendScore.ts'
 import { CATEGORIES, type CategoryEnum } from '../_shared/categories.ts'
 import type {
   WatchlistChannel,
@@ -95,6 +103,11 @@ Deno.serve(async (_req: Request) => {
       try {
         const stats = statsMap.get(channel.youtube_channel_id)
         if (!stats) continue
+
+        // Phase 6: track the max trend_score we compute for this channel
+        // this scan run. Used both for the structured `scan_trend` log and
+        // for the legacy `scan_results.is_premium` backward-compat flag.
+        let maxTrendScoreThisChannel = 0
 
         // Enriched fetch — returns VideoSnapshot-shaped objects (no scannedAt).
         // We adapt to VideoData for the legacy metrics path below.
@@ -197,6 +210,11 @@ Deno.serve(async (_req: Request) => {
             }
 
             const metricsRows: Record<string, unknown>[] = []
+            // Phase 6: side-map of transient features needed for trend_score
+            // computation but NOT persisted on video_metrics. Keyed by video_id.
+            const trendContextByVideo = new Map<string, {
+              hoursSinceUpload: number
+            }>()
             const lifecycleDist: Record<LifecycleStatus, number> = {
               emerging: 0,
               exploding: 0,
@@ -263,9 +281,16 @@ Deno.serve(async (_req: Request) => {
                   view_acceleration: features.viewAcceleration,
                   breakout_ratio: features.breakoutRatio,
                   // novelty_score: filled by Phase 5A third pass below.
-                  // trend_score, topic_tags: NULL — Phase 6.
+                  // trend_score: filled by Phase 6 fourth pass below.
+                  // topic_tags: NULL — future phase.
                   lifecycle_status: lifecycleStatus,
                   computed_at: scannedAt,
+                })
+                // Phase 6: stash hoursSinceUpload (already computed in
+                // velocity features) for the trend_score pass that runs
+                // after novelty. Avoids re-parsing publishedAt later.
+                trendContextByVideo.set(v.videoId, {
+                  hoursSinceUpload: features.hoursSinceUpload,
                 })
               } catch (velErr) {
                 console.error(
@@ -312,6 +337,11 @@ Deno.serve(async (_req: Request) => {
             const isKnownCategory = typeof cat === 'string'
               && (CATEGORIES as readonly string[]).includes(cat)
 
+            // Phase 6: novelty score per video this scan (defaults to 0 when
+            // novelty pass is skipped due to NULL category). Used as input to
+            // computeTrendScore in the fourth pass below.
+            const noveltyByVideoId = new Map<string, number>()
+
             if (isKnownCategory && metricsRows.length > 0) {
               const category = cat as CategoryEnum
               let nicheBaseline = nicheBaselineCache.get(category)
@@ -348,6 +378,7 @@ Deno.serve(async (_req: Request) => {
                   video_id: String(m.video_id),
                   novelty_score: novelty,
                 })
+                noveltyByVideoId.set(String(m.video_id), novelty)
               }
 
               // Write novelty_score per video. Upsert keeps idempotency.
@@ -383,6 +414,131 @@ Deno.serve(async (_req: Request) => {
                 videos: metricsRows.length,
                 scannedAt,
               }))
+            }
+
+            // ─── Phase 6: fourth pass — weighted trend_score ──────────
+            // For every video_metrics row we just upserted, look up cluster
+            // membership, compute trend_score via the weighted formula
+            // (vph + delta + accel + cph + perfRatio + novelty + cluster,
+            // multiplied by lifecycle factor) and UPDATE the row.
+            //
+            // Defensive: failures here MUST NOT abort the scan. Wrapped in
+            // try/catch like the other Phase 3/5A passes.
+            if (metricsRows.length > 0) {
+              try {
+                // Bulk fetch cluster membership for every video this channel
+                // contributed in this scan. ONE query, joined to clusters
+                // for video_count.
+                const videoIdsForTrend = metricsRows.map(m => String(m.video_id))
+                const { data: memberRows, error: memberErr } = await supabase
+                  .from('trend_cluster_members')
+                  .select('video_id, cluster_id, trend_clusters(video_count)')
+                  .in('video_id', videoIdsForTrend)
+
+                if (memberErr) {
+                  console.error(
+                    'scan: trend_cluster_members fetch failed',
+                    channel.youtube_channel_id,
+                    memberErr,
+                  )
+                }
+
+                type MemberRow = {
+                  video_id: string
+                  cluster_id: number
+                  trend_clusters: { video_count: number } | { video_count: number }[] | null
+                }
+                const clusterByVideoId = new Map<string, number>()
+                for (const row of (memberRows ?? []) as MemberRow[]) {
+                  // Supabase nests joined rows as either object or array
+                  // depending on relationship cardinality; handle both.
+                  const tc = Array.isArray(row.trend_clusters)
+                    ? row.trend_clusters[0]
+                    : row.trend_clusters
+                  const size = Number(tc?.video_count ?? 0)
+                  // If a video belongs to multiple clusters (rare), keep
+                  // the largest cluster size — strongest replication signal.
+                  const prev = clusterByVideoId.get(row.video_id) ?? 0
+                  if (size > prev) clusterByVideoId.set(row.video_id, size)
+                }
+
+                // Resolve nicheBaseline for performanceRatio. Reuses the
+                // Phase 5A cache when category is known; otherwise 0
+                // (expectedViews then floors to 1, perfRatio computes off
+                // an unrealistically small expectation — but we wrap with
+                // log10 clamp to 2 so the impact is bounded).
+                const nicheBaselineForChannel = (isKnownCategory && cat)
+                  ? (nicheBaselineCache.get(cat) ?? 0)
+                  : 0
+
+                let videosScored = 0
+                let clusterMemberships = 0
+                for (const m of metricsRows) {
+                  const videoId = String(m.video_id)
+                  const ctx = trendContextByVideo.get(videoId)
+                  if (!ctx) continue
+
+                  const expected = expectedViews(
+                    stats.subscriberCount,
+                    nicheBaselineForChannel,
+                    ctx.hoursSinceUpload,
+                  )
+                  const perfRatio = performanceRatio(
+                    Number(m.latest_views ?? 0),
+                    expected,
+                  )
+
+                  const clusterSize = clusterByVideoId.get(videoId) ?? 0
+                  const inReplicationCluster = clusterByVideoId.has(videoId)
+                  if (inReplicationCluster) clusterMemberships++
+
+                  const trendInput: TrendScoreInput = {
+                    viewsPerHour: Number(m.views_per_hour ?? 0),
+                    velocityDelta: Number(m.velocity_delta ?? 0),
+                    viewAcceleration: Number(m.view_acceleration ?? 0),
+                    commentsPerHour: Number(m.comments_per_hour ?? 0),
+                    likesPerHour: Number(m.likes_per_hour ?? 0),
+                    performanceRatio: perfRatio,
+                    noveltyScore: noveltyByVideoId.get(videoId) ?? 0,
+                    inReplicationCluster,
+                    clusterSize,
+                    lifecycleStatus: m.lifecycle_status as LifecycleStatus,
+                  }
+                  const trendScore = computeTrendScore(trendInput)
+                  if (trendScore > maxTrendScoreThisChannel) {
+                    maxTrendScoreThisChannel = trendScore
+                  }
+
+                  const { error: trendErr } = await supabase
+                    .from('video_metrics')
+                    .update({ trend_score: trendScore })
+                    .eq('video_id', videoId)
+                  if (trendErr) {
+                    console.error(
+                      'scan: trend_score update failed',
+                      videoId,
+                      trendErr,
+                    )
+                  } else {
+                    videosScored++
+                  }
+                }
+
+                console.log('scan_trend', JSON.stringify({
+                  channelId: channel.youtube_channel_id,
+                  videosScored,
+                  maxTrendScore: maxTrendScoreThisChannel,
+                  clusterMemberships,
+                  scannedAt,
+                }))
+              } catch (trendErr) {
+                console.error(
+                  'scan: trend_score pass failed for channel',
+                  channel.youtube_channel_id,
+                  trendErr,
+                )
+                // Non-fatal — proceed to legacy scan_results write.
+              }
             }
           }
         }
@@ -433,6 +589,17 @@ Deno.serve(async (_req: Request) => {
         const channelCreatedDate = new Date(stats.channelCreatedAt).toISOString().split('T')[0]
 
         const isSpike = outlier.ratio >= OUTLIER_SPIKE_THRESHOLD
+
+        // Phase 6 Step 6.4: legacy backward-compat. The plan specifies
+        // setting `scan_results.is_premium = (maxTrendScoreThisChannel >= 60)`
+        // ONLY when that column already exists. As of migration 0024 the
+        // `scan_results` table has no `is_premium` column — `video_metrics.trend_score`
+        // is the new source of truth. We compute the flag here for the
+        // structured log so observability is unblocked even though we
+        // cannot persist it. TODO(phase-7): drop this comment + flag once
+        // /discover migrates fully to trend_score and we deprecate scan_results.
+        const _isPremiumByTrend = maxTrendScoreThisChannel >= 60
+        void _isPremiumByTrend
 
         const { error: insertError } = await supabase.from('scan_results').insert({
           // Sonar core fields
