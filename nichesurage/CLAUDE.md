@@ -232,3 +232,73 @@ Phase 4 step 4.14 (`src/lib/discovery/ytdlp.ts` wrapper) and Phase 5b discovery 
 - `fetchTranscript(videoId): Promise<string | null>` — `--write-auto-subs --skip-download` then read VTT from /tmp
 
 Both reuse the same `ensureBinary()` + `spawn` plumbing.
+
+---
+
+## Sprint B Phase 5 — Trend signal foundation (2026-05-04)
+
+**Status:** complete. Branch `claude/infallible-germain-89d9e5` ahead of master by 16 commits. 303/303 Jest tests pass, `tsc --noEmit` clean.
+
+### What shipped
+
+| Sub-phase | Module | Purpose |
+|---|---|---|
+| 5A | `supabase/functions/_shared/baseline.ts` + scan third pass | Channel + niche median VPS baselines, novelty score = `(currentVps − nicheBaseline) / max(nicheBaseline, 1)` |
+| 5B | `src/lib/clusters/detect.ts` | Pure replication detection: title/transcript cosine + thumbnail pHash Hamming → DSU union-find → ≥5 members AND ≥3 channels filter |
+| 5C | `src/app/api/clusters/detect/route.ts` + 2 helpers | Vercel Node cron route: per-category persistence + Claude Haiku archetype matching + cross-niche mega-cluster flagging |
+
+### Key design decisions (and why)
+
+**1. JS-pairwise edge construction, not SQL self-join.**
+Plan suggested pgvector `<=>` self-join + `bit_count(a # b)` for Hamming. Supabase JS chained client cannot express this — would require an RPC migration. Implementer correctly stopped + asked. Decision: **JS-pairwise N² is fine to ~500 videos per (category, 48h-window).** At ≥1000 videos, push to SQL. Documented in `detect.ts` with `// SCALING:` comment.
+
+**2. Cluster idempotency via simpler-fallback (delete fresh + re-insert).**
+No natural unique key on `trend_clusters`. Two options: overlap-matching (preserves IDs across runs) or simpler-fallback (loses IDs). Chose simpler-fallback for v1 because cluster IDs aren't user-facing yet. Phase 7 will check whether stable IDs are needed for UI deep-links — if yes, upgrade to overlap-matching.
+
+**3. Hybrid archetypes (15 canonical + Claude-proposed candidates).**
+Pure-canonical list misses emerging narratives. Pure-LLM-discovered drifts. Hybrid: canonical seeds in migration `0024`, Claude either matches one or proposes new (`status='candidate'`). Candidate promotion to canonical requires manual admin approval (Phase 7 admin tile).
+
+**4. Defensive Claude parsing.**
+`_archetype.ts` strips markdown fences, validates slug regex `^[a-z][a-z0-9_]{2,40}$`, validates label length 1–60, validates `is_new` boolean. Any failure → fallback to `education_howto`. Hallucinated canonical slugs (Claude returns `is_new=false` with non-existent slug) get rejected by `incrementCanonicalArchetype` returning false → fallback path.
+
+**5. Cost cap: top 20 clusters per category get Claude calls.**
+Worst case: 12 cats × 20 calls × 4 runs/day × ~$0.001/call ≈ **$30/mo**. Acceptable. Empty-titles short-circuit avoids burning calls on data-incomplete clusters.
+
+### Patterns established (copy these later)
+
+- **Cron route auth:** `const expected = process.env.CRON_SECRET; if (expected && req.headers.get('authorization') !== \`Bearer ${expected}\`) return 401`. Match `embeddings/build/route.ts` exactly when adding new cron routes.
+- **Claude direct fetch (no SDK):** see `_archetype.ts` callClaude function. Model: `claude-haiku-4-5`. temp=0, max_tokens=100 for structured JSON outputs. Fallback on every parse failure path.
+- **Per-category try/catch in cron loops:** one bad category doesn't abort the run. Each catches → `summary.push({categoryFailed:true, error: msg})` → continue.
+- **Cache niche-level computations outside per-channel loops:** scan/index.ts third pass uses `Map<CategoryEnum, number>` for niche baselines. Pattern: declare cache OUTSIDE iteration, populate lazily per category encounter.
+
+### Open follow-ups (deferred to Phase 6+)
+
+| Item | Where | Why deferred |
+|---|---|---|
+| Bulk-upsert `novelty_score` instead of N per-video UPDATEs | scan/index.ts third pass | Phase 6 rewrites scoring pipeline anyway |
+| `video_snapshots` query category-scoped (currently fetches all) | clusters/detect.ts edge fetch | Premature optimization; ≤500 videos/category is fine |
+| Test coverage: partial-category-failure, hallucinated-canonical-slug, prompt structure | clusters/detect/route.test.ts | 8/8 spec required cases shipped; gaps are hardening, not correctness |
+| Recategorize backfill (49 channels with NULL category) | one-shot Edge Function | Defer to before first production cron run; clusters skip NULL-category channels gracefully |
+| Stable cluster IDs across runs (overlap-matching idempotency) | _persistence.ts | Phase 7 will tell us if UI needs deep-linkable cluster IDs |
+
+### What Phase 6 inherits
+
+`video_metrics` now has these populated columns ready for the trend score formula:
+- `views_per_hour`, `comments_per_hour`, `likes_per_hour` (Phase 3)
+- `velocity_delta`, `view_acceleration` (Phase 3)
+- `breakout_ratio` (Phase 3 — likely to be REPLACED by `performance_ratio` per A5 amendment)
+- `lifecycle_status` (Phase 3 — multiplier in formula per A3)
+- `novelty_score` (Phase 5A — niche-relative outperformance)
+- Cluster membership via `trend_cluster_members` (Phase 5C — `+ inReplicationCluster ? min(clusterSize, 20) × 2 : 0` term)
+
+`trend_score` is still NULL everywhere. Phase 6 populates it via the weighted 5+ factor formula in `_shared/trendScore.ts`.
+
+### Production verification before Phase 7 UI
+
+After Phase 6 deploy + 24h of cron:
+- `SELECT count(*) FROM video_metrics WHERE trend_score > 50` should be > 0
+- `SELECT count(*) FROM trend_clusters WHERE video_count >= 5` should be > 0
+- `SELECT count(*) FROM trend_clusters WHERE narrative_archetype_id IS NOT NULL` should be > 0
+- `SELECT count(*) FROM narrative_archetypes WHERE status='candidate' AND detection_count >= 3` may be 0–N (will surface in Phase 7 admin tile for human approval)
+
+If any of those return 0 after 24h, something is wired wrong — don't proceed to UI.
