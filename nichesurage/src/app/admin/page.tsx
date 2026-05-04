@@ -9,8 +9,14 @@ import {
   getAiUsageToday,
   findUsersByEmail,
   getStripeMode,
+  getTrendEngineReadiness,
+  getTrendStats,
+  getPendingArchetypes,
 } from '@/lib/admin/queries'
 import { StatCard } from '@/components/admin/StatCard'
+import { TrendReadinessRow } from '@/components/admin/TrendReadinessRow'
+import { ArchetypeModerationTable } from '@/components/admin/ArchetypeModerationTable'
+import { approveArchetype, rejectArchetype } from './_actions'
 
 // SSR fresh on every visit. Admin metrics need to be live, not cached.
 export const dynamic = 'force-dynamic'
@@ -37,6 +43,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     cron,
     aiUsage,
     lookupResults,
+    trendReadiness,
+    trendStats,
+    pendingArchetypes,
   ] = await Promise.all([
     getUserCounts(),
     getMrrEur(),
@@ -49,6 +58,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     getCronHealth(),
     getAiUsageToday(),
     lookupQuery ? findUsersByEmail(lookupQuery, 25) : Promise.resolve([]),
+    getTrendEngineReadiness(),
+    getTrendStats(),
+    getPendingArchetypes(),
   ])
 
   const stripeMode = getStripeMode()
@@ -115,6 +127,54 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           />
           <SentryLinkCard />
         </div>
+      </section>
+
+      {/* Trend engine — Sprint B Phase 7C */}
+      <section>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+          Trend engine
+        </h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <StatCard
+            label="Active clusters"
+            value={trendStats.activeClusters}
+            hint="updated last 7d"
+            tone={trendStats.activeClusters > 0 ? 'good' : 'default'}
+          />
+          <StatCard
+            label="Trend score >50 (24h)"
+            value={trendStats.hotVideos24h}
+            hint="hot video_metrics rows"
+            tone={trendStats.hotVideos24h > 0 ? 'good' : 'default'}
+          />
+          <StatCard
+            label="Pending archetypes"
+            value={pendingArchetypes.length}
+            hint="awaiting moderation"
+            tone={pendingArchetypes.length > 0 ? 'warn' : 'default'}
+          />
+          <StatCard
+            label="Engine status"
+            value={trendReadiness.allOk ? 'Ready' : 'Calibrating'}
+            hint={trendReadiness.allOk ? 'all thresholds met' : 'thresholds not met'}
+            tone={trendReadiness.allOk ? 'good' : 'warn'}
+          />
+        </div>
+        <div className="mt-3">
+          <TrendReadinessRow readiness={trendReadiness} />
+        </div>
+        {pendingArchetypes.length > 0 && (
+          <div className="mt-3">
+            <h3 className="mb-2 text-[11px] uppercase tracking-[0.18em] text-slate-500">
+              Archetype moderation queue ({pendingArchetypes.length})
+            </h3>
+            <ArchetypeModerationTable
+              pending={pendingArchetypes}
+              approve={approveArchetype}
+              reject={rejectArchetype}
+            />
+          </div>
+        )}
       </section>
 
       {/* Recent signups */}
