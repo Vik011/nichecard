@@ -1,25 +1,21 @@
 // supabase/functions/_shared/youtube.ts
-import type { YouTubeChannelData, VideoData, VideoSearchHit } from './types.ts'
+import type { YouTubeChannelData, VideoData, VideoSearchHit, VideoSnapshot } from './types.ts'
 
 const BASE = 'https://www.googleapis.com/youtube/v3'
 
 /**
- * Parse YouTube ISO-8601 duration like "PT4M13S", "PT1H2M30S", "PT45S" → seconds.
+ * Parse YouTube ISO-8601 duration (e.g. "PT4M13S", "PT1H2M30S") to seconds.
+ * Returns 0 for unparseable input. Never throws.
  *
- * Returns 0 for unparseable / missing input — callers downstream
- * (premiumSpike.classifyVideoType) treat 0 as "shorts" which is the safer
- * mis-classification (we'd rather false-negative an unknown video than mark
- * it longform without evidence).
- *
- * Sprint A.8: added when /scan started filtering channel video pools by
- * format-matching duration.
+ * Supports H/M/S components only — extended designators like P1Y / P1D are
+ * intentionally rejected (YouTube videos never use them) and yield 0.
  */
 export function parseIsoDuration(s: string | undefined | null): number {
   if (!s) return 0
   const m = s.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/)
   if (!m) return 0
   const [, h, mi, se] = m
-  return (parseInt(h ?? '0', 10) * 3600) + (parseInt(mi ?? '0', 10) * 60) + parseInt(se ?? '0', 10)
+  return parseInt(h ?? '0') * 3600 + parseInt(mi ?? '0') * 60 + parseInt(se ?? '0')
 }
 
 // Read primary + optional fallback YouTube API key from env.
@@ -160,10 +156,7 @@ export async function getRecentVideos(
   const buildVideosUrl = (key: string) => {
     const url = new URL(`${BASE}/videos`)
     url.searchParams.set('key', key)
-    // Sprint A.8: contentDetails added so we can read each video's duration
-    // (ISO-8601) and bucket it as shorts/longform inside premiumSpike.
-    // Same videos.list call — no extra request, no quota cost.
-    url.searchParams.set('part', 'snippet,statistics,contentDetails')
+    url.searchParams.set('part', 'snippet,statistics')
     url.searchParams.set('id', videoIds.join(','))
     return url
   }
@@ -175,8 +168,7 @@ export async function getRecentVideos(
     id: string
     snippet: { title: string; description?: string; publishedAt: string }
     statistics: { viewCount?: string; likeCount?: string; commentCount?: string }
-    contentDetails?: { duration?: string }
-  }): VideoData => ({
+  }) => ({
     videoId: item.id,
     title: item.snippet.title,
     description: (item.snippet.description ?? '').slice(0, 240),
@@ -184,51 +176,91 @@ export async function getRecentVideos(
     likeCount: parseInt(item.statistics.likeCount ?? '0', 10),
     commentCount: parseInt(item.statistics.commentCount ?? '0', 10),
     publishedAt: item.snippet.publishedAt,
-    durationSeconds: parseIsoDuration(item.contentDetails?.duration),
-  })).sort((a: VideoData, b: VideoData) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+  })).sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
 }
 
-/**
- * Batch-fetch viewCount + publishedAt for a list of video IDs. Cheap
- * (one videos.list call per 50 IDs, 1 quota unit each). Used by
- * /discover pre-screen to compute "best-VPS hit" per candidate channel
- * before deciding whether to insert into the watchlist.
- *
- * Sprint A.8 follow-up: without this, /discover was inserting any channel
- * whose subs/age fit the bracket — even if their best video was a 5k-view
- * dud. The pre-screen catches that before scan-cycle quota gets burned.
- */
-export async function getVideoStatsBatch(
+// Sprint B Phase 2: enriched recent-uploads fetch returning the full
+// VideoSnapshot shape (minus scannedAt, which the caller fills in so all
+// videos in one scan share a timestamp).
+//
+// Cost: 1u (playlistItems.list) + 1u (videos.list) — same as getRecentVideos
+// since contentDetails/snippet/statistics are folded into the existing parts
+// param at no extra quota cost beyond the baseline call.
+//
+// Kept SEPARATE from getRecentVideos (which still returns the legacy VideoData
+// shape) so existing callers don't break. New scan paths call this one.
+export async function getRecentVideosWithStats(
   apiKeys: string[],
-  videoIds: string[],
-): Promise<Array<{ videoId: string; viewCount: number; publishedAt: string }>> {
-  if (videoIds.length === 0) return []
-
-  const out: Array<{ videoId: string; viewCount: number; publishedAt: string }> = []
-
-  for (let i = 0; i < videoIds.length; i += 50) {
-    const batch = videoIds.slice(i, i + 50)
-    const buildUrl = (key: string) => {
-      const url = new URL(`${BASE}/videos`)
-      url.searchParams.set('key', key)
-      url.searchParams.set('part', 'snippet,statistics')
-      url.searchParams.set('id', batch.join(','))
-      return url
-    }
-
-    const res = await tryFetchWithFallback(apiKeys, buildUrl, 'videos.list (discover-prescreen)')
-    const data = await res.json()
-
-    for (const item of (data.items ?? [])) {
-      out.push({
-        videoId: item.id,
-        viewCount: parseInt(item.statistics?.viewCount ?? '0', 10),
-        publishedAt: item.snippet?.publishedAt ?? '',
-      })
-    }
+  uploadsPlaylistId: string,
+  maxResults = 20
+): Promise<Omit<VideoSnapshot, 'scannedAt'>[]> {
+  const buildPlaylistUrl = (key: string) => {
+    const url = new URL(`${BASE}/playlistItems`)
+    url.searchParams.set('key', key)
+    url.searchParams.set('part', 'contentDetails')
+    url.searchParams.set('playlistId', uploadsPlaylistId)
+    url.searchParams.set('maxResults', String(maxResults))
+    return url
   }
 
-  return out
+  const playlistRes = await tryFetchWithFallback(apiKeys, buildPlaylistUrl, 'playlistItems.list')
+  const playlistData = await playlistRes.json()
+
+  const videoIds: string[] = (playlistData.items ?? [])
+    .map((item: { contentDetails?: { videoId?: string } }) => item.contentDetails?.videoId)
+    .filter(Boolean)
+
+  if (videoIds.length === 0) return []
+
+  const buildVideosUrl = (key: string) => {
+    const url = new URL(`${BASE}/videos`)
+    url.searchParams.set('key', key)
+    url.searchParams.set('part', 'snippet,contentDetails,statistics')
+    url.searchParams.set('id', videoIds.join(','))
+    return url
+  }
+
+  const videosRes = await tryFetchWithFallback(apiKeys, buildVideosUrl, 'videos.list')
+  const videosData = await videosRes.json()
+
+  type ThumbnailVariant = { url?: string }
+  type VideoItem = {
+    id: string
+    snippet?: {
+      channelId?: string
+      title?: string
+      publishedAt?: string
+      thumbnails?: {
+        maxres?: ThumbnailVariant
+        high?: ThumbnailVariant
+        medium?: ThumbnailVariant
+        default?: ThumbnailVariant
+      }
+    }
+    contentDetails?: { duration?: string }
+    statistics?: { viewCount?: string; likeCount?: string; commentCount?: string }
+  }
+
+  return (videosData.items ?? []).map((item: VideoItem) => {
+    const thumbs = item.snippet?.thumbnails
+    const thumbnailUrl =
+      thumbs?.maxres?.url ??
+      thumbs?.high?.url ??
+      thumbs?.medium?.url ??
+      thumbs?.default?.url ??
+      ''
+    return {
+      videoId: item.id,
+      channelId: item.snippet?.channelId ?? '',
+      viewCount: Number(item.statistics?.viewCount ?? 0),
+      likeCount: Number(item.statistics?.likeCount ?? 0),
+      commentCount: Number(item.statistics?.commentCount ?? 0),
+      durationSeconds: parseIsoDuration(item.contentDetails?.duration),
+      thumbnailUrl,
+      title: item.snippet?.title ?? '',
+      publishedAt: item.snippet?.publishedAt ?? '',
+    }
+  })
 }
 
 // Sonar: keyword-driven search returning videos + their channelIds.

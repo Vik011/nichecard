@@ -7,7 +7,8 @@ import { NicheCard } from '@/components/niche/NicheCard'
 import { NicheCardSkeleton } from '@/components/niche/NicheCardSkeleton'
 import { RevealCountdown } from '@/components/niche/RevealCountdown'
 import { UpsellModal } from '@/components/niche/UpsellModal'
-import { fetchNiches, fetchSpikeHistory } from '@/lib/supabase/queries'
+import { fetchNiches, fetchSpikeHistory, type DiscoverMode } from '@/lib/supabase/queries'
+import { fetchTrendingByChannel } from '@/lib/discover/fetchTrending'
 import { fetchSavedNicheIds } from '@/lib/supabase/savedNiches'
 import { filtersToParams, paramsToFilters, type ReadableParams } from '@/lib/supabase/filterParams'
 import { useUser } from '@/lib/context/UserContext'
@@ -18,13 +19,22 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { EmptyMagnifier } from '@/components/ui/illustrations/EmptyMagnifier'
 import { SonarEmptyState } from '@/components/ui/SonarEmptyState'
 import { TrendingTopics } from '@/components/niche/TrendingTopics'
+import { HotNowFilter } from '@/components/discover/HotNowFilter'
 import { getRevealedIds } from '@/lib/tier/reveal'
 import type {
   SearchFilters as SearchFiltersType,
   NicheCardData,
   SpikePoint,
   ContentType,
+  TrendData,
 } from '@/lib/types'
+
+// Sprint B Phase 7A: bootstrapping flag. While the trend engine is still
+// warming up (Phases 4-6 just deployed, video_metrics partially populated),
+// default the page to legacy 'quality' mode and surface a banner. Flip this
+// env var to 'true' once production has 48-72h of trend coverage.
+const TREND_ENGINE_BOOTSTRAPPED =
+  process.env.NEXT_PUBLIC_TREND_ENGINE_BOOTSTRAPPED === 'true'
 
 // Sonar default: surface nano-creators (sub <1K) by default — they're where
 // the highest outlier ratios live. Users can narrow via the SearchFilters UI.
@@ -48,6 +58,12 @@ function defaultFilters(contentType: ContentType): SearchFiltersType {
 
 function resolveContentType(params: ReadableParams): ContentType {
   return params.get('type') === 'longform' ? 'longform' : 'shorts'
+}
+
+function resolveDiscoverMode(params: ReadableParams): DiscoverMode {
+  const raw = params.get('mode')
+  if (raw === 'hot' || raw === 'quality' || raw === 'all') return raw
+  return TREND_ENGINE_BOOTSTRAPPED ? 'hot' : 'quality'
 }
 
 function headings(copy: CopyKeys, contentType: ContentType) {
@@ -97,6 +113,7 @@ function DiscoverPageInner() {
   )
   const [results, setResults] = useState<NicheCardData[]>([])
   const [histories, setHistories] = useState<Map<string, SpikePoint[]>>(new Map())
+  const [trendByChannel, setTrendByChannel] = useState<Map<string, TrendData>>(new Map())
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -108,27 +125,44 @@ function DiscoverPageInner() {
   // The format (shorts/longform) lives in the URL — top nav navigates by changing
   // ?type=. We watch this param so re-search fires when the user clicks a tab.
   const urlContentType = resolveContentType(searchParams)
+  const mode = resolveDiscoverMode(searchParams)
 
-  async function handleSearch(filtersOverride?: SearchFiltersType) {
+  async function handleSearch(filtersOverride?: SearchFiltersType, modeOverride?: DiscoverMode) {
     const f = filtersOverride ?? filters
+    const m = modeOverride ?? mode
     setVisibleCount(VISIBLE_STEP)
     setLoading(true)
     setSearched(true)
     setError(null)
     const { data, error: fetchError } = await fetchNiches(f, {
       clusterId: activeClusterId ?? undefined,
+      mode: m,
     })
     setResults(data)
     setError(fetchError)
     setLoading(false)
     if (data.length > 0) {
-      const points = await Promise.all(data.map(n => fetchSpikeHistory(n.youtubeChannelId)))
-      const map = new Map<string, SpikePoint[]>()
-      data.forEach((n, i) => map.set(n.id, points[i]))
-      setHistories(map)
+      const channelIds = data.map(n => n.youtubeChannelId)
+      const [points, trendMap] = await Promise.all([
+        Promise.all(data.map(n => fetchSpikeHistory(n.youtubeChannelId))),
+        fetchTrendingByChannel(channelIds),
+      ])
+      const histMap = new Map<string, SpikePoint[]>()
+      data.forEach((n, i) => histMap.set(n.id, points[i]))
+      setHistories(histMap)
+      setTrendByChannel(trendMap)
     } else {
       setHistories(new Map())
+      setTrendByChannel(new Map())
     }
+  }
+
+  function handleModeChange(next: DiscoverMode) {
+    // Update URL — the useEffect that watches `mode` will pick up the change
+    // and trigger handleSearch with the new mode. Avoids double-fetching.
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('mode', next)
+    router.replace(`/discover?${params.toString()}`)
   }
 
   function handleFiltersChange(updated: SearchFiltersType) {
@@ -177,10 +211,10 @@ function DiscoverPageInner() {
       const ct = resolveContentType(searchParams)
       const f = paramsToFilters(searchParams, ct, DEFAULTS[ct])
       setFilters(f)
-      handleSearch(f)
+      handleSearch(f, mode)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLoading, activeClusterId, urlContentType])
+  }, [userLoading, activeClusterId, urlContentType, mode])
 
   const { eyebrow, headline } = headings(copy, filters.contentType)
   const fromUrl = (() => {
@@ -232,8 +266,28 @@ function DiscoverPageInner() {
         </div>
       )}
 
+      <div className="flex flex-col items-center gap-2 mb-4">
+        <HotNowFilter mode={mode} onChange={handleModeChange} copy={copy} />
+        <a
+          href="/discover/trending"
+          className="text-xs text-indigo-300 hover:text-indigo-200 underline-offset-2 hover:underline"
+        >
+          {copy.discoverTrendingViewClustersLink}
+        </a>
+      </div>
+
+      {!TREND_ENGINE_BOOTSTRAPPED && mode !== 'hot' && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mb-4 max-w-2xl mx-auto rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200"
+        >
+          {copy.discoverBootstrapBanner}
+        </div>
+      )}
+
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 max-w-2xl mx-auto">
-        <SearchFilters value={filters} onChange={handleFiltersChange} copy={copy} />
+        <SearchFilters value={filters} onChange={handleFiltersChange} copy={copy} mode={mode} />
         <button
           type="button"
           onClick={() => handleSearch()}
@@ -288,6 +342,7 @@ function DiscoverPageInner() {
                 spikeHistory={histories.get(niche.id)}
                 fromUrl={fromUrl}
                 onBookmarkToggle={handleBookmarkToggle}
+                trendData={trendByChannel.get(niche.youtubeChannelId)}
               />
             ))}
           </StaggerList>

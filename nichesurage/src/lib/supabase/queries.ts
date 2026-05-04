@@ -77,13 +77,45 @@ function channelAgeCutoff(age: Exclude<ChannelAge, 'any'>): string {
 
 const SONAR_UI_THRESHOLD = Number(process.env.NEXT_PUBLIC_OUTLIER_UI_THRESHOLD ?? '5')
 
+// Sprint B Phase 7A: cap of channel candidates pulled from video_metrics in
+// hot mode. We then filter to the active surface (subs / age / cluster) and
+// re-rank by trend_score in JS. 30 keeps payload small and matches the
+// existing 20-row default the legacy mode uses.
+const HOT_MODE_CHANNEL_LIMIT = 30
+const HOT_MODE_WINDOW_DAYS = 7
+
+export type DiscoverMode = 'hot' | 'quality' | 'all'
+
 export interface FetchNichesOptions {
   clusterId?: string
+  /**
+   * Sprint B Phase 7A. 'hot' re-ranks by max(trend_score) over recent
+   * video_metrics rows (filters dying lifecycle by default). 'quality' and
+   * 'all' both keep the legacy outlier_ratio + is_spike behavior — 'all' is
+   * the default to preserve every existing call site.
+   */
+  mode?: DiscoverMode
+  /**
+   * In hot mode, dying-lifecycle channels are dropped unless this is true.
+   * Per plan Step 7.12.
+   */
+  includeDying?: boolean
 }
 
 export async function fetchNiches(
   filters: SearchFilters,
   options: FetchNichesOptions = {},
+): Promise<{ data: NicheCardData[]; error: string | null }> {
+  const mode: DiscoverMode = options.mode ?? 'all'
+  if (mode === 'hot') {
+    return fetchHotNiches(filters, options)
+  }
+  return fetchQualityNiches(filters, options)
+}
+
+async function fetchQualityNiches(
+  filters: SearchFilters,
+  options: FetchNichesOptions,
 ): Promise<{ data: NicheCardData[]; error: string | null }> {
   const supabase = createClient()
 
@@ -118,6 +150,84 @@ export async function fetchNiches(
 
   if (error) return { data: [], error: 'Search failed. Please try again.' }
   return { data: (data ?? []).map(row => mapRow(row as ScanResultWithCluster)), error: null }
+}
+
+// Hot mode deliberately ignores `filters.sortBy` — the mode IS the sort
+// (max trend_score across recent video_metrics). The SearchFilters Sort
+// dropdown still renders in the parent UI when mode==='hot' but silently
+// no-ops; Phase 7B will hide it to avoid the inconsistency.
+// TODO(phase-7b): hide SearchFilters Sort control when mode==='hot'.
+async function fetchHotNiches(
+  filters: SearchFilters,
+  options: FetchNichesOptions,
+): Promise<{ data: NicheCardData[]; error: string | null }> {
+  const supabase = createClient()
+  const sevenDaysAgoIso = new Date(Date.now() - HOT_MODE_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
+
+  // Step 1: top channels by max(trend_score) within the hot window. Supabase
+  // JS doesn't support GROUP BY, so we pull rows ordered by trend_score desc
+  // and dedupe to first-seen channel_id (which is its max because of the order).
+  const { data: metrics, error: metricsErr } = await supabase
+    .from('video_metrics')
+    .select('channel_id, trend_score, lifecycle_status')
+    .gte('computed_at', sevenDaysAgoIso)
+    .not('trend_score', 'is', null)
+    .order('trend_score', { ascending: false, nullsFirst: false })
+    .limit(500)
+
+  if (metricsErr) return { data: [], error: 'Search failed. Please try again.' }
+  if (!metrics || metrics.length === 0) return { data: [], error: null }
+
+  // Filter dying rows out FIRST so a channel whose top-scored video is
+  // dying (but who also has a healthier video in the window) can still
+  // surface via the healthier video's score. Without this, the original
+  // scoreByChannel.has() check would skip the dying row, leaving the
+  // channel out entirely. (CQ review found the bug 2026-05-04.)
+  const includeDying = options.includeDying ?? false
+  const scoreByChannel = new Map<string, number>()
+  for (const m of metrics) {
+    if (!includeDying && m.lifecycle_status === 'dying') continue
+    const ch = String(m.channel_id)
+    if (scoreByChannel.has(ch)) continue
+    scoreByChannel.set(ch, Number(m.trend_score ?? 0))
+    if (scoreByChannel.size >= HOT_MODE_CHANNEL_LIMIT) break
+  }
+  if (scoreByChannel.size === 0) return { data: [], error: null }
+
+  const channelIds = Array.from(scoreByChannel.keys())
+
+  // Step 2: surface scan_results_latest rows for those channels. We drop
+  // is_spike + outlier_ratio floors (hot mode trusts trend_score) but keep
+  // user-controlled subscriber/age filters intact.
+  let query = supabase
+    .from('scan_results_latest')
+    .select('*, niche_clusters(id, label)')
+    .eq('content_type', filters.contentType)
+    .gte('subscriber_count', filters.subscriberMin)
+    .lte('subscriber_count', filters.subscriberMax)
+    .in('youtube_channel_id', channelIds)
+
+  if (options.clusterId) {
+    query = query.eq('cluster_id', options.clusterId)
+  }
+  if (filters.channelAge !== 'any') {
+    query = query.gte('channel_created_at', channelAgeCutoff(filters.channelAge))
+  }
+  if (filters.onlyRecentlyViral) {
+    query = query.gte('scanned_at', sevenDaysAgoIso)
+  }
+
+  const { data, error } = await query
+  if (error) return { data: [], error: 'Search failed. Please try again.' }
+
+  // Step 3: re-rank in JS by trend_score desc (preserve hot ordering).
+  const mapped = (data ?? []).map(row => mapRow(row as ScanResultWithCluster))
+  mapped.sort((a, b) => {
+    const sa = scoreByChannel.get(a.youtubeChannelId) ?? 0
+    const sb = scoreByChannel.get(b.youtubeChannelId) ?? 0
+    return sb - sa
+  })
+  return { data: mapped, error: null }
 }
 
 export async function fetchTrendingClusters(limit = 8): Promise<TrendingCluster[]> {

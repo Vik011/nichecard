@@ -78,3 +78,79 @@ export interface DbNicheCluster {
   last_labeled_at: string
   updated_at: string
 }
+
+// ─── Sprint B: Trend Detection Engine ────────────────────────────────
+// Mirrors enums + tables in 0024_trend_engine_schema.sql. Keep in sync.
+
+export type CategoryEnum =
+  | 'ai_tools' | 'finance' | 'crypto' | 'tech_reviews'
+  | 'gaming_streamers' | 'fitness_health' | 'self_improvement'
+  | 'true_crime' | 'luxury_lifestyle' | 'celebrity_drama'
+  | 'geopolitics_news' | 'education_howto'
+
+export type WatchlistTier = 'candidate' | 'observed' | 'permanent'
+export type LifecycleStatus = 'emerging' | 'exploding' | 'peak' | 'saturated' | 'dying'
+export type ArchetypeStatus = 'canonical' | 'candidate' | 'rejected'
+
+export interface VideoSnapshot {
+  id: number
+  video_id: string
+  channel_id: string
+  scanned_at: string
+  view_count: number
+  like_count: number | null
+  comment_count: number | null
+  duration_seconds: number | null
+  thumbnail_url: string | null
+  title: string | null
+  published_at: string | null
+}
+
+export interface VideoMetrics {
+  video_id: string
+  channel_id: string | null
+  category: CategoryEnum | null
+  latest_views: number | null
+  views_per_hour: number | null
+  comments_per_hour: number | null
+  likes_per_hour: number | null
+  velocity_delta: number | null
+  view_acceleration: number | null
+  breakout_ratio: number | null
+  novelty_score: number | null
+  trend_score: number | null
+  lifecycle_status: LifecycleStatus | null
+  topic_tags: string[] | null
+  computed_at: string
+}
+
+export interface TrendCluster {
+  id: number
+  label: string | null
+  category: CategoryEnum | null
+  narrative_archetype_id: string | null
+  video_count: number
+  channel_count: number
+  first_seen_at: string | null
+  last_updated_at: string
+  avg_trend_score: number | null
+  is_mega_cluster: boolean
+  mega_cluster_categories: CategoryEnum[] | null
+}
+
+export interface NarrativeArchetype {
+  id: string
+  display_label: string
+  status: ArchetypeStatus
+  detection_count: number
+  first_detected_at: string
+  promoted_at: string | null
+  description: string | null
+}
+
+export interface VideoRecommendation {
+  source_video_id: string
+  related_video_id: string
+  position: number
+  discovered_at: string
+}

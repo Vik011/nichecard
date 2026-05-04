@@ -10,6 +10,14 @@ export type {
   DbNicheHealthCheck,
 } from './database'
 import type { ViralityRating, ContentLanguage, ContentType } from './database'
+export type { TrendData, TrendLifecycle, TrendClusterCard } from './trend'
+export {
+  TREND_BADGE_SCORE_THRESHOLD,
+  TREND_BADGE_CLUSTER_THRESHOLD,
+  CLUSTER_FEED_DEFAULT_LIMIT,
+  CLUSTER_FEED_FRESHNESS_DAYS,
+  CLUSTER_FEED_SAMPLE_THUMBS,
+} from './trend'
 
 export type ChannelAge = '1month' | '3months' | '6months' | '1year' | 'any'
 export type SortBy = 'score' | 'newest'

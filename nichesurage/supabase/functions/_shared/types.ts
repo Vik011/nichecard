@@ -1,3 +1,9 @@
+export type WatchlistTier = 'candidate' | 'observed' | 'permanent'
+
+// Sprint B Phase 1+: lifecycle phase classifier for a video's growth curve.
+// Stored in video_metrics.lifecycle_status (enum lifecycle_status_enum).
+export type LifecycleStatus = 'emerging' | 'exploding' | 'peak' | 'saturated' | 'dying'
+
 export interface WatchlistChannel {
   id: string
   youtube_channel_id: string
@@ -12,6 +18,12 @@ export interface WatchlistChannel {
   first_discovered_at: string
   last_scanned_at: string | null
   seed_keyword: string | null
+  // Sprint B Phase 1+: 3-tier candidate universe. Optional here because
+  // older rows / fixtures may not yet have it; column has DB default 'permanent'.
+  tier?: WatchlistTier | null
+  // Sprint B Phase 1+: industry-standard category (12-niche enum).
+  // NULL until recategorize backfill runs.
+  category?: string | null
 }
 
 export interface SeedKeyword {
@@ -53,4 +65,20 @@ export interface VideoData {
   // a channel's video pool to its actual format (longform >180s, shorts ≤180s).
   // Populated by getRecentVideos via contentDetails.duration (ISO-8601).
   durationSeconds: number
+}
+
+// Sprint B Phase 2: time-series snapshot row inserted into video_snapshots
+// on every scan. INSERT-only (never updated) — multiple rows per video over
+// time IS the data we use for velocity / acceleration / trend score.
+export interface VideoSnapshot {
+  videoId: string
+  channelId: string
+  viewCount: number
+  likeCount: number
+  commentCount: number
+  durationSeconds: number
+  thumbnailUrl: string
+  title: string
+  publishedAt: string  // ISO 8601
+  scannedAt: string    // ISO 8601, set by caller (so all videos in one scan share a timestamp)
 }
