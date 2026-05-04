@@ -32,7 +32,12 @@ import { hammingDistance } from '@/lib/thumbnails/phash'
 
 export interface ClusterMember {
   videoId: string
-  /** Strongest similarity into this node from another cluster member. */
+  /**
+   * Strongest similarity edge from this member to ANY other cluster member.
+   * NOT centroid-relative — a member can have a stronger link to a non-centroid neighbor.
+   * Phase 5C persists this to `trend_cluster_members.similarity` as the
+   * "how strongly does this video belong to this cluster" signal.
+   */
   similarity: number
 }
 
@@ -123,9 +128,16 @@ class DSU {
 // ─── Pure clusterer over pre-computed edges ──────────────────────────────
 
 /**
- * Pure clustering over a fixed set of nodes and pre-thresholded edges.
- * Exported for direct unit testing — tests inject edges/channels rather
- * than spinning up an embedding pipeline.
+ * Run union-find clustering over a pre-computed edge set, then filter and rank.
+ *
+ * INVARIANT: every videoId referenced in `edges` MUST also appear in `videoIds`.
+ * If a stray edge references an unknown videoId, `find()` will infinite-loop.
+ * `detectReplicationClusters` upholds this invariant by deriving edges only
+ * from the same candidate set it passes as `videoIds`.
+ *
+ * @param videoIds - all candidate videos in this (category, window) batch
+ * @param edges - any-signal edges; both endpoints must be in `videoIds`
+ * @param channelOf - videoId → channelId map for distinct-channel filtering
  */
 export function clusterFromEdges(
   videoIds: string[],
@@ -272,6 +284,7 @@ function buildEdges(
   const edges: Edge[] = []
 
   // Title cosine
+  // SCALING: O(N²) pairwise — fine to ~500 videos per (category, window). At ≥1000, push edge construction down to SQL via pgvector `<=>` and `bit_count(a # b)` (requires Postgres RPC).
   for (let i = 0; i < titleVecs.length; i++) {
     for (let j = i + 1; j < titleVecs.length; j++) {
       const sim = cosineSimilarity(titleVecs[i].vec, titleVecs[j].vec)
