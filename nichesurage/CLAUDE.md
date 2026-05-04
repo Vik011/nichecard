@@ -372,6 +372,14 @@ Phases 7A–7C shipped in commits `cc155b5`, `162127e`, `e4db2aa`, `dc5f459` (ch
 3. Wait 24-72h after deploy. Visit `/admin` → Trend Engine Readiness panel must show 3 green checkmarks: ≥5000 video_snapshots, ≥60% embedding coverage, ≥1 cluster formed.
 4. ONLY THEN: set `NEXT_PUBLIC_TREND_ENGINE_BOOTSTRAPPED=true` in Vercel env, redeploy. `/discover` will default to Hot mode, banner disappears.
 
+### Scan cadence — pg_cron schedule (post-Sprint-B)
+
+Migration `0007_cron_discover_scan.sql` originally scheduled `daily-scan` at 03:30 UTC (1×/day) — fine for a static channel-quality scanner but starves the Sprint B trend engine: time-series snapshots need ≥2 readings to compute velocity_delta, ≥3 for view_acceleration. With 1×/day, first velocity reading takes 24h.
+
+Migration `0026_scan_cadence_increase.sql` reschedules to `30 */6 * * *` (4×/day at 03:30, 09:30, 15:30, 21:30 UTC). Quota math: 104 channels × 25 videos / 50 per call ≈ 52 units per scan × 4 ticks = 208 units/day. Headroom remains under YouTube's 10k/key/day. If we add `/api/discovery/expand` later, audit quota again.
+
+The `daily-scan` jobname is intentionally retained across migrations so `cron.job_run_details` history stays linked to one logical job. Bump cadence further (every 4h or every 2h) only after Phase 5b ships tier-aware throttling so the cold pool doesn't burn quota uselessly.
+
 ### Open follow-ups (queued, not blockers for ship)
 
 - **Phase 5b** (deferred): dynamic discovery loop — `/api/discovery/expand|promote|evict`. Tier-aware throttling, yt-dlp-driven universe expansion. Adds new candidate channels automatically when a video crosses score>70 or a cluster forms with ≥5 members. Phase 0 already validated yt-dlp on Vercel.
