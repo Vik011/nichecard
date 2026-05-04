@@ -53,6 +53,17 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Lint runs separately via `npm run lint` and CI; don't block production
+  // builds on style violations. Type errors still fail the build (tsc runs).
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  // image-hash + file-type ship `.wasm` assets that Next's webpack can't
+  // bundle. Mark them external so the API route requires them from
+  // node_modules at runtime (Node serverless runtime, not Edge).
+  experimental: {
+    serverComponentsExternalPackages: ['image-hash', 'file-type', 'sharp'],
+  },
   async headers() {
     return [
       {
