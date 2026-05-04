@@ -160,49 +160,75 @@ Worktree branch: `claude/infallible-germain-89d9e5` (PR #6). Master nije merged 
 
 ---
 
-## yt-dlp on Vercel — feasibility result
+## yt-dlp on Vercel — Sprint B Phase 0 verdict (2026-05-04)
 
-**Status:** WORKS locally (Windows + Node v24). Vercel verification pending — manual hit on preview required.
-**Date:** 2026-05-04
-**Spike route:** `src/app/api/spike/ytdlp/route.ts` (THROWAWAY — delete after Sprint B Phase 0 decision)
+**Status:** ✅ **GREEN** — works on Vercel preview after 4 iterations. Spike commit chain `cbf6d0b → bd605f2 → 431b71b → 0907af4 → e804d88`. Throwaway spike route deleted post-decision; the lessons live here.
 
-### Verdict
-- `youtube-dl-exec@3.1.5` works as a Next.js Node-runtime dependency.
-- yt-dlp binary version: **2026.03.17** (shipped inside the npm package — no vendoring).
-- Latency on the dev server (Windows): **~3-4.5s** per call for a video that has a Mix playlist; well within Vercel's 60s function ceiling, comfortable headroom under our 25s timeout.
-- `next build` succeeds; `next start` (production server) also works → not a dev-only artifact.
+### Final working approach
 
-### Critical gotcha #1 — `related_videos` is gone
-Modern yt-dlp does **NOT** return a `related_videos` field for plain watch-page URLs. That field existed in old `youtube-dl` forks but was removed.
+**No npm wrapper.** Native `fetch` to GitHub releases + native `child_process.spawn`. We own every line of the integration.
 
-**Workaround:** fetch the YouTube Mix playlist for the video — URL pattern `watch?v=VID&list=RDVID` — with `--flat-playlist --dump-single-json`. Each playlist entry IS a related video, populated by YouTube's recommendation algorithm. Returned ~24 related items consistently for popular videos. Some videos (e.g. very old / niche, like `jNQXAC9IVRw` "Me at the zoo") have NO Mix playlist and return 0 — Sprint B universe-expansion logic must handle this gracefully.
+```ts
+// 1. Pin a yt-dlp release version (NOT 'latest' — reproducibility)
+const YT_DLP_VERSION = '2025.10.22'
+const RELEASE_URL = `https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp_linux`
+const BIN_PATH = '/tmp/yt-dlp'  // /tmp is the only writable FS on Vercel
 
-### Critical gotcha #2 — webpack rewrites the binary path
-Without intervention, the route fails with `ENOENT spawn .next/server/bin/yt-dlp.exe`. The package's `constants.js` derives the binary path from `__dirname`, which webpack rewrites to the bundled chunk dir (where there is no binary).
+// 2. On cold start, fetch + write + chmod +x. Coalesce concurrent calls.
+let downloadPromise: Promise<...> | null = null
+async function ensureBinary() {
+  if (fs.existsSync(BIN_PATH) && fs.statSync(BIN_PATH).size > 1_000_000) return
+  if (!downloadPromise) {
+    downloadPromise = fetch(RELEASE_URL).then(async (res) => {
+      const buf = Buffer.from(await res.arrayBuffer())
+      fs.writeFileSync(BIN_PATH, buf)
+      fs.chmodSync(BIN_PATH, 0o755)
+    })
+  }
+  await downloadPromise
+}
 
-**Workarounds, in order of preference:**
-1. **Production fix (preferred):** add `experimental.serverComponentsExternalPackages: ['youtube-dl-exec']` to `next.config.mjs`. Tells Next.js to leave it as an external CommonJS require, preserving `__dirname`. **Spike does NOT do this** because the spec forbids touching `next.config.mjs`.
-2. **In-route fix (what the spike uses):** set `process.env.YOUTUBE_DL_DIR = path.join(process.cwd(), 'node_modules', 'youtube-dl-exec', 'bin')` BEFORE `require('youtube-dl-exec')`. The constants module checks this env var first. Works in dev + production server locally. Should work on Vercel too because `process.cwd()` is the project root in serverless functions.
+// 3. Spawn directly with full stdio capture
+spawn(BIN_PATH, ['<url>', '--skip-download', '--dump-single-json', ...])
+```
 
-### Caveats / unknowns for Vercel
-- **Binary tracing:** Vercel uses Next.js's nft (Output File Tracing) to decide which `node_modules/` files to include in the deployment bundle. The `youtube-dl-exec/bin/yt-dlp` (Linux build) needs to be traced. Because the package's source still references `__dirname/../bin`, nft *should* pick it up. **MUST verify on the actual Vercel preview deploy** — if 404 or ENOENT on Vercel, fall back to Plan B/C.
-- **Cold start cost:** binary spawn was not measured (dev server keeps warm). On Vercel cold start, expect +200-500ms.
-- **YouTube anti-bot:** for pure metadata extraction (Mix playlist via `--flat-playlist`) the spike worked clean. If Sprint B ever needs format/stream URLs it will hit signature-solving failures — stay in metadata-only territory.
-- **YouTube IP rate limits:** Vercel functions go out via shared IPs. Heavy fan-out (many videoIDs in parallel) may get throttled or temp-blocked by YouTube. Sprint B's universe expansion should be sequential or low-concurrency, with backoff.
-- **`related_videos` API stability:** the YouTube Mix playlist is a public surface but undocumented. yt-dlp may break extractor logic on a future YouTube change; keep `youtube-dl-exec` updateable.
+### Phase 0 measured numbers
+- Cold start: **~4.8s** total (≈3s GitHub fetch + 1s yt-dlp run + overhead)
+- Warm: **<1s** typical (skips download)
+- Binary size: **37.6 MB** (`yt-dlp_linux`, PyInstaller standalone, zero python dependency)
+- Returned related count: **24** for `dQw4w9WgXcQ` (Rick Astley) — high-quality '80s music cluster
+- Vercel function timeout: declared `export const maxDuration = 60` (Pro tier)
 
-### Smoke test
-- `GET /api/spike/ytdlp?videoId=dQw4w9WgXcQ` → `{ ok: true, relatedCount: 24, durationMs: ~3000, version: "3.1.5" }`
-- `GET /api/spike/ytdlp?videoId=9bZkp7q19f0` (Gangnam Style) → `relatedCount: 24`
-- `GET /api/spike/ytdlp?videoId=jNQXAC9IVRw` (Me at the zoo) → `relatedCount: 0` (no Mix → graceful zero)
+### Critical gotchas (from 4 spike iterations)
 
-### Next step
-Hit the preview URL once the push lands:
-`https://nichecard-git-claude-infallible-germain-89d9e5-vik011s-projects.vercel.app/api/spike/ytdlp?videoId=dQw4w9WgXcQ`
+**1. `related_videos` field is dead.** Modern yt-dlp (2024+) does NOT return `related_videos` for plain watch-page URLs. **Workaround:** fetch the YouTube Mix playlist (`watch?v=VID&list=RDVID`) with `--flat-playlist --dump-single-json`. Each playlist entry IS a related video populated by YouTube's recommendation algorithm. Some videos (very old, niche, age-restricted) have no Mix and return 0 entries — handle gracefully.
 
-If Vercel returns `ok: true`: GREEN — proceed with Phase 5b as planned. Then add `serverComponentsExternalPackages: ['youtube-dl-exec']` to `next.config.mjs` and remove the in-route env-var workaround when productionizing.
+**2. `youtube-dl-exec` package fails on Vercel.** Two reasons:
+  - Webpack rewrites `__dirname` so binary path resolution breaks. Even with `experimental.serverComponentsExternalPackages: ['youtube-dl-exec']` (which fixes path), the bundled binary is a **Python script** needing `python3`. Vercel's Node runtime has no python.
+  - `yt-dlp-wrap` (deprecated) downloads the source distribution (also Python script). Same failure.
+  - **The only thing that works** is fetching `yt-dlp_linux` directly — the PyInstaller-packaged standalone Linux binary. We control the URL, no wrapper.
 
-If Vercel returns `ok: false` with ENOENT: switch to Plan B (Supabase Edge Function) or Plan D (YouTube Data API search.list). Plan C (separate Railway/Render Node worker) is most robust but adds infra overhead.
+**3. Folder naming.** Next.js App Router treats `_*` prefixed folders as **private** (404). For Sprint B production code, do not use `_spike`, `_internal`, etc. as route folder names.
 
-### NOTE on folder name
-The route is at `src/app/api/spike/ytdlp/` (NOT `_spike` as originally specified). Next.js App Router treats any folder prefixed with `_` as a **private folder** and excludes it from routing — `_spike/ytdlp` would 404. Renamed to `spike` for routability. The "experimental, throwaway" intent is preserved by the folder being literally named `spike`.
+**4. `process.cwd()` on Vercel.** Equals `/var/task/nichesurage` (the project root inside the function), NOT `/var/task` or repo root.
+
+### Sprint B production plan (Phase 4 implementation)
+
+For productionization, replace the runtime fetch with a **vendored binary**:
+
+1. Commit `nichesurage/bin/yt-dlp` (~37MB) to git — eliminates GitHub-releases runtime dependency, faster cold start, fully reproducible.
+2. Verify executable bit preserved (`git update-index --chmod=+x bin/yt-dlp`).
+3. In wrapper module (`src/lib/discovery/ytdlp.ts`), `BIN_PATH = path.join(process.cwd(), 'bin', 'yt-dlp')`.
+4. Vercel Output File Tracing (nft) auto-includes anything `require()`-d or imported. Pure file references via `fs.readFileSync` need a `bundlePagesRouterDependencies` or explicit inclusion. Test on preview before merge.
+
+**Concurrency caveat:** Vercel egress IPs are shared. YouTube will throttle aggressive fan-out. Sprint B universe-expansion (`/api/discovery/expand`) MUST be sequential or low-concurrency (≤3 parallel) with exponential backoff. If we get IP-banned, fall back is residential proxy budget (~$200-500/mo) — not budgeted in v1.
+
+**Mix-playlist API stability:** undocumented YouTube surface. yt-dlp extractor logic may break on future YouTube changes. Pin yt-dlp version per release; don't auto-update. Plan to bump version manually every ~3 months.
+
+### What to use this for in Sprint B
+
+Phase 4 step 4.14 (`src/lib/discovery/ytdlp.ts` wrapper) and Phase 5b discovery loop both rely on this primitive. Two functions to build:
+- `fetchRelatedVideos(videoId): Promise<RelatedItem[]>` — Mix playlist trick
+- `fetchTranscript(videoId): Promise<string | null>` — `--write-auto-subs --skip-download` then read VTT from /tmp
+
+Both reuse the same `ensureBinary()` + `spawn` plumbing.
