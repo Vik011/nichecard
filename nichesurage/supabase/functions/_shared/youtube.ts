@@ -1,7 +1,22 @@
 // supabase/functions/_shared/youtube.ts
-import type { YouTubeChannelData, VideoData, VideoSearchHit } from './types.ts'
+import type { YouTubeChannelData, VideoData, VideoSearchHit, VideoSnapshot } from './types.ts'
 
 const BASE = 'https://www.googleapis.com/youtube/v3'
+
+/**
+ * Parse YouTube ISO-8601 duration (e.g. "PT4M13S", "PT1H2M30S") to seconds.
+ * Returns 0 for unparseable input. Never throws.
+ *
+ * Supports H/M/S components only — extended designators like P1Y / P1D are
+ * intentionally rejected (YouTube videos never use them) and yield 0.
+ */
+export function parseIsoDuration(s: string | undefined | null): number {
+  if (!s) return 0
+  const m = s.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/)
+  if (!m) return 0
+  const [, h, mi, se] = m
+  return parseInt(h ?? '0') * 3600 + parseInt(mi ?? '0') * 60 + parseInt(se ?? '0')
+}
 
 // Read primary + optional fallback YouTube API key from env.
 // Order matters: primary key is tried first; on quota-exceeded (403 + "quota"
@@ -162,6 +177,90 @@ export async function getRecentVideos(
     commentCount: parseInt(item.statistics.commentCount ?? '0', 10),
     publishedAt: item.snippet.publishedAt,
   })).sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+}
+
+// Sprint B Phase 2: enriched recent-uploads fetch returning the full
+// VideoSnapshot shape (minus scannedAt, which the caller fills in so all
+// videos in one scan share a timestamp).
+//
+// Cost: 1u (playlistItems.list) + 1u (videos.list) — same as getRecentVideos
+// since contentDetails/snippet/statistics are folded into the existing parts
+// param at no extra quota cost beyond the baseline call.
+//
+// Kept SEPARATE from getRecentVideos (which still returns the legacy VideoData
+// shape) so existing callers don't break. New scan paths call this one.
+export async function getRecentVideosWithStats(
+  apiKeys: string[],
+  uploadsPlaylistId: string,
+  maxResults = 20
+): Promise<Omit<VideoSnapshot, 'scannedAt'>[]> {
+  const buildPlaylistUrl = (key: string) => {
+    const url = new URL(`${BASE}/playlistItems`)
+    url.searchParams.set('key', key)
+    url.searchParams.set('part', 'contentDetails')
+    url.searchParams.set('playlistId', uploadsPlaylistId)
+    url.searchParams.set('maxResults', String(maxResults))
+    return url
+  }
+
+  const playlistRes = await tryFetchWithFallback(apiKeys, buildPlaylistUrl, 'playlistItems.list')
+  const playlistData = await playlistRes.json()
+
+  const videoIds: string[] = (playlistData.items ?? [])
+    .map((item: { contentDetails?: { videoId?: string } }) => item.contentDetails?.videoId)
+    .filter(Boolean)
+
+  if (videoIds.length === 0) return []
+
+  const buildVideosUrl = (key: string) => {
+    const url = new URL(`${BASE}/videos`)
+    url.searchParams.set('key', key)
+    url.searchParams.set('part', 'snippet,contentDetails,statistics')
+    url.searchParams.set('id', videoIds.join(','))
+    return url
+  }
+
+  const videosRes = await tryFetchWithFallback(apiKeys, buildVideosUrl, 'videos.list')
+  const videosData = await videosRes.json()
+
+  type ThumbnailVariant = { url?: string }
+  type VideoItem = {
+    id: string
+    snippet?: {
+      channelId?: string
+      title?: string
+      publishedAt?: string
+      thumbnails?: {
+        maxres?: ThumbnailVariant
+        high?: ThumbnailVariant
+        medium?: ThumbnailVariant
+        default?: ThumbnailVariant
+      }
+    }
+    contentDetails?: { duration?: string }
+    statistics?: { viewCount?: string; likeCount?: string; commentCount?: string }
+  }
+
+  return (videosData.items ?? []).map((item: VideoItem) => {
+    const thumbs = item.snippet?.thumbnails
+    const thumbnailUrl =
+      thumbs?.maxres?.url ??
+      thumbs?.high?.url ??
+      thumbs?.medium?.url ??
+      thumbs?.default?.url ??
+      ''
+    return {
+      videoId: item.id,
+      channelId: item.snippet?.channelId ?? '',
+      viewCount: Number(item.statistics?.viewCount ?? 0),
+      likeCount: Number(item.statistics?.likeCount ?? 0),
+      commentCount: Number(item.statistics?.commentCount ?? 0),
+      durationSeconds: parseIsoDuration(item.contentDetails?.duration),
+      thumbnailUrl,
+      title: item.snippet?.title ?? '',
+      publishedAt: item.snippet?.publishedAt ?? '',
+    }
+  })
 }
 
 // Sonar: keyword-driven search returning videos + their channelIds.

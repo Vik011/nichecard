@@ -4,7 +4,11 @@
 // if ratio >= OUTLIER_DB_FLOOR. Legacy fields (spike_multiplier, opportunity_score)
 // kept populated for backward compat with the existing /discover UI.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { getChannelStats, getRecentVideos, getYoutubeKeys } from '../_shared/youtube.ts'
+import {
+  getChannelStats,
+  getRecentVideosWithStats,
+  getYoutubeKeys,
+} from '../_shared/youtube.ts'
 import {
   computeViews48h,
   computeViewsAvg,
@@ -16,7 +20,7 @@ import {
   computeCompetitionScore,
   findOutlier,
 } from '../_shared/metrics.ts'
-import type { WatchlistChannel } from '../_shared/types.ts'
+import type { WatchlistChannel, VideoData } from '../_shared/types.ts'
 
 const OUTLIER_DB_FLOOR = parseFloat(Deno.env.get('OUTLIER_DB_FLOOR') ?? '2')
 const OUTLIER_SPIKE_THRESHOLD = parseFloat(Deno.env.get('OUTLIER_SPIKE_THRESHOLD') ?? '5')
@@ -49,16 +53,83 @@ Deno.serve(async (_req: Request) => {
 
     let scanned = 0
     let persisted = 0
-    const now = new Date().toISOString()
+    // Single timestamp for the entire scan run — every snapshot row inserted
+    // in this invocation shares it, giving downstream a clean join key.
+    const scannedAt = new Date().toISOString()
+    const now = scannedAt
+    // Sprint B Phase 2: drop videos older than 30 days BEFORE snapshot insert.
+    // Avoids ingesting stale channel back-catalog noise on first scan.
+    const SNAPSHOT_FRESHNESS_CUTOFF_MS = Date.now() - 30 * 24 * 3600 * 1000
 
     for (const channel of channels as WatchlistChannel[]) {
       try {
         const stats = statsMap.get(channel.youtube_channel_id)
         if (!stats) continue
 
-        const videos = await getRecentVideos(youtubeKeys, stats.uploadsPlaylistId, 20)
-        if (videos.length === 0) continue
+        // Enriched fetch — returns VideoSnapshot-shaped objects (no scannedAt).
+        // We adapt to VideoData for the legacy metrics path below.
+        const enriched = await getRecentVideosWithStats(youtubeKeys, stats.uploadsPlaylistId, 20)
+        if (enriched.length === 0) continue
         scanned++
+
+        // ─── Phase 2: append-only video_snapshots ingest ─────────────
+        // Filter to fresh videos (last 30d) and insert one row per video,
+        // all sharing scannedAt. Best-effort: errors logged, scan proceeds.
+        const fresh = enriched.filter(v => {
+          const t = new Date(v.publishedAt).getTime()
+          return Number.isFinite(t) && t >= SNAPSHOT_FRESHNESS_CUTOFF_MS
+        })
+        // Tier-aware throttling (Phase 5b). For now we just READ the tier so
+        // the structured log captures it; differential cadence comes later.
+        const tier = channel.tier ?? null
+        if (fresh.length > 0) {
+          const snapshotRows = fresh.map(v => ({
+            video_id: v.videoId,
+            channel_id: v.channelId,
+            scanned_at: scannedAt,
+            view_count: v.viewCount,
+            like_count: v.likeCount,
+            comment_count: v.commentCount,
+            duration_seconds: v.durationSeconds,
+            thumbnail_url: v.thumbnailUrl,
+            title: v.title,
+            published_at: v.publishedAt,
+          }))
+          const { error: snapshotErr } = await supabase
+            .from('video_snapshots')
+            .insert(snapshotRows)
+          if (snapshotErr) {
+            console.error(
+              'scan: snapshot insert failed for channel',
+              channel.youtube_channel_id,
+              snapshotErr,
+            )
+            // Do NOT throw — snapshots are best-effort. Legacy scan_results
+            // writes proceed below.
+          }
+        }
+        console.log('scan_snapshot', JSON.stringify({
+          channelId: channel.youtube_channel_id,
+          tier,
+          videosFetched: enriched.length,
+          snapshotsInserted: fresh.length,
+          scannedAt,
+        }))
+
+        // Adapt enriched rows back to legacy VideoData shape for the existing
+        // outlier / metrics path. description is unused in this code path
+        // (only consumed by anthropic.ts in cluster-outliers), so '' is safe.
+        const videos: VideoData[] = enriched
+          .map(v => ({
+            videoId: v.videoId,
+            title: v.title,
+            description: '',
+            viewCount: v.viewCount,
+            likeCount: v.likeCount,
+            commentCount: v.commentCount,
+            publishedAt: v.publishedAt,
+          }))
+          .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
 
         // Sonar outlier window: 48h Shorts (fast viral cycle),
         // 14d Longform (slower viral half-life — tutorials/podcasts/finance
