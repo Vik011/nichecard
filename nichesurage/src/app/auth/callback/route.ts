@@ -51,7 +51,14 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(new URL('/dashboard', appUrl))
+  // Default landing after sign-in: discover feed (longform, defaults to
+  // 'quality' mode while the trend engine is bootstrapping). Previously this
+  // redirected to /dashboard which renders the user's empty Saved Niches
+  // list, a catastrophic first impression for new free users. The welcome
+  // email's CTA points to /trending; here we send users to /discover so
+  // they immediately see live niche cards (their free reveal window kicks
+  // in alongside the paywalled-top-4 FOMO row).
+  return NextResponse.redirect(new URL('/discover?type=longform', appUrl))
 }
 
 /**
