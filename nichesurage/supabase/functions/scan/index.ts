@@ -24,6 +24,12 @@ import {
   computeVelocityFeatures,
   deriveLifecycleStatus,
 } from '../_shared/velocity.ts'
+import {
+  computeChannelBaseline,
+  computeNicheBaseline,
+  computeNoveltyScore,
+} from '../_shared/baseline.ts'
+import { CATEGORIES, type CategoryEnum } from '../_shared/categories.ts'
 import type {
   WatchlistChannel,
   VideoData,
@@ -69,6 +75,21 @@ Deno.serve(async (_req: Request) => {
     // Sprint B Phase 2: drop videos older than 30 days BEFORE snapshot insert.
     // Avoids ingesting stale channel back-catalog noise on first scan.
     const SNAPSHOT_FRESHNESS_CUTOFF_MS = Date.now() - 30 * 24 * 3600 * 1000
+
+    // ─── Phase 5A: per-scan baseline caches ──────────────────────────
+    // Niche baselines depend only on category and the rolling 30d window;
+    // computing them once per scan and reusing across all videos in that
+    // category keeps a 100-channel scan to ≤12 niche queries (one per
+    // CategoryEnum), not N (one per channel).
+    // Channel baselines are scoped to one channel; cached so multiple
+    // videos from the same channel in this scan share the lookup.
+    const nicheBaselineCache = new Map<CategoryEnum, number>()
+    const channelBaselineCache = new Map<string, number>()
+    // 1.5× channel-baseline filter: if a video's current vps is below this
+    // multiple of its channel's historical median, it's "matching channel
+    // norms" — not novel even if niche-relative scoring says otherwise.
+    // Caller-side filter per spec; computeNoveltyScore stays niche-relative.
+    const CHANNEL_HISTORICAL_FACTOR = 1.5
 
     for (const channel of channels as WatchlistChannel[]) {
       try {
@@ -241,7 +262,8 @@ Deno.serve(async (_req: Request) => {
                   velocity_delta: features.velocityDelta,
                   view_acceleration: features.viewAcceleration,
                   breakout_ratio: features.breakoutRatio,
-                  // novelty_score, trend_score, topic_tags: NULL — Phase 5/6.
+                  // novelty_score: filled by Phase 5A third pass below.
+                  // trend_score, topic_tags: NULL — Phase 6.
                   lifecycle_status: lifecycleStatus,
                   computed_at: scannedAt,
                 })
@@ -274,6 +296,94 @@ Deno.serve(async (_req: Request) => {
               scannedAt,
               lifecycleDist,
             }))
+
+            // ─── Phase 5A: third pass — baseline subtraction → novelty ──
+            // For every metrics row we just upserted, compute novelty_score
+            // as a niche-relative multiplier and write it back.
+            //
+            // Skipped entirely when channel.category is NULL (Phase 1
+            // recategorize backfill incomplete) — a NULL category can't be
+            // baseline-compared and we'd rather store NULL novelty than a
+            // misleading number. The per-niche baseline is cached across
+            // channels (one query per CategoryEnum per scan run); the
+            // per-channel baseline is cached per channel (videos from the
+            // same channel reuse it).
+            const cat = channel.category as CategoryEnum | null | undefined
+            const isKnownCategory = typeof cat === 'string'
+              && (CATEGORIES as readonly string[]).includes(cat)
+
+            if (isKnownCategory && metricsRows.length > 0) {
+              const category = cat as CategoryEnum
+              let nicheBaseline = nicheBaselineCache.get(category)
+              if (nicheBaseline === undefined) {
+                nicheBaseline = await computeNicheBaseline(supabase, category, 30)
+                nicheBaselineCache.set(category, nicheBaseline)
+              }
+              let channelBaseline = channelBaselineCache.get(channel.youtube_channel_id)
+              if (channelBaseline === undefined) {
+                channelBaseline = await computeChannelBaseline(
+                  supabase,
+                  channel.youtube_channel_id,
+                  30,
+                )
+                channelBaselineCache.set(channel.youtube_channel_id, channelBaseline)
+              }
+
+              const noveltyRows: Array<{ video_id: string; novelty_score: number }> = []
+              for (const m of metricsRows) {
+                const currentVps = Number(m.views_per_hour ?? 0)
+                const rawNovelty = computeNoveltyScore(
+                  currentVps,
+                  channelBaseline,
+                  nicheBaseline,
+                )
+                // 1.5× channel-baseline filter (caller-side per spec): if
+                // the video isn't outpacing the channel's own historical
+                // median by 1.5×, it's just normal performance — collapse
+                // novelty to 0 even if niche-relative score is positive.
+                const passesChannelFilter = channelBaseline <= 0
+                  || currentVps >= CHANNEL_HISTORICAL_FACTOR * channelBaseline
+                const novelty = passesChannelFilter ? rawNovelty : 0
+                noveltyRows.push({
+                  video_id: String(m.video_id),
+                  novelty_score: novelty,
+                })
+              }
+
+              // Write novelty_score per video. Upsert keeps idempotency.
+              for (const row of noveltyRows) {
+                const { error: noveltyErr } = await supabase
+                  .from('video_metrics')
+                  .update({ novelty_score: row.novelty_score })
+                  .eq('video_id', row.video_id)
+                if (noveltyErr) {
+                  console.error(
+                    'scan: novelty_score update failed',
+                    row.video_id,
+                    noveltyErr,
+                  )
+                }
+              }
+
+              console.log('scan_novelty', JSON.stringify({
+                channelId: channel.youtube_channel_id,
+                category,
+                channelBaseline,
+                nicheBaseline,
+                videosScored: noveltyRows.length,
+                scannedAt,
+              }))
+            } else if (metricsRows.length > 0) {
+              // NULL category — leave novelty_score NULL. Documented choice:
+              // NULL > 0 because 0 falsely implies "computed and matches
+              // niche". A future recategorize backfill will fill these in.
+              console.log('scan_novelty_skipped', JSON.stringify({
+                channelId: channel.youtube_channel_id,
+                reason: 'null_category',
+                videos: metricsRows.length,
+                scannedAt,
+              }))
+            }
           }
         }
 
