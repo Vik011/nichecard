@@ -266,8 +266,14 @@ function DiscoverPageInner() {
         </div>
       )}
 
-      <div className="flex justify-center mb-4">
+      <div className="flex flex-col items-center gap-2 mb-4">
         <HotNowFilter mode={mode} onChange={handleModeChange} copy={copy} />
+        <a
+          href="/discover/trending"
+          className="text-xs text-indigo-300 hover:text-indigo-200 underline-offset-2 hover:underline"
+        >
+          {copy.discoverTrendingViewClustersLink}
+        </a>
       </div>
 
       {!TREND_ENGINE_BOOTSTRAPPED && mode !== 'hot' && (
@@ -281,7 +287,7 @@ function DiscoverPageInner() {
       )}
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 max-w-2xl mx-auto">
-        <SearchFilters value={filters} onChange={handleFiltersChange} copy={copy} />
+        <SearchFilters value={filters} onChange={handleFiltersChange} copy={copy} mode={mode} />
         <button
           type="button"
           onClick={() => handleSearch()}

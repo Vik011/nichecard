@@ -23,3 +23,27 @@ export interface TrendData {
 // production validation may revise.
 export const TREND_BADGE_SCORE_THRESHOLD = 60
 export const TREND_BADGE_CLUSTER_THRESHOLD = 5
+
+// Sprint B Phase 7B: cluster-feed card payload. Shape returned by
+// fetchClusterFeed and consumed by TrendingClusterCard. We centralise it
+// here next to TrendData so all trend-surface types live in one place.
+export interface TrendClusterCard {
+  id: string                               // cluster.id stringified for URL routing
+  label: string                            // claude-generated label, fallback '(unlabeled cluster)'
+  category: string | null                  // category_enum value
+  narrativeArchetypeLabel?: string         // narrative_archetypes.display_label
+  videoCount: number
+  channelCount: number
+  avgTrendScore: number
+  isMegaCluster: boolean
+  megaCategories: string[]                 // category_enum[] from mega_cluster_categories
+  sampleThumbnails: string[]               // up to 4, preview-quality thumbnails
+  sampleTitles: string[]                   // up to 4, paired with thumbnails by index
+  lastUpdatedAt: string                    // ISO timestamp
+  lifecycleHint?: TrendLifecycle | null    // most-common lifecycle of cluster members (soft cue)
+}
+
+// Phase 7B feed knobs — exported so tests + page can re-use without magic numbers.
+export const CLUSTER_FEED_DEFAULT_LIMIT = 24
+export const CLUSTER_FEED_FRESHNESS_DAYS = 7
+export const CLUSTER_FEED_SAMPLE_THUMBS = 4

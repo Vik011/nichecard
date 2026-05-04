@@ -1,6 +1,7 @@
 'use client'
 
 import type { SearchFilters as SearchFiltersType, ChannelAge, SortBy } from '@/lib/types'
+import type { DiscoverMode } from '@/lib/supabase/queries'
 import { Check } from '@phosphor-icons/react/dist/ssr'
 import { COPY, type CopyKeys } from '@/components/landing/copy'
 
@@ -8,6 +9,10 @@ interface SearchFiltersProps {
   value: SearchFiltersType
   onChange: (updated: SearchFiltersType) => void
   copy?: CopyKeys
+  // Sprint B Phase 7B: in 'hot' mode the page sorts by trend_score and the
+  // user-facing Sort dropdown becomes a no-op, so we hide it in favour of
+  // a small caption. 'quality'/'all' keep the dropdown visible.
+  mode?: DiscoverMode
 }
 
 function channelAgeLabels(c: CopyKeys): Record<ChannelAge, string> {
@@ -48,7 +53,7 @@ function pillClass(active: boolean): string {
   ].join(' ')
 }
 
-export function SearchFilters({ value, onChange, copy = COPY.en }: SearchFiltersProps) {
+export function SearchFilters({ value, onChange, copy = COPY.en, mode }: SearchFiltersProps) {
   const set = <K extends keyof SearchFiltersType>(key: K, val: SearchFiltersType[K]) =>
     onChange({ ...value, [key]: val })
 
@@ -105,24 +110,33 @@ export function SearchFilters({ value, onChange, copy = COPY.en }: SearchFilters
         </div>
       </div>
 
-      {/* Sort */}
-      <div className="flex flex-col gap-2">
-        <span className={eyebrow}>{copy.filterSortBy}</span>
-        <div className="flex gap-2" role="radiogroup" aria-label={copy.filterSortBy}>
-          {(Object.entries(sortLabelsLocal) as [SortBy, string][]).map(([val, label]) => (
-            <button
-              key={val}
-              type="button"
-              role="radio"
-              aria-checked={value.sortBy === val}
-              onClick={() => set('sortBy', val)}
-              className={pillClass(value.sortBy === val)}
-            >
-              {label}
-            </button>
-          ))}
+      {/* Sort — hidden in 'hot' mode where trend_score order is non-negotiable.
+          We surface a small caption instead so the user knows ordering still
+          happens, just not under their control. */}
+      {mode === 'hot' ? (
+        <div className="flex flex-col gap-2">
+          <span className={eyebrow}>{copy.filterSortBy}</span>
+          <p className="text-slate-500 text-xs">{copy.discoverTrendingHotSortCaption}</p>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <span className={eyebrow}>{copy.filterSortBy}</span>
+          <div className="flex gap-2" role="radiogroup" aria-label={copy.filterSortBy}>
+            {(Object.entries(sortLabelsLocal) as [SortBy, string][]).map(([val, label]) => (
+              <button
+                key={val}
+                type="button"
+                role="radio"
+                aria-checked={value.sortBy === val}
+                onClick={() => set('sortBy', val)}
+                className={pillClass(value.sortBy === val)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Viral-only toggle */}
       <button

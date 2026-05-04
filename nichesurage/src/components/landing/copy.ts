@@ -93,6 +93,16 @@ export const COPY = {
     discoverModeAllLabel: 'All',
     discoverBootstrapBanner: 'Trend engine is calibrating — full coverage activates within 48-72h. Switch to Quality mode for evergreen picks meanwhile.',
     discoverSpikingNow: 'Spiking Now',
+    // Sprint B Phase 7B — /discover/trending cluster-feed page
+    discoverTrendingEyebrow: 'Trend clusters',
+    discoverTrendingHeadline: 'Where the conversation is converging',
+    discoverTrendingSubline: 'Replication patterns across channels — clusters of ≥5 videos sharing a narrative.',
+    discoverTrendingCrossNicheTitle: '🚨 Cross-niche waves',
+    discoverTrendingCrossNicheSubline: 'Same archetype trending across multiple categories — strongest signal we surface.',
+    discoverTrendingNoClusters: 'No clusters formed yet — engine needs ≥48h of scans for replication detection to populate.',
+    discoverTrendingViewClustersLink: 'View clusters →',
+    discoverTrendingAllCategories: 'All categories',
+    discoverTrendingHotSortCaption: 'Sorted by trend score',
 
     filterFormat: 'Format',
     filterSubscriberRange: 'Subscriber range',
@@ -396,6 +406,16 @@ export const COPY = {
     discoverModeAllLabel: 'Alle',
     discoverBootstrapBanner: 'Trend-Engine kalibriert — volle Abdeckung innerhalb 48-72h. Wechsel zu Qualitätsmodus für Evergreen-Picks.',
     discoverSpikingNow: 'Im Aufstieg',
+    // Sprint B Phase 7B — /discover/trending Cluster-Feed-Seite
+    discoverTrendingEyebrow: 'Trend-Cluster',
+    discoverTrendingHeadline: 'Wo sich die Diskussion verdichtet',
+    discoverTrendingSubline: 'Replikationsmuster über Kanäle — Cluster aus ≥5 Videos mit gemeinsamem Narrativ.',
+    discoverTrendingCrossNicheTitle: '🚨 Cross-niche-Wellen',
+    discoverTrendingCrossNicheSubline: 'Gleicher Archetyp trendet über mehrere Kategorien — unser stärkstes Signal.',
+    discoverTrendingNoClusters: 'Noch keine Cluster — Engine braucht ≥48h Scans, bevor Replikationserkennung Daten liefert.',
+    discoverTrendingViewClustersLink: 'Cluster ansehen →',
+    discoverTrendingAllCategories: 'Alle Kategorien',
+    discoverTrendingHotSortCaption: 'Nach Trend-Score sortiert',
 
     filterFormat: 'Format',
     filterSubscriberRange: 'Abonnenten',

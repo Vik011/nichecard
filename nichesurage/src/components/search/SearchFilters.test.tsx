@@ -82,4 +82,15 @@ describe('SearchFilters', () => {
       expect.objectContaining({ sortBy: 'newest' })
     )
   })
+
+  it('hides the sort radiogroup when mode="hot" and surfaces a caption instead', () => {
+    render(<SearchFilters value={defaultFilters} onChange={() => {}} mode="hot" />)
+    expect(screen.queryByRole('radiogroup', { name: /sort/i })).toBeNull()
+    expect(screen.getByText(/Sorted by trend score/i)).toBeInTheDocument()
+  })
+
+  it('keeps the sort radiogroup visible when mode="quality"', () => {
+    render(<SearchFilters value={defaultFilters} onChange={() => {}} mode="quality" />)
+    expect(screen.getByRole('radiogroup', { name: /sort/i })).toBeTruthy()
+  })
 })
