@@ -80,7 +80,7 @@ export interface DbNicheCluster {
 }
 
 // ─── Sprint B: Trend Detection Engine ────────────────────────────────
-// Mirrors enums + tables in 0021_trend_engine_schema.sql. Keep in sync.
+// Mirrors enums + tables in 0024_trend_engine_schema.sql. Keep in sync.
 
 export type CategoryEnum =
   | 'ai_tools' | 'finance' | 'crypto' | 'tech_reviews'

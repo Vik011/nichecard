@@ -10,7 +10,7 @@
 // - Defensive: classifier itself never throws (returns 'education_howto'
 //   fallback), so one bad row can't abort the loop.
 //
-// Invoke once after migration 0021_trend_engine_schema.sql is applied:
+// Invoke once after migration 0024_trend_engine_schema.sql is applied:
 //   supabase functions invoke recategorize
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { classifyChannelCategory } from '../_shared/categories.ts'
