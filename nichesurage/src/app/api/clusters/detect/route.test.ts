@@ -71,8 +71,9 @@ function makeSupabaseMock(state: MockState) {
         ctx.op = 'upsert'
         return builder
       },
-      update(payload: unknown) {
+      update(payload: unknown, options?: { count?: string }) {
         ctx.payload = payload
+        ctx.updateOptions = options
         ctx.op = 'update'
         return builder
       },

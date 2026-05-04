@@ -18,7 +18,8 @@ import type { CategoryEnum } from '@/lib/types/database'
 import type { ClusterCandidate } from '@/lib/clusters/detect'
 
 const FRESH_WINDOW_HOURS = 24
-const STALE_AGE_DAYS = 7
+const STALE_AGE_DAYS = 7              // existing — used for cluster deletion
+const MEGA_CLUSTER_WINDOW_DAYS = 7    // used for mega-cluster aggregation lookback
 
 export interface InsertedCluster {
   id: number
@@ -255,7 +256,7 @@ export async function resetMegaClusterFlags(supabase: SupabaseClient): Promise<v
  * cats array.
  */
 export async function flagMegaClusters(supabase: SupabaseClient): Promise<number> {
-  const cutoff = new Date(Date.now() - STALE_AGE_DAYS * 24 * 3600 * 1000).toISOString()
+  const cutoff = new Date(Date.now() - MEGA_CLUSTER_WINDOW_DAYS * 24 * 3600 * 1000).toISOString()
   const { data, error } = await supabase
     .from('trend_clusters')
     .select('narrative_archetype_id, category')
@@ -281,13 +282,16 @@ export async function flagMegaClusters(supabase: SupabaseClient): Promise<number
   for (const [aid, cats] of Array.from(catsByArchetype.entries())) {
     if (cats.size < 3) continue
     const catsArr = Array.from(cats)
-    const { error: updErr } = await supabase
+    const { error: updErr, count } = await supabase
       .from('trend_clusters')
-      .update({ is_mega_cluster: true, mega_cluster_categories: catsArr })
+      .update(
+        { is_mega_cluster: true, mega_cluster_categories: catsArr },
+        { count: 'exact' },
+      )
       .eq('narrative_archetype_id', aid)
       .gt('last_updated_at', cutoff)
     if (updErr) throw new Error(`flagMegaClusters update ${aid}: ${updErr.message}`)
-    flagged += cats.size
+    flagged += count ?? 0
   }
   return flagged
 }

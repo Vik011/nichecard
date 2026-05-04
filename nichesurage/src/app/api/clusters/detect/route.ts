@@ -130,8 +130,14 @@ async function labelCluster(
     }
     const ok = await incrementCanonicalArchetype(supabase, match.archetype_id)
     if (!ok) {
-      // Hallucinated slug — defensive default.
-      await incrementCanonicalArchetype(supabase, DEFENSIVE_DEFAULT.archetype_id)
+      // Hallucinated slug — defensive default. Telemetry increment is
+      // best-effort; the user-facing pointer (setClusterArchetype) MUST
+      // succeed before we claim "matched".
+      try {
+        await incrementCanonicalArchetype(supabase, DEFENSIVE_DEFAULT.archetype_id)
+      } catch (incErr) {
+        console.error('[clusters/detect] defensive increment failed (non-fatal)', incErr)
+      }
       await setClusterArchetype(supabase, cluster.id, DEFENSIVE_DEFAULT.archetype_id)
       return { matched: true, created: false, error: false }
     }
