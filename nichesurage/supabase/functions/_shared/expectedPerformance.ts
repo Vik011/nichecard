@@ -1,35 +1,46 @@
 // supabase/functions/_shared/expectedPerformance.ts
 //
-// Sprint B Phase 6 (per A5 amendment): statistical expected-views model
-// that lets trend_score reward small-channel outperformance without
-// over-rewarding tiny channels (which the raw views/subs ratio did).
+// Sprint B Phase 6 (per A5 amendment): heuristic expected-views model
+// that replaces raw `breakoutRatio` in trendScore so small-channel
+// outperformers aren't over-rewarded purely on views/subs.
 //
 // Pure functions. No I/O. No DB.
 //
-// Replaces `breakoutRatio` in trendScore.
-//
-// Formula intent:
-//   expected = niche_median_vps * subs * subAdjustment * (hours / 24)
+// Formula (per plan A5 spec, kept verbatim — the literal multiplication
+// chain matters for spec compliance):
+//   expected = nicheMedianRate * subs * subAdjustment * (hours / 24)
 //   ratio    = actual_views / expected
 //
-// `subAdjustment = log10(max(subs/100, 1) + 1)` softens the curve so that
-// a 10M-sub channel doesn't get an unfairly low expectation. Result is
-// scaled so a "matching the niche" video ends near ratio=1.0.
+// IMPORTANT — units honesty:
+// The plan parameter is named `nicheMedianVps` and the original docstring
+// described it as "views-per-subscriber-per-day". In practice the only
+// upstream value we have is `computeNicheBaseline(...)` which returns
+// median `views_per_hour` across the niche (a niche-wide per-video rate,
+// NOT per-subscriber). Phase 6 wires that vph value straight into this
+// parameter — the formula is therefore HEURISTIC, not statistically
+// derived. The downstream trendScore clamps `log10(1+ratio)` to 2 so the
+// signal is bounded regardless of the dimensional mismatch. Phase 9
+// production tuning may revisit either (a) computing a real
+// per-sub-per-day metric upstream, or (b) dropping the `* subs` term and
+// treating this as a pure niche-vph multiplier.
+//
+// `subAdjustment = log10(max(subs/100, 1) + 1)` softens the curve so a
+// 10M-sub channel doesn't get an unbounded expectation.
 
 /**
- * Statistical expected views for a video given the channel's subscriber
- * count, the niche's median views-per-subscriber-per-day, and the time
- * since upload.
+ * Heuristic expected views for a video given the channel's subscriber
+ * count, a niche-wide rate proxy, and time since upload.
  *
  * Pure function. Defensive: clamps subs and hours to safe minimums.
  *
- * @param subs            Channel subscriber count. ≤0 → falls back to 100.
- * @param nicheMedianVps  Median views-per-subscriber-per-day for the niche.
- *                        Pass `nicheBaseline` from baseline.ts (already a
- *                        per-second/per-hour rate; here we re-document it
- *                        for the caller). Pass 0 for unknown → returns
- *                        a minimum of 1.
- * @param hoursSinceUpload Age in hours since publishedAt. <1 → clamped to 1.
+ * @param subs              Channel subscriber count. ≤0 → falls back to 100.
+ * @param nicheMedianVps    In Phase 6 callers pass `computeNicheBaseline()`,
+ *                          which is median views-per-hour across the niche
+ *                          (a niche-wide per-video rate, NOT per-subscriber-
+ *                          per-day as the parameter name might suggest).
+ *                          Plan-specified parameter name retained for spec
+ *                          compliance. Pass 0 for unknown → floors to 1.
+ * @param hoursSinceUpload  Age in hours since publishedAt. <1 → clamped to 1.
  * @returns Expected views (always ≥1 to avoid div/0 downstream).
  */
 export function expectedViews(

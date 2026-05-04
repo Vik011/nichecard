@@ -432,7 +432,7 @@ Deno.serve(async (_req: Request) => {
                 const videoIdsForTrend = metricsRows.map(m => String(m.video_id))
                 const { data: memberRows, error: memberErr } = await supabase
                   .from('trend_cluster_members')
-                  .select('video_id, cluster_id, trend_clusters(video_count)')
+                  .select('video_id, trend_clusters(video_count)')
                   .in('video_id', videoIdsForTrend)
 
                 if (memberErr) {
@@ -445,7 +445,6 @@ Deno.serve(async (_req: Request) => {
 
                 type MemberRow = {
                   video_id: string
-                  cluster_id: number
                   trend_clusters: { video_count: number } | { video_count: number }[] | null
                 }
                 const clusterByVideoId = new Map<string, number>()
@@ -488,8 +487,11 @@ Deno.serve(async (_req: Request) => {
                     expected,
                   )
 
+                  // `inReplicationCluster = clusterSize > 0` (one map lookup,
+                  // and a `video_count=0` row would otherwise inflate the
+                  // membership counter while contributing zero to the score).
                   const clusterSize = clusterByVideoId.get(videoId) ?? 0
-                  const inReplicationCluster = clusterByVideoId.has(videoId)
+                  const inReplicationCluster = clusterSize > 0
                   if (inReplicationCluster) clusterMemberships++
 
                   const trendInput: TrendScoreInput = {
@@ -528,6 +530,7 @@ Deno.serve(async (_req: Request) => {
                   channelId: channel.youtube_channel_id,
                   videosScored,
                   maxTrendScore: maxTrendScoreThisChannel,
+                  isPremiumByTrend: maxTrendScoreThisChannel >= 60,
                   clusterMemberships,
                   scannedAt,
                 }))
@@ -594,12 +597,11 @@ Deno.serve(async (_req: Request) => {
         // setting `scan_results.is_premium = (maxTrendScoreThisChannel >= 60)`
         // ONLY when that column already exists. As of migration 0024 the
         // `scan_results` table has no `is_premium` column — `video_metrics.trend_score`
-        // is the new source of truth. We compute the flag here for the
-        // structured log so observability is unblocked even though we
-        // cannot persist it. TODO(phase-7): drop this comment + flag once
-        // /discover migrates fully to trend_score and we deprecate scan_results.
-        const _isPremiumByTrend = maxTrendScoreThisChannel >= 60
-        void _isPremiumByTrend
+        // is the new source of truth. The boolean is observable in the
+        // `scan_trend` structured log (`isPremiumByTrend` field) so we get
+        // the signal in production telemetry without a schema change.
+        // TODO(phase-7): drop this comment once /discover migrates fully to
+        // trend_score and we deprecate scan_results.
 
         const { error: insertError } = await supabase.from('scan_results').insert({
           // Sonar core fields
