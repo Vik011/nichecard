@@ -1,5 +1,9 @@
 export type WatchlistTier = 'candidate' | 'observed' | 'permanent'
 
+// Sprint B Phase 1+: lifecycle phase classifier for a video's growth curve.
+// Stored in video_metrics.lifecycle_status (enum lifecycle_status_enum).
+export type LifecycleStatus = 'emerging' | 'exploding' | 'peak' | 'saturated' | 'dying'
+
 export interface WatchlistChannel {
   id: string
   youtube_channel_id: string
@@ -14,6 +18,9 @@ export interface WatchlistChannel {
   // Sprint B Phase 1+: 3-tier candidate universe. Optional here because
   // older rows / fixtures may not yet have it; column has DB default 'permanent'.
   tier?: WatchlistTier | null
+  // Sprint B Phase 1+: industry-standard category (12-niche enum).
+  // NULL until recategorize backfill runs.
+  category?: string | null
 }
 
 export interface SeedKeyword {

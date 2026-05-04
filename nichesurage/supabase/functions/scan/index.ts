@@ -20,7 +20,16 @@ import {
   computeCompetitionScore,
   findOutlier,
 } from '../_shared/metrics.ts'
-import type { WatchlistChannel, VideoData } from '../_shared/types.ts'
+import {
+  computeVelocityFeatures,
+  deriveLifecycleStatus,
+} from '../_shared/velocity.ts'
+import type {
+  WatchlistChannel,
+  VideoData,
+  VideoSnapshot,
+  LifecycleStatus,
+} from '../_shared/types.ts'
 
 const OUTLIER_DB_FLOOR = parseFloat(Deno.env.get('OUTLIER_DB_FLOOR') ?? '2')
 const OUTLIER_SPIKE_THRESHOLD = parseFloat(Deno.env.get('OUTLIER_SPIKE_THRESHOLD') ?? '5')
@@ -115,6 +124,158 @@ Deno.serve(async (_req: Request) => {
           snapshotsInserted: fresh.length,
           scannedAt,
         }))
+
+        // ─── Phase 3: derive video_metrics from snapshot history ─────
+        // For every video we just snapshotted, fetch its latest 3 snapshots
+        // (ONE bulk query for the whole channel — no N+1), compute velocity
+        // features + lifecycle, UPSERT into video_metrics. Best-effort:
+        // failures logged, scan proceeds. Skipped entirely when no fresh
+        // snapshots were inserted this run.
+        if (fresh.length > 0) {
+          const videoIdsForMetrics = fresh.map(v => v.videoId)
+          const { data: snapshotRows, error: snapshotFetchErr } = await supabase
+            .from('video_snapshots')
+            .select(
+              'video_id, channel_id, scanned_at, view_count, like_count, comment_count, duration_seconds, thumbnail_url, title, published_at',
+            )
+            .in('video_id', videoIdsForMetrics)
+            .order('video_id', { ascending: true })
+            .order('scanned_at', { ascending: false })
+
+          if (snapshotFetchErr) {
+            console.error(
+              'scan: video_snapshots bulk fetch failed for channel',
+              channel.youtube_channel_id,
+              snapshotFetchErr,
+            )
+          } else if (snapshotRows && snapshotRows.length > 0) {
+            // Group rows by video_id, keep only the most recent 3 per video,
+            // then reverse to ASC for computeVelocityFeatures.
+            type SnapshotRow = {
+              video_id: string
+              channel_id: string
+              scanned_at: string
+              view_count: number | string | null
+              like_count: number | string | null
+              comment_count: number | string | null
+              duration_seconds: number | null
+              thumbnail_url: string | null
+              title: string | null
+              published_at: string | null
+            }
+            const byVideo = new Map<string, SnapshotRow[]>()
+            for (const row of snapshotRows as SnapshotRow[]) {
+              const existing = byVideo.get(row.video_id)
+              if (!existing) {
+                byVideo.set(row.video_id, [row])
+              } else if (existing.length < 3) {
+                existing.push(row)
+              }
+              // Rows arrive scanned_at DESC, so we naturally collect the
+              // newest 3 per video and then ignore the rest.
+            }
+
+            const metricsRows: Record<string, unknown>[] = []
+            const lifecycleDist: Record<LifecycleStatus, number> = {
+              emerging: 0,
+              exploding: 0,
+              peak: 0,
+              saturated: 0,
+              dying: 0,
+            }
+
+            // Build a quick lookup of the just-fetched VideoData (for
+            // viewCount + channelId) keyed by videoId.
+            const enrichedByVideoId = new Map(fresh.map(v => [v.videoId, v]))
+
+            for (const v of fresh) {
+              const grouped = byVideo.get(v.videoId)
+              if (!grouped || grouped.length === 0) {
+                console.warn(
+                  'scan: no snapshots found for video (race or fetch lag)',
+                  v.videoId,
+                )
+                continue
+              }
+              // Reverse DESC → ASC for the velocity helper.
+              const ascSnapshots: VideoSnapshot[] = [...grouped]
+                .reverse()
+                .map((row): VideoSnapshot => ({
+                  videoId: row.video_id,
+                  channelId: row.channel_id,
+                  viewCount: Number(row.view_count ?? 0),
+                  likeCount: Number(row.like_count ?? 0),
+                  commentCount: Number(row.comment_count ?? 0),
+                  durationSeconds: row.duration_seconds ?? 0,
+                  thumbnailUrl: row.thumbnail_url ?? '',
+                  title: row.title ?? '',
+                  publishedAt: row.published_at ?? '',
+                  scannedAt: row.scanned_at,
+                }))
+
+              try {
+                const features = computeVelocityFeatures(
+                  ascSnapshots,
+                  stats.subscriberCount,
+                  v.publishedAt,
+                )
+                // Phase 5 retrofits clusterSize. In Phase 3 no clusters
+                // exist yet — pass 0 (saturated rule unreachable but the
+                // signature stays stable for the future retrofit).
+                const lifecycleStatus = deriveLifecycleStatus(
+                  features.hoursSinceUpload,
+                  features.velocityDelta,
+                  0,
+                )
+                lifecycleDist[lifecycleStatus]++
+
+                const enrichedRow = enrichedByVideoId.get(v.videoId)
+                metricsRows.push({
+                  video_id: v.videoId,
+                  channel_id: enrichedRow?.channelId ?? channel.youtube_channel_id,
+                  category: channel.category ?? null,
+                  latest_views: v.viewCount,
+                  views_per_hour: features.viewsPerHour,
+                  comments_per_hour: features.commentsPerHour,
+                  likes_per_hour: features.likesPerHour,
+                  velocity_delta: features.velocityDelta,
+                  view_acceleration: features.viewAcceleration,
+                  breakout_ratio: features.breakoutRatio,
+                  // novelty_score, trend_score, topic_tags: NULL — Phase 5/6.
+                  lifecycle_status: lifecycleStatus,
+                  computed_at: scannedAt,
+                })
+              } catch (velErr) {
+                console.error(
+                  'scan: velocity compute failed for video',
+                  v.videoId,
+                  velErr,
+                )
+              }
+            }
+
+            if (metricsRows.length > 0) {
+              const { error: metricsErr } = await supabase
+                .from('video_metrics')
+                .upsert(metricsRows, { onConflict: 'video_id' })
+              if (metricsErr) {
+                console.error(
+                  'scan: video_metrics upsert failed for channel',
+                  channel.youtube_channel_id,
+                  metricsErr,
+                )
+                // non-fatal — continue with next video
+              }
+            }
+
+            console.log('scan_metrics', JSON.stringify({
+              channelId: channel.youtube_channel_id,
+              metricsComputed: metricsRows.length,
+              scannedAt,
+              lifecycleDist,
+            }))
+          }
+        }
 
         // Adapt enriched rows back to legacy VideoData shape for the existing
         // outlier / metrics path. description is unused in this code path
