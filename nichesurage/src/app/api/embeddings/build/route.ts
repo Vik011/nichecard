@@ -33,20 +33,24 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient()
 
-  // Find video_ids where title_embedding IS NULL (or row missing entirely).
+  // Find video_ids that already have a title_embedding. We do the NOT NULL
+  // filter server-side via PostgREST `.not('col', 'is', null)` because
+  // pgvector columns serialize unpredictably through PostgREST — a row with
+  // a real vector can come back as a string, an array, or sometimes NULL
+  // depending on driver path, which broke a previous client-side filter
+  // (haveTitle ended up empty even though 100+ rows had real embeddings,
+  // so the route picked the same top-100 candidates every run and
+  // UPSERT just overwrote them, freezing coverage).
   const { data: existing, error: existErr } = await supabase
     .from('video_embeddings')
-    .select('video_id, title_embedding')
+    .select('video_id')
+    .not('title_embedding', 'is', null)
     .limit(10_000)
   if (existErr) {
     console.error('[embeddings/build] list video_embeddings failed', existErr)
     return Response.json({ error: 'db error' }, { status: 500 })
   }
-  const haveTitle = new Set(
-    (existing ?? [])
-      .filter((r) => r.title_embedding !== null && r.title_embedding !== undefined)
-      .map((r) => r.video_id as string),
-  )
+  const haveTitle = new Set((existing ?? []).map((r) => r.video_id as string))
 
   // Pull a wider candidate window than 5×BATCH_SIZE — a row's `computed_at`
   // can drop out of the top 500 once we have many video_metrics rows, so we
