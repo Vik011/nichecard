@@ -51,8 +51,14 @@ const SEED_TREND_SCORE_MIN = 60
 const SEED_FRESHNESS_HOURS = 48
 const SEEDS_PER_RUN = 5
 const RELATED_PER_SEED = 25
+// SurgeNiche surfaces small channels with breakout videos. The expand
+// route operates on viral seeds (already small-channel by virtue of the
+// trending discovery filter), but their Mix-playlist neighborhood can
+// contain MrBeast-tier channels that the YouTube algorithm clusters with
+// any popular video. We keep the same 500k upper cap as the trending
+// route so the universe stays focused on the value prop.
 const MIN_SUBS = 1_000
-const MAX_SUBS = 1_500_000
+const MAX_SUBS = 500_000
 // Bound the time we spend on Mix-playlist fetches. yt-dlp is slow + flaky
 // against YouTube; a single hung seed shouldn't eat the whole budget.
 const TIME_BUDGET_MS = 240_000
