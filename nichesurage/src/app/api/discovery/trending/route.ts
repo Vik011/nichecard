@@ -108,6 +108,7 @@ async function fetchActiveSeeds(
 async function fetchExplodingForSeed(
   apiKey: string,
   seed: string,
+  diagnosticBucket?: { rawSamples: unknown[] },
 ): Promise<ExplodingVideo[]> {
   const publishedAfterIso = new Date(
     Date.now() - PUBLISHED_AFTER_DAYS * 86400 * 1000,
@@ -119,18 +120,38 @@ async function fetchExplodingForSeed(
   url.searchParams.set('q', seed)
   url.searchParams.set('order', 'viewCount')
   url.searchParams.set('publishedAfter', publishedAfterIso)
-  url.searchParams.set('regionCode', REGION_CODE)
-  url.searchParams.set('relevanceLanguage', 'en')
   url.searchParams.set('maxResults', String(MAX_RESULTS_PER_SEED))
 
+  const requestUrlForLog = url.toString().replace(apiKey, 'KEY_REDACTED')
   const res = await fetch(url.toString())
+  const status = res.status
   if (!res.ok) {
     const body = await res.text()
+    if (diagnosticBucket && diagnosticBucket.rawSamples.length < 2) {
+      diagnosticBucket.rawSamples.push({
+        seed,
+        url: requestUrlForLog,
+        status,
+        bodyPreview: body.slice(0, 600),
+      })
+    }
     throw new Error(
-      `search.list failed (seed "${seed}"): ${res.status} ${body.slice(0, 200)}`,
+      `search.list failed (seed "${seed}"): ${status} ${body.slice(0, 200)}`,
     )
   }
-  const json = (await res.json()) as SearchListResponse
+  const json = (await res.json()) as SearchListResponse & {
+    pageInfo?: { totalResults?: number; resultsPerPage?: number }
+  }
+  if (diagnosticBucket && diagnosticBucket.rawSamples.length < 2) {
+    diagnosticBucket.rawSamples.push({
+      seed,
+      url: requestUrlForLog,
+      status,
+      itemCount: (json.items ?? []).length,
+      pageInfo: json.pageInfo ?? null,
+      firstItem: json.items?.[0] ?? null,
+    })
+  }
   const out: ExplodingVideo[] = []
   for (const item of json.items ?? []) {
     const videoId = item.id?.videoId
@@ -175,6 +196,10 @@ export async function GET(request: Request) {
   const supabase = createServiceClient()
   const startedAt = Date.now()
   const outcomes: SeedOutcome[] = []
+  // Diagnostic: record up to 2 raw YouTube responses (first seed success
+  // + first seed failure if any) so we can see exact API behaviour from
+  // production without redeploying instrumentation.
+  const diagnosticBucket: { rawSamples: unknown[] } = { rawSamples: [] }
 
   const seeds = await fetchActiveSeeds(supabase, SEEDS_PER_RUN)
   if (seeds.length === 0) {
@@ -206,7 +231,7 @@ export async function GET(request: Request) {
       classifyFailures: 0,
     }
     try {
-      const videos = await fetchExplodingForSeed(apiKey, seedRow.term)
+      const videos = await fetchExplodingForSeed(apiKey, seedRow.term, diagnosticBucket)
       outcome.videosReturned = videos.length
 
       const distinct = new Set<string>()
@@ -299,5 +324,6 @@ export async function GET(request: Request) {
     totalSeen,
     elapsedMs,
     outcomes,
+    diagnostic: diagnosticBucket.rawSamples,
   })
 }
