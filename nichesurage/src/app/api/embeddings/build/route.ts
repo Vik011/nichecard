@@ -55,6 +55,7 @@ interface BatchOutcome {
 async function processOneBatch(
   supabase: ReturnType<typeof createServiceClient>,
 ): Promise<BatchOutcome | 'empty'> {
+  const t0 = Date.now()
   const { data: rpcData, error: rpcErr } = await supabase.rpc('next_unembedded_video_ids', {
     batch_size: BATCH_SIZE,
   })
@@ -87,31 +88,50 @@ async function processOneBatch(
     }
   }
 
+  const tRpc = Date.now() - t0
   const vecs = await buildEmbeddingsBatch(titles)
+  const tEmbed = Date.now() - t0 - tRpc
+
+  // Single bulk upsert — one SQL statement for all rows in the batch.
+  // Earlier we did 100 sequential upserts per batch, which alone consumed
+  // 30-40s and pushed the per-invocation budget over Vercel's 60s
+  // timeout. Bulk-upserting collapses that to ~1 round-trip.
+  const now = new Date().toISOString()
+  const upsertRows = ids.map((id, i) => ({
+    video_id: id,
+    title_embedding: vecs[i],
+    title_embedded_at: now,
+    embedded_at: now,
+  }))
+  const { error: upsertErr } = await supabase
+    .from('video_embeddings')
+    .upsert(upsertRows, { onConflict: 'video_id' })
 
   let embedded = 0
   let upsertFailures = 0
-  const now = new Date().toISOString()
-  for (let i = 0; i < ids.length; i++) {
-    const { error } = await supabase
-      .from('video_embeddings')
-      .upsert(
-        {
-          video_id: ids[i],
-          title_embedding: vecs[i],
-          // title_embedded_at gates next iteration's RPC subquery.
-          title_embedded_at: now,
-          embedded_at: now,
-        },
-        { onConflict: 'video_id' },
-      )
-    if (error) {
-      console.error('[embeddings/build] upsert failed', ids[i], error.message)
-      upsertFailures++
-    } else {
-      embedded++
-    }
+  if (upsertErr) {
+    console.error(
+      '[embeddings/build] bulk upsert failed',
+      JSON.stringify({ batchIds: ids.length, msg: upsertErr.message }),
+    )
+    upsertFailures = ids.length
+  } else {
+    embedded = ids.length
   }
+
+  const tUpsert = Date.now() - t0 - tRpc - tEmbed
+  console.log(
+    '[embeddings/build] batch',
+    JSON.stringify({
+      ids: ids.length,
+      tRpcMs: tRpc,
+      tEmbedMs: tEmbed,
+      tUpsertMs: tUpsert,
+      tTotalMs: Date.now() - t0,
+      embedded,
+      upsertFailures,
+    }),
+  )
 
   return {
     rpcRows: rows.length,
