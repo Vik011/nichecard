@@ -1,26 +1,29 @@
 /**
- * Trending discovery cron — Phase 5b primary growth signal.
+ * Exploding-videos discovery cron — Phase 5b primary growth signal.
  *
- * Reads YouTube's officially curated trending feed via
- *   videos.list?chart=mostPopular&regionCode=US&videoCategoryId=X
+ * SurgeNiche's value prop is "small channel with a banger video", not
+ * "what's trending globally". YouTube's videos.list?chart=mostPopular
+ * surfaces ONLY huge channels (MrBeast-tier) because that's literally
+ * what mostPopular means. Wrong tool for our use case.
  *
- * For 8 broad YouTube videoCategoryIds that map to our 12 industry
- * categories, fetch up to 50 trending videos per category, extract distinct
- * channelIds, hydrate channel stats, classify into our taxonomy via Claude
- * Haiku, and INSERT new channels into channels_watchlist as Tier 1
- * (candidate) rows. Existing channels are skipped.
+ * The right API: search.list with order=viewCount + publishedAfter=14d +
+ * videoCategoryId. This returns videos in the last 14 days SORTED BY VIEW
+ * COUNT, regardless of channel size. We then hydrate the unique channels
+ * and filter by subscriber band (1k-500k). The combination surfaces
+ * small/mid-size channels whose recent video racked up an outsized number
+ * of views — the literal definition of "exploding" in SurgeNiche terms.
  *
  * Quota cost per run:
- *   8 mostPopular calls × 1 unit = 8 units
+ *   8 search.list calls × 100 units = 800 units (the expensive part)
  *   ~30-60 channels.list batches × 1 unit ≈ 30-60 units
- *   Total: ~40-70 units/day. Safe under 10000-unit/day budget.
+ *   Total: ~830-860 units/day. Safe under 10000-unit/day budget.
  *
  * Schedule: 1×/day at 02:00 UTC (vercel.json).
  *
- * Why videos.list mostPopular and not search.list keyword? mostPopular is
- * 1 quota unit per call vs 100 for search.list — 100× cheaper for an
- * arguably better signal (YouTube's own trending curation is broad and
- * covers many channels we'd never reach via keyword seeds).
+ * Why pay 100×-quota for search.list over mostPopular? Because mostPopular
+ * never returns the small channels we exist to surface. A 1k-sub channel
+ * with a 100k-view banger never lands on YouTube's mostPopular chart;
+ * search.list+order=viewCount+publishedAfter does surface it.
  */
 
 import { createServiceClient } from '@/lib/supabase/service'
@@ -38,10 +41,9 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
-// YouTube videoCategoryId list mapping to our 12-niche taxonomy. We hit
-// the broad 8 that produce the highest-signal trending feeds. Note these
-// are YouTube's NATIVE categories (not ours) — the actual category_enum
-// is assigned per-channel by Claude classifier downstream.
+// YouTube videoCategoryId list. These are YouTube's NATIVE category IDs
+// (not ours) — we use them as a coarse pre-filter for search.list. The
+// actual category_enum is assigned per-channel by Claude classifier.
 //   20 = Gaming
 //   22 = People & Blogs
 //   23 = Comedy
@@ -64,63 +66,80 @@ const YT_TRENDING_CATEGORY_IDS: { id: string; label: string }[] = [
 const YT_BASE = 'https://www.googleapis.com/youtube/v3'
 const REGION_CODE = 'US'
 const MAX_RESULTS_PER_CATEGORY = 50
+const PUBLISHED_AFTER_DAYS = 14
 
-// Channel size band — match the existing discover edge function so the
-// trend engine's filtering and downstream scan logic stay consistent.
+// Channel size band — SurgeNiche's whole point is "small channel with a
+// banger video". A 1k-sub channel with 100k views is the gold; a 5M-sub
+// channel doing 100k is normal noise. The 500k upper bound matches the
+// existing discover edge function's longform threshold.
+//
+// search.list+order=viewCount surfaces high-view-count videos regardless
+// of channel size, then we filter at hydrate time. The intersection
+// (high views AND small channel) is precisely the breakout signal.
 const MIN_SUBS = 1_000
-const MAX_SUBS = 1_500_000
+const MAX_SUBS = 500_000
 
-interface TrendingVideo {
+interface ExplodingVideo {
   videoId: string
   channelId: string
   title: string
-  durationSeconds: number
 }
 
-interface VideosListResponse {
+interface SearchListResponse {
   items?: Array<{
-    id: string
+    id?: { videoId?: string }
     snippet?: { channelId?: string; title?: string }
-    contentDetails?: { duration?: string }
   }>
 }
 
-function parseIsoDuration(s: string | undefined | null): number {
-  if (!s) return 0
-  const m = s.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/)
-  if (!m) return 0
-  const [, h, mi, se] = m
-  return parseInt(h ?? '0') * 3600 + parseInt(mi ?? '0') * 60 + parseInt(se ?? '0')
-}
-
-async function fetchTrendingForCategory(
+/**
+ * Fetch the highest-view-count videos uploaded in the last
+ * PUBLISHED_AFTER_DAYS days for a given videoCategoryId.
+ *
+ * search.list with order=viewCount returns videos sorted by total view
+ * count regardless of channel size or upload time within the window. A
+ * recent video that racked up a lot of views floats to the top — exactly
+ * the breakout signal we want to convert into channel-discovery seeds.
+ *
+ * Quota: 100 units per call. Worth it because mostPopular (1 unit) returns
+ * ONLY the YouTube-curated trending list which is dominated by huge
+ * channels we don't want.
+ */
+async function fetchExplodingForCategory(
   apiKey: string,
   videoCategoryId: string,
-): Promise<TrendingVideo[]> {
-  const url = new URL(`${YT_BASE}/videos`)
+): Promise<ExplodingVideo[]> {
+  const publishedAfterIso = new Date(
+    Date.now() - PUBLISHED_AFTER_DAYS * 86400 * 1000,
+  ).toISOString()
+  const url = new URL(`${YT_BASE}/search`)
   url.searchParams.set('key', apiKey)
-  url.searchParams.set('part', 'snippet,contentDetails')
-  url.searchParams.set('chart', 'mostPopular')
-  url.searchParams.set('regionCode', REGION_CODE)
+  url.searchParams.set('part', 'snippet')
+  url.searchParams.set('type', 'video')
+  url.searchParams.set('order', 'viewCount')
+  url.searchParams.set('publishedAfter', publishedAfterIso)
   url.searchParams.set('videoCategoryId', videoCategoryId)
+  url.searchParams.set('regionCode', REGION_CODE)
+  url.searchParams.set('relevanceLanguage', 'en')
   url.searchParams.set('maxResults', String(MAX_RESULTS_PER_CATEGORY))
 
   const res = await fetch(url.toString())
   if (!res.ok) {
     const body = await res.text()
     throw new Error(
-      `videos.list mostPopular failed (cat ${videoCategoryId}): ${res.status} ${body.slice(0, 200)}`,
+      `search.list failed (cat ${videoCategoryId}): ${res.status} ${body.slice(0, 200)}`,
     )
   }
-  const json = (await res.json()) as VideosListResponse
-  const out: TrendingVideo[] = []
+  const json = (await res.json()) as SearchListResponse
+  const out: ExplodingVideo[] = []
   for (const item of json.items ?? []) {
-    if (!item.id || !item.snippet?.channelId) continue
+    const videoId = item.id?.videoId
+    const channelId = item.snippet?.channelId
+    if (!videoId || !channelId) continue
     out.push({
-      videoId: item.id,
-      channelId: item.snippet.channelId,
-      title: item.snippet.title ?? '',
-      durationSeconds: parseIsoDuration(item.contentDetails?.duration),
+      videoId,
+      channelId,
+      title: item.snippet?.title ?? '',
     })
   }
   return out
@@ -157,10 +176,11 @@ export async function GET(request: Request) {
   const outcomes: CategoryOutcome[] = []
 
   // Single in-memory dedup set across categories — same channel showing up
-  // in multiple trending categories should be hydrated + inserted once.
+  // in multiple categories' top-viewed videos should be hydrated + inserted
+  // once.
   const seenChannelIdsThisRun = new Set<string>()
-  // Carry per-channel "first sighting title" for content_type inference.
-  const channelFirstVideo = new Map<string, TrendingVideo>()
+  // Carry per-channel "first sighting title" for classifier context.
+  const channelFirstVideo = new Map<string, ExplodingVideo>()
 
   for (const cat of YT_TRENDING_CATEGORY_IDS) {
     const outcome: CategoryOutcome = {
@@ -174,7 +194,7 @@ export async function GET(request: Request) {
       classifyFailures: 0,
     }
     try {
-      const videos = await fetchTrendingForCategory(apiKey, cat.id)
+      const videos = await fetchExplodingForCategory(apiKey, cat.id)
       outcome.trendingVideos = videos.length
 
       const distinct = new Set<string>()
@@ -232,15 +252,15 @@ export async function GET(request: Request) {
           continue
         }
 
-        const contentType = inferContentType(
-          firstVid ? [firstVid.durationSeconds] : [],
-        )
-
+        // search.list doesn't return video duration cheaply. Default to
+        // longform — the scan pipeline will pick up shorts on a per-video
+        // basis when it ingests this channel's recent uploads, and a wrong
+        // content_type tag just means we ingest a slightly smaller subset.
         const result = await insertCandidateChannel(supabase, {
           youtubeChannelId: ch.channelId,
           channelName: ch.title,
           category,
-          contentType,
+          contentType: 'longform',
           language: 'en',
           discoveredVia: 'trending_feed',
           nicheLabel: cat.label,
