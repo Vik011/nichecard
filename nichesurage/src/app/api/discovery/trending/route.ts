@@ -2,28 +2,31 @@
  * Exploding-videos discovery cron — Phase 5b primary growth signal.
  *
  * SurgeNiche's value prop is "small channel with a banger video", not
- * "what's trending globally". YouTube's videos.list?chart=mostPopular
- * surfaces ONLY huge channels (MrBeast-tier) because that's literally
- * what mostPopular means. Wrong tool for our use case.
+ * "what's trending globally". The right primitive is YouTube `search.list`
+ * with `order=viewCount + publishedAfter` driven by curated KEYWORD seeds.
  *
- * The right API: search.list with order=viewCount + publishedAfter=14d +
- * videoCategoryId. This returns videos in the last 14 days SORTED BY VIEW
- * COUNT, regardless of channel size. We then hydrate the unique channels
- * and filter by subscriber band (1k-500k). The combination surfaces
- * small/mid-size channels whose recent video racked up an outsized number
- * of views — the literal definition of "exploding" in SurgeNiche terms.
+ * Why keyword seeds and not videoCategoryId? videoCategoryId without a
+ * `q` returns 0 results in practice — verified empirically (production
+ * smoke test 2026-05-05 returned trendingVideos=0 across 7 categories).
+ * The existing /supabase/functions/discover Deno function — which has been
+ * adding channels to channels_watchlist for weeks — uses `q=<keyword>`
+ * with order=viewCount + publishedAfter and that pattern works. We mirror
+ * it here on Vercel-Node so the cron can run more frequently than the
+ * Supabase pg_cron daily Edge Function tick.
+ *
+ * Seeds come from the seed_keywords table (already curated per Sprint A.8;
+ * see migration 0022). Each cron run picks the top N highest-priority
+ * active longform EN seeds. The KEYWORD itself targets known small-channel-
+ * rich niches: "AI Automation Agency", "Dark History of", "Costco Deals
+ * You NEED To Buy", etc. Those phrases match titles small creators write
+ * imitating successful larger creators in the same niche, surfacing the
+ * imitator small channels that may be quietly exploding.
  *
  * Quota cost per run:
- *   8 search.list calls × 100 units = 800 units (the expensive part)
- *   ~30-60 channels.list batches × 1 unit ≈ 30-60 units
- *   Total: ~830-860 units/day. Safe under 10000-unit/day budget.
+ *   N seeds × 100 units (search.list) + ~hydrate batches × 1 unit
+ *   With N=12 seeds: 1200 + ~50 ≈ 1250 units/day. Safe under 10k budget.
  *
  * Schedule: 1×/day at 02:00 UTC (vercel.json).
- *
- * Why pay 100×-quota for search.list over mostPopular? Because mostPopular
- * never returns the small channels we exist to surface. A 1k-sub channel
- * with a 100k-view banger never lands on YouTube's mostPopular chart;
- * search.list+order=viewCount+publishedAfter does surface it.
  */
 
 import { createServiceClient } from '@/lib/supabase/service'
@@ -32,7 +35,6 @@ import {
   classifyChannelCategory,
   insertCandidateChannel,
   filterNewChannelIds,
-  inferContentType,
   checkCronSecret,
   getYouTubeApiKey,
 } from '@/lib/discovery/channelOnboard'
@@ -41,41 +43,17 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
-// YouTube videoCategoryId list. These are YouTube's NATIVE category IDs
-// (not ours) — we use them as a coarse pre-filter for search.list. The
-// actual category_enum is assigned per-channel by Claude classifier.
-//   20 = Gaming
-//   22 = People & Blogs
-//   23 = Comedy
-//   24 = Entertainment
-//   25 = News & Politics
-//   26 = Howto & Style
-//   27 = Education
-//   28 = Science & Technology
-const YT_TRENDING_CATEGORY_IDS: { id: string; label: string }[] = [
-  { id: '20', label: 'Gaming' },
-  { id: '22', label: 'People & Blogs' },
-  { id: '23', label: 'Comedy' },
-  { id: '24', label: 'Entertainment' },
-  { id: '25', label: 'News & Politics' },
-  { id: '26', label: 'Howto & Style' },
-  { id: '27', label: 'Education' },
-  { id: '28', label: 'Science & Technology' },
-]
-
 const YT_BASE = 'https://www.googleapis.com/youtube/v3'
 const REGION_CODE = 'US'
-const MAX_RESULTS_PER_CATEGORY = 50
+const MAX_RESULTS_PER_SEED = 50
 const PUBLISHED_AFTER_DAYS = 14
+const SEEDS_PER_RUN = 12
 
-// Channel size band — SurgeNiche's whole point is "small channel with a
-// banger video". A 1k-sub channel with 100k views is the gold; a 5M-sub
-// channel doing 100k is normal noise. The 500k upper bound matches the
-// existing discover edge function's longform threshold.
-//
-// search.list+order=viewCount surfaces high-view-count videos regardless
-// of channel size, then we filter at hydrate time. The intersection
-// (high views AND small channel) is precisely the breakout signal.
+// Channel size band — SurgeNiche surfaces small channels with breakout
+// videos. 1k floor filters spam; 500k cap matches the existing longform
+// /discover function. Top viewed videos under a niche-specific keyword
+// often come from small channels imitating larger creators in the same
+// niche, so the intersection (high views AND small channel) materialises.
 const MIN_SUBS = 1_000
 const MAX_SUBS = 500_000
 
@@ -92,22 +70,44 @@ interface SearchListResponse {
   }>
 }
 
+interface SeedKeywordRow {
+  term: string
+  priority: number
+}
+
 /**
- * Fetch the highest-view-count videos uploaded in the last
- * PUBLISHED_AFTER_DAYS days for a given videoCategoryId.
- *
- * search.list with order=viewCount returns videos sorted by total view
- * count regardless of channel size or upload time within the window. A
- * recent video that racked up a lot of views floats to the top — exactly
- * the breakout signal we want to convert into channel-discovery seeds.
- *
- * Quota: 100 units per call. Worth it because mostPopular (1 unit) returns
- * ONLY the YouTube-curated trending list which is dominated by huge
- * channels we don't want.
+ * Fetch the top N active longform EN seed keywords from the canonical
+ * seed_keywords table. These were curated in Sprint A.8 (migration 0022)
+ * to target known small-channel-rich niches.
  */
-async function fetchExplodingForCategory(
+async function fetchActiveSeeds(
+  supabase: ReturnType<typeof createServiceClient>,
+  limit: number,
+): Promise<SeedKeywordRow[]> {
+  const { data, error } = await supabase
+    .from('seed_keywords')
+    .select('term, priority')
+    .eq('is_active', true)
+    .eq('language', 'en')
+    .eq('content_type', 'longform')
+    .order('priority', { ascending: false })
+    .limit(limit)
+  if (error) {
+    console.error('[discovery/trending] seed fetch failed', error.message)
+    return []
+  }
+  return (data ?? []) as SeedKeywordRow[]
+}
+
+/**
+ * Run YouTube search.list with `q=<seed>`, `order=viewCount`,
+ * `publishedAfter=14d`. Returns the highest-view-count videos for that
+ * keyword in the recency window — small or large channel alike. Channel
+ * size filtering happens downstream at hydration.
+ */
+async function fetchExplodingForSeed(
   apiKey: string,
-  videoCategoryId: string,
+  seed: string,
 ): Promise<ExplodingVideo[]> {
   const publishedAfterIso = new Date(
     Date.now() - PUBLISHED_AFTER_DAYS * 86400 * 1000,
@@ -116,18 +116,18 @@ async function fetchExplodingForCategory(
   url.searchParams.set('key', apiKey)
   url.searchParams.set('part', 'snippet')
   url.searchParams.set('type', 'video')
+  url.searchParams.set('q', seed)
   url.searchParams.set('order', 'viewCount')
   url.searchParams.set('publishedAfter', publishedAfterIso)
-  url.searchParams.set('videoCategoryId', videoCategoryId)
   url.searchParams.set('regionCode', REGION_CODE)
   url.searchParams.set('relevanceLanguage', 'en')
-  url.searchParams.set('maxResults', String(MAX_RESULTS_PER_CATEGORY))
+  url.searchParams.set('maxResults', String(MAX_RESULTS_PER_SEED))
 
   const res = await fetch(url.toString())
   if (!res.ok) {
     const body = await res.text()
     throw new Error(
-      `search.list failed (cat ${videoCategoryId}): ${res.status} ${body.slice(0, 200)}`,
+      `search.list failed (seed "${seed}"): ${res.status} ${body.slice(0, 200)}`,
     )
   }
   const json = (await res.json()) as SearchListResponse
@@ -145,9 +145,10 @@ async function fetchExplodingForCategory(
   return out
 }
 
-interface CategoryOutcome {
-  categoryLabel: string
-  trendingVideos: number
+interface SeedOutcome {
+  seed: string
+  priority: number
+  videosReturned: number
   distinctChannels: number
   newChannels: number
   hydrationFailed: number
@@ -173,19 +174,30 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient()
   const startedAt = Date.now()
-  const outcomes: CategoryOutcome[] = []
+  const outcomes: SeedOutcome[] = []
 
-  // Single in-memory dedup set across categories — same channel showing up
-  // in multiple categories' top-viewed videos should be hydrated + inserted
-  // once.
+  const seeds = await fetchActiveSeeds(supabase, SEEDS_PER_RUN)
+  if (seeds.length === 0) {
+    return Response.json({
+      ok: true,
+      reason: 'no_seeds_in_db',
+      totalInserted: 0,
+      totalSeen: 0,
+      elapsedMs: Date.now() - startedAt,
+      outcomes: [],
+    })
+  }
+
+  // Single in-memory dedup set across seeds — same channel showing up in
+  // multiple keyword results should be hydrated + inserted once.
   const seenChannelIdsThisRun = new Set<string>()
-  // Carry per-channel "first sighting title" for classifier context.
   const channelFirstVideo = new Map<string, ExplodingVideo>()
 
-  for (const cat of YT_TRENDING_CATEGORY_IDS) {
-    const outcome: CategoryOutcome = {
-      categoryLabel: cat.label,
-      trendingVideos: 0,
+  for (const seedRow of seeds) {
+    const outcome: SeedOutcome = {
+      seed: seedRow.term,
+      priority: seedRow.priority,
+      videosReturned: 0,
       distinctChannels: 0,
       newChannels: 0,
       hydrationFailed: 0,
@@ -194,8 +206,8 @@ export async function GET(request: Request) {
       classifyFailures: 0,
     }
     try {
-      const videos = await fetchExplodingForCategory(apiKey, cat.id)
-      outcome.trendingVideos = videos.length
+      const videos = await fetchExplodingForSeed(apiKey, seedRow.term)
+      outcome.videosReturned = videos.length
 
       const distinct = new Set<string>()
       for (const v of videos) {
@@ -222,7 +234,6 @@ export async function GET(request: Request) {
       outcome.hydrationFailed = newIds.length - hydrated.length
 
       for (const ch of hydrated) {
-        // Reject obvious size-band misses early to save Claude calls.
         if (ch.subscriberCount < MIN_SUBS || ch.subscriberCount > MAX_SUBS) {
           outcome.outOfBand++
           continue
@@ -252,10 +263,6 @@ export async function GET(request: Request) {
           continue
         }
 
-        // search.list doesn't return video duration cheaply. Default to
-        // longform — the scan pipeline will pick up shorts on a per-video
-        // basis when it ingests this channel's recent uploads, and a wrong
-        // content_type tag just means we ingest a slightly smaller subset.
         const result = await insertCandidateChannel(supabase, {
           youtubeChannelId: ch.channelId,
           channelName: ch.title,
@@ -263,14 +270,14 @@ export async function GET(request: Request) {
           contentType: 'longform',
           language: 'en',
           discoveredVia: 'trending_feed',
-          nicheLabel: cat.label,
+          nicheLabel: seedRow.term,
         })
         if (result === 'inserted') outcome.inserted++
       }
     } catch (err) {
       console.error(
-        '[discovery/trending] category failed',
-        cat.label,
+        '[discovery/trending] seed failed',
+        seedRow.term,
         err instanceof Error ? err.message : err,
       )
     }
