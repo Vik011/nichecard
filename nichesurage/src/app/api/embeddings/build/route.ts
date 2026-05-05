@@ -2,9 +2,18 @@
  * Cron route: pull videos lacking title_embedding, embed via OpenAI in one
  * batch, UPSERT video_embeddings.
  *
- * BATCH_SIZE = 100. Titles are ~100 chars each so this fits well under the
- * 50-input safety cap of buildEmbeddingsBatch — but the helper splits
- * automatically so we pass all 100 and let it do 2 OpenAI calls.
+ * The candidate-selection step is now a Postgres RPC
+ * (`next_unembedded_video_ids` — migration 0029) instead of two PostgREST
+ * round-trips with client-side filtering. The earlier two-round-trip
+ * approach kept overwriting the same 100 rows on every cron tick because:
+ *   * pgvector NULL filtering through PostgREST was unreliable, and
+ *   * even after migration 0028 added a plain timestamp flag, consecutive
+ *     SELECTs occasionally missed rows that had just been upserted.
+ *
+ * The RPC computes the batch atomically against the latest committed state,
+ * with the latest snapshot title pre-joined per video_id. Each cron run
+ * therefore picks a disjoint batch and coverage grows by `embedded` rows
+ * rather than churning in place.
  */
 
 import { createServiceClient } from '@/lib/supabase/service'
@@ -15,6 +24,11 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const BATCH_SIZE = 100
+
+interface UnembeddedRow {
+  video_id: string
+  latest_title: string | null
+}
 
 function checkCronSecret(request: Request): boolean {
   const secret = process.env.CRON_SECRET
@@ -33,111 +47,47 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient()
 
-  // Find video_ids that already have a title_embedding. We filter on the
-  // plain timestamp column `title_embedded_at` (added in migration 0028)
-  // rather than the vector column directly: PostgREST's NULL handling for
-  // pgvector is unreliable, which previously caused haveTitle to be empty
-  // even after rows were genuinely embedded — the route then re-picked the
-  // same top-100 candidates every run and the UPSERT just overwrote them
-  // in place, freezing coverage.
-  const { data: existing, error: existErr } = await supabase
-    .from('video_embeddings')
-    .select('video_id')
-    .not('title_embedded_at', 'is', null)
-    .limit(10_000)
-  if (existErr) {
-    console.error('[embeddings/build] list video_embeddings failed', existErr)
-    return Response.json({ error: 'db error' }, { status: 500 })
-  }
-  const haveTitle = new Set((existing ?? []).map((r) => r.video_id as string))
-
-  // Pull a wider candidate window than 5×BATCH_SIZE — a row's `computed_at`
-  // can drop out of the top 500 once we have many video_metrics rows, so we
-  // give ourselves room. Bumped to 50× so even a 5k pool still surfaces.
-  const { data: candidates, error: candErr } = await supabase
-    .from('video_metrics')
-    .select('video_id, computed_at')
-    .order('computed_at', { ascending: false, nullsFirst: false })
-    .limit(BATCH_SIZE * 50)
-  if (candErr) {
-    console.error('[embeddings/build] list video_metrics failed', candErr)
-    return Response.json({ error: 'db error' }, { status: 500 })
+  // Single atomic call: gets up to BATCH_SIZE unembedded video_ids, each
+  // with the latest non-empty snapshot title pre-joined, ordered by
+  // video_metrics.computed_at DESC. See migration 0029 for the SQL body.
+  const { data: rpcData, error: rpcErr } = await supabase.rpc('next_unembedded_video_ids', {
+    batch_size: BATCH_SIZE,
+  })
+  if (rpcErr) {
+    console.error('[embeddings/build] next_unembedded_video_ids rpc failed', rpcErr)
+    return Response.json({ error: 'rpc error', detail: rpcErr.message }, { status: 500 })
   }
 
-  const targetIds = (candidates ?? [])
-    .filter((c) => !haveTitle.has(c.video_id as string))
-    .slice(0, BATCH_SIZE)
-    .map((c) => c.video_id as string)
+  const rows = (rpcData ?? []) as UnembeddedRow[]
+  const ids: string[] = []
+  const titles: string[] = []
+  let skippedNoTitle = 0
+  for (const r of rows) {
+    if (!r.latest_title || r.latest_title.trim().length === 0) {
+      skippedNoTitle++
+      continue
+    }
+    ids.push(r.video_id)
+    titles.push(r.latest_title.trim())
+  }
 
   console.log(
     '[embeddings/build] candidate stage',
     JSON.stringify({
-      embeddingsRowsTotal: existing?.length ?? 0,
-      haveTitleCount: haveTitle.size,
-      candidatesPulled: candidates?.length ?? 0,
-      targetIdsLength: targetIds.length,
-    }),
-  )
-
-  if (targetIds.length === 0) {
-    return Response.json({ processed: 0, embedded: 0, batch: BATCH_SIZE, reason: 'no_targets' })
-  }
-
-  // Bulk-fetch the latest snapshot title per video.
-  // Column is `scanned_at` per migration 0024 schema (NOT `captured_at` —
-  // that was a stale copy-paste from a different table that silently 500'd
-  // every cron run, leaving embedding coverage at 0%).
-  //
-  // PostgREST default row cap is 1000. With ~20 snapshots per video over the
-  // 60-day retention window, 100 video_ids can balloon to 2k rows — the
-  // truncated half could omit some video_ids entirely. Explicit higher cap
-  // pulls everything we need in one go.
-  const { data: snaps, error: snapErr } = await supabase
-    .from('video_snapshots')
-    .select('video_id, title, scanned_at')
-    .in('video_id', targetIds)
-    .order('scanned_at', { ascending: false })
-    .limit(50_000)
-  if (snapErr) {
-    console.error('[embeddings/build] list video_snapshots failed', snapErr)
-    return Response.json({ error: 'db error' }, { status: 500 })
-  }
-
-  // Pick latest snapshot title per video_id (sorted desc → first wins)
-  const latestTitle = new Map<string, string>()
-  for (const s of snaps ?? []) {
-    const vid = s.video_id as string
-    if (latestTitle.has(vid)) continue
-    const title = (s.title as string | null)?.trim()
-    if (title) latestTitle.set(vid, title)
-  }
-
-  const ids: string[] = []
-  const titles: string[] = []
-  const skippedNoTitle: string[] = []
-  for (const id of targetIds) {
-    const t = latestTitle.get(id)
-    if (!t) {
-      skippedNoTitle.push(id)
-      continue
-    }
-    ids.push(id)
-    titles.push(t)
-  }
-
-  console.log(
-    '[embeddings/build] snapshot stage',
-    JSON.stringify({
-      snapsReturned: snaps?.length ?? 0,
-      latestTitleMapSize: latestTitle.size,
+      rpcRowsReturned: rows.length,
       idsToEmbed: ids.length,
-      skippedNoTitleCount: skippedNoTitle.length,
-      skippedNoTitleSample: skippedNoTitle.slice(0, 3),
+      skippedNoTitle,
     }),
   )
 
   if (ids.length === 0) {
-    return Response.json({ processed: 0, embedded: 0, batch: BATCH_SIZE, reason: 'no_titles' })
+    return Response.json({
+      processed: 0,
+      embedded: 0,
+      batch: BATCH_SIZE,
+      reason: rows.length === 0 ? 'no_targets' : 'no_titles',
+      skippedNoTitle,
+    })
   }
 
   let vecs: number[][]
@@ -158,9 +108,8 @@ export async function GET(request: Request) {
         {
           video_id: ids[i],
           title_embedding: vecs[i],
-          // title_embedded_at is the flag the route uses on the next cron
-          // tick to know "this video already has a title vector", so we set
-          // it together with the vector itself.
+          // title_embedded_at is the flag the RPC's NOT EXISTS subquery
+          // uses to skip already-done videos on the next cron tick.
           title_embedded_at: now,
           embedded_at: now,
         },
@@ -189,5 +138,6 @@ export async function GET(request: Request) {
     embedded,
     batch: BATCH_SIZE,
     upsertFailures: upsertErrors.length,
+    skippedNoTitle,
   })
 }
