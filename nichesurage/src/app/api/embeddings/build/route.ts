@@ -68,11 +68,14 @@ export async function GET(request: Request) {
   }
 
   // Bulk-fetch the latest snapshot title per video.
+  // Column is `scanned_at` per migration 0024 schema (NOT `captured_at` —
+  // that was a stale copy-paste from a different table that silently 500'd
+  // every cron run, leaving embedding coverage at 0%).
   const { data: snaps, error: snapErr } = await supabase
     .from('video_snapshots')
-    .select('video_id, title, captured_at')
+    .select('video_id, title, scanned_at')
     .in('video_id', targetIds)
-    .order('captured_at', { ascending: false })
+    .order('scanned_at', { ascending: false })
   if (snapErr) {
     console.error('[embeddings/build] list video_snapshots failed', snapErr)
     return Response.json({ error: 'db error' }, { status: 500 })

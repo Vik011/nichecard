@@ -67,11 +67,12 @@ export async function GET(request: Request) {
     return Response.json({ processed: 0, hashed: 0, skipped: 0, batch: BATCH_SIZE })
   }
 
+  // Column is `scanned_at` per migration 0024 schema (NOT `captured_at`).
   const { data: snaps, error: snapErr } = await supabase
     .from('video_snapshots')
-    .select('video_id, thumbnail_url, captured_at')
+    .select('video_id, thumbnail_url, scanned_at')
     .in('video_id', targetIds)
-    .order('captured_at', { ascending: false })
+    .order('scanned_at', { ascending: false })
   if (snapErr) {
     console.error('[thumbnails/phash] list snapshots failed', snapErr)
     return Response.json({ error: 'db error' }, { status: 500 })
@@ -114,13 +115,14 @@ export async function GET(request: Request) {
     const TWO63 = BigInt(1) << BigInt(63)
     const TWO64 = BigInt(1) << BigInt(64)
     const signed = h >= TWO63 ? h - TWO64 : h
+    // Column is `hashed_at` per migration 0024 schema (NOT `computed_at`).
     const { error } = await supabase
       .from('video_thumbnail_phash')
       .upsert(
         {
           video_id: id,
           phash: signed.toString(),
-          computed_at: new Date().toISOString(),
+          hashed_at: new Date().toISOString(),
         },
         { onConflict: 'video_id' },
       )
