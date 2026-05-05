@@ -4,6 +4,10 @@
     { "path": "/api/transcripts/fetch", "schedule": "0 */4 * * *" },
     { "path": "/api/thumbnails/phash", "schedule": "15 */4 * * *" },
     { "path": "/api/embeddings/build", "schedule": "30 */4 * * *" },
-    { "path": "/api/clusters/detect", "schedule": "0 */6 * * *" }
+    { "path": "/api/clusters/detect", "schedule": "0 */6 * * *" },
+    { "path": "/api/discovery/trending", "schedule": "0 2 * * *" },
+    { "path": "/api/discovery/expand", "schedule": "45 */4 * * *" },
+    { "path": "/api/discovery/evict", "schedule": "0 3 * * *" },
+    { "path": "/api/discovery/promote", "schedule": "30 3 * * *" }
   ]
 }
