@@ -33,18 +33,17 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient()
 
-  // Find video_ids that already have a title_embedding. We do the NOT NULL
-  // filter server-side via PostgREST `.not('col', 'is', null)` because
-  // pgvector columns serialize unpredictably through PostgREST — a row with
-  // a real vector can come back as a string, an array, or sometimes NULL
-  // depending on driver path, which broke a previous client-side filter
-  // (haveTitle ended up empty even though 100+ rows had real embeddings,
-  // so the route picked the same top-100 candidates every run and
-  // UPSERT just overwrote them, freezing coverage).
+  // Find video_ids that already have a title_embedding. We filter on the
+  // plain timestamp column `title_embedded_at` (added in migration 0028)
+  // rather than the vector column directly: PostgREST's NULL handling for
+  // pgvector is unreliable, which previously caused haveTitle to be empty
+  // even after rows were genuinely embedded — the route then re-picked the
+  // same top-100 candidates every run and the UPSERT just overwrote them
+  // in place, freezing coverage.
   const { data: existing, error: existErr } = await supabase
     .from('video_embeddings')
     .select('video_id')
-    .not('title_embedding', 'is', null)
+    .not('title_embedded_at', 'is', null)
     .limit(10_000)
   if (existErr) {
     console.error('[embeddings/build] list video_embeddings failed', existErr)
@@ -156,7 +155,15 @@ export async function GET(request: Request) {
     const { error } = await supabase
       .from('video_embeddings')
       .upsert(
-        { video_id: ids[i], title_embedding: vecs[i], embedded_at: now },
+        {
+          video_id: ids[i],
+          title_embedding: vecs[i],
+          // title_embedded_at is the flag the route uses on the next cron
+          // tick to know "this video already has a title vector", so we set
+          // it together with the vector itself.
+          title_embedded_at: now,
+          embedded_at: now,
+        },
         { onConflict: 'video_id' },
       )
     if (error) {
