@@ -48,11 +48,14 @@ export async function GET(request: Request) {
       .map((r) => r.video_id as string),
   )
 
+  // Pull a wider candidate window than 5×BATCH_SIZE — a row's `computed_at`
+  // can drop out of the top 500 once we have many video_metrics rows, so we
+  // give ourselves room. Bumped to 50× so even a 5k pool still surfaces.
   const { data: candidates, error: candErr } = await supabase
     .from('video_metrics')
     .select('video_id, computed_at')
-    .order('computed_at', { ascending: false })
-    .limit(BATCH_SIZE * 5)
+    .order('computed_at', { ascending: false, nullsFirst: false })
+    .limit(BATCH_SIZE * 50)
   if (candErr) {
     console.error('[embeddings/build] list video_metrics failed', candErr)
     return Response.json({ error: 'db error' }, { status: 500 })
@@ -63,19 +66,35 @@ export async function GET(request: Request) {
     .slice(0, BATCH_SIZE)
     .map((c) => c.video_id as string)
 
+  console.log(
+    '[embeddings/build] candidate stage',
+    JSON.stringify({
+      embeddingsRowsTotal: existing?.length ?? 0,
+      haveTitleCount: haveTitle.size,
+      candidatesPulled: candidates?.length ?? 0,
+      targetIdsLength: targetIds.length,
+    }),
+  )
+
   if (targetIds.length === 0) {
-    return Response.json({ processed: 0, embedded: 0, batch: BATCH_SIZE })
+    return Response.json({ processed: 0, embedded: 0, batch: BATCH_SIZE, reason: 'no_targets' })
   }
 
   // Bulk-fetch the latest snapshot title per video.
   // Column is `scanned_at` per migration 0024 schema (NOT `captured_at` —
   // that was a stale copy-paste from a different table that silently 500'd
   // every cron run, leaving embedding coverage at 0%).
+  //
+  // PostgREST default row cap is 1000. With ~20 snapshots per video over the
+  // 60-day retention window, 100 video_ids can balloon to 2k rows — the
+  // truncated half could omit some video_ids entirely. Explicit higher cap
+  // pulls everything we need in one go.
   const { data: snaps, error: snapErr } = await supabase
     .from('video_snapshots')
     .select('video_id, title, scanned_at')
     .in('video_id', targetIds)
     .order('scanned_at', { ascending: false })
+    .limit(50_000)
   if (snapErr) {
     console.error('[embeddings/build] list video_snapshots failed', snapErr)
     return Response.json({ error: 'db error' }, { status: 500 })
@@ -92,15 +111,30 @@ export async function GET(request: Request) {
 
   const ids: string[] = []
   const titles: string[] = []
+  const skippedNoTitle: string[] = []
   for (const id of targetIds) {
     const t = latestTitle.get(id)
-    if (!t) continue // No usable snapshot title yet — skip this round
+    if (!t) {
+      skippedNoTitle.push(id)
+      continue
+    }
     ids.push(id)
     titles.push(t)
   }
 
+  console.log(
+    '[embeddings/build] snapshot stage',
+    JSON.stringify({
+      snapsReturned: snaps?.length ?? 0,
+      latestTitleMapSize: latestTitle.size,
+      idsToEmbed: ids.length,
+      skippedNoTitleCount: skippedNoTitle.length,
+      skippedNoTitleSample: skippedNoTitle.slice(0, 3),
+    }),
+  )
+
   if (ids.length === 0) {
-    return Response.json({ processed: 0, embedded: 0, batch: BATCH_SIZE })
+    return Response.json({ processed: 0, embedded: 0, batch: BATCH_SIZE, reason: 'no_titles' })
   }
 
   let vecs: number[][]
@@ -112,6 +146,7 @@ export async function GET(request: Request) {
   }
 
   let embedded = 0
+  const upsertErrors: Array<{ id: string; msg: string }> = []
   const now = new Date().toISOString()
   for (let i = 0; i < ids.length; i++) {
     const { error } = await supabase
@@ -122,10 +157,26 @@ export async function GET(request: Request) {
       )
     if (error) {
       console.error('[embeddings/build] upsert failed', ids[i], error)
+      upsertErrors.push({ id: ids[i], msg: error.message ?? String(error) })
     } else {
       embedded++
     }
   }
 
-  return Response.json({ processed: ids.length, embedded, batch: BATCH_SIZE })
+  console.log(
+    '[embeddings/build] done',
+    JSON.stringify({
+      processed: ids.length,
+      embedded,
+      upsertFailures: upsertErrors.length,
+      upsertErrorSample: upsertErrors.slice(0, 3),
+    }),
+  )
+
+  return Response.json({
+    processed: ids.length,
+    embedded,
+    batch: BATCH_SIZE,
+    upsertFailures: upsertErrors.length,
+  })
 }
