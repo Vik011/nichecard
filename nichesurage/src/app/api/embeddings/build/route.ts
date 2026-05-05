@@ -1,19 +1,21 @@
 /**
- * Cron route: pull videos lacking title_embedding, embed via OpenAI in one
- * batch, UPSERT video_embeddings.
+ * Cron route: drain the title-embedding queue until empty or near the
+ * Vercel maxDuration budget.
  *
- * The candidate-selection step is now a Postgres RPC
- * (`next_unembedded_video_ids` — migration 0029) instead of two PostgREST
- * round-trips with client-side filtering. The earlier two-round-trip
- * approach kept overwriting the same 100 rows on every cron tick because:
- *   * pgvector NULL filtering through PostgREST was unreliable, and
- *   * even after migration 0028 added a plain timestamp flag, consecutive
- *     SELECTs occasionally missed rows that had just been upserted.
+ * Each iteration of the inner loop calls `next_unembedded_video_ids`
+ * (migration 0029) to atomically grab up to BATCH_SIZE candidates, then
+ * embeds + upserts. Looping inside ONE invocation side-steps a multi-
+ * invocation coordination problem we hit earlier: consecutive Run-now
+ * clicks (or rapid scheduled cron firings) sometimes returned overlapping
+ * candidate sets across separate function executions, so coverage grew
+ * fractionally per click instead of fully. Within a single function
+ * execution the RPC sees its own previous upserts on each call, so each
+ * batch is genuinely disjoint and the queue drains cleanly.
  *
- * The RPC computes the batch atomically against the latest committed state,
- * with the latest snapshot title pre-joined per video_id. Each cron run
- * therefore picks a disjoint batch and coverage grows by `embedded` rows
- * rather than churning in place.
+ * Budget shape: ~3s OpenAI per batch + ~5s for 100 sequential upserts =
+ * ~8s per batch. With Vercel maxDuration 60s and a 10s safety margin we
+ * allow up to MAX_BATCHES_PER_INVOCATION = 6, i.e. up to 600 embeddings
+ * per Run-now or scheduled tick.
  */
 
 import { createServiceClient } from '@/lib/supabase/service'
@@ -24,6 +26,8 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const BATCH_SIZE = 100
+const MAX_BATCHES_PER_INVOCATION = 6
+const TIME_BUDGET_MS = 50_000 // leave 10s headroom under maxDuration
 
 interface UnembeddedRow {
   video_id: string
@@ -40,25 +44,27 @@ function checkCronSecret(request: Request): boolean {
   return got === secret
 }
 
-export async function GET(request: Request) {
-  if (!checkCronSecret(request)) {
-    return new Response('unauthorized', { status: 401 })
-  }
+interface BatchOutcome {
+  rpcRows: number
+  candidates: number
+  skippedNoTitle: number
+  embedded: number
+  upsertFailures: number
+}
 
-  const supabase = createServiceClient()
-
-  // Single atomic call: gets up to BATCH_SIZE unembedded video_ids, each
-  // with the latest non-empty snapshot title pre-joined, ordered by
-  // video_metrics.computed_at DESC. See migration 0029 for the SQL body.
+async function processOneBatch(
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<BatchOutcome | 'empty'> {
   const { data: rpcData, error: rpcErr } = await supabase.rpc('next_unembedded_video_ids', {
     batch_size: BATCH_SIZE,
   })
   if (rpcErr) {
-    console.error('[embeddings/build] next_unembedded_video_ids rpc failed', rpcErr)
-    return Response.json({ error: 'rpc error', detail: rpcErr.message }, { status: 500 })
+    console.error('[embeddings/build] rpc failed', rpcErr)
+    throw new Error(`rpc: ${rpcErr.message}`)
   }
-
   const rows = (rpcData ?? []) as UnembeddedRow[]
+  if (rows.length === 0) return 'empty'
+
   const ids: string[] = []
   const titles: string[] = []
   let skippedNoTitle = 0
@@ -71,35 +77,20 @@ export async function GET(request: Request) {
     titles.push(r.latest_title.trim())
   }
 
-  console.log(
-    '[embeddings/build] candidate stage',
-    JSON.stringify({
-      rpcRowsReturned: rows.length,
-      idsToEmbed: ids.length,
-      skippedNoTitle,
-    }),
-  )
-
   if (ids.length === 0) {
-    return Response.json({
-      processed: 0,
-      embedded: 0,
-      batch: BATCH_SIZE,
-      reason: rows.length === 0 ? 'no_targets' : 'no_titles',
+    return {
+      rpcRows: rows.length,
+      candidates: 0,
       skippedNoTitle,
-    })
+      embedded: 0,
+      upsertFailures: 0,
+    }
   }
 
-  let vecs: number[][]
-  try {
-    vecs = await buildEmbeddingsBatch(titles)
-  } catch (err) {
-    console.error('[embeddings/build] OpenAI batch failed', err)
-    return Response.json({ error: 'embedding failed' }, { status: 502 })
-  }
+  const vecs = await buildEmbeddingsBatch(titles)
 
   let embedded = 0
-  const upsertErrors: Array<{ id: string; msg: string }> = []
+  let upsertFailures = 0
   const now = new Date().toISOString()
   for (let i = 0; i < ids.length; i++) {
     const { error } = await supabase
@@ -108,36 +99,94 @@ export async function GET(request: Request) {
         {
           video_id: ids[i],
           title_embedding: vecs[i],
-          // title_embedded_at is the flag the RPC's NOT EXISTS subquery
-          // uses to skip already-done videos on the next cron tick.
+          // title_embedded_at gates next iteration's RPC subquery.
           title_embedded_at: now,
           embedded_at: now,
         },
         { onConflict: 'video_id' },
       )
     if (error) {
-      console.error('[embeddings/build] upsert failed', ids[i], error)
-      upsertErrors.push({ id: ids[i], msg: error.message ?? String(error) })
+      console.error('[embeddings/build] upsert failed', ids[i], error.message)
+      upsertFailures++
     } else {
       embedded++
     }
   }
 
+  return {
+    rpcRows: rows.length,
+    candidates: ids.length,
+    skippedNoTitle,
+    embedded,
+    upsertFailures,
+  }
+}
+
+export async function GET(request: Request) {
+  if (!checkCronSecret(request)) {
+    return new Response('unauthorized', { status: 401 })
+  }
+
+  const supabase = createServiceClient()
+  const startedAt = Date.now()
+
+  let batchesRun = 0
+  let totalRpcRows = 0
+  let totalCandidates = 0
+  let totalSkippedNoTitle = 0
+  let totalEmbedded = 0
+  let totalUpsertFailures = 0
+  let stopReason: 'queue_empty' | 'max_batches' | 'time_budget' | 'error' = 'queue_empty'
+
+  try {
+    for (let i = 0; i < MAX_BATCHES_PER_INVOCATION; i++) {
+      if (Date.now() - startedAt > TIME_BUDGET_MS) {
+        stopReason = 'time_budget'
+        break
+      }
+      const result = await processOneBatch(supabase)
+      if (result === 'empty') {
+        stopReason = 'queue_empty'
+        break
+      }
+      batchesRun++
+      totalRpcRows += result.rpcRows
+      totalCandidates += result.candidates
+      totalSkippedNoTitle += result.skippedNoTitle
+      totalEmbedded += result.embedded
+      totalUpsertFailures += result.upsertFailures
+
+      if (i === MAX_BATCHES_PER_INVOCATION - 1) {
+        stopReason = 'max_batches'
+      }
+    }
+  } catch (err) {
+    stopReason = 'error'
+    console.error('[embeddings/build] aborting batch loop', err)
+  }
+
+  const elapsedMs = Date.now() - startedAt
   console.log(
     '[embeddings/build] done',
     JSON.stringify({
-      processed: ids.length,
-      embedded,
-      upsertFailures: upsertErrors.length,
-      upsertErrorSample: upsertErrors.slice(0, 3),
+      batchesRun,
+      totalRpcRows,
+      totalCandidates,
+      totalSkippedNoTitle,
+      totalEmbedded,
+      totalUpsertFailures,
+      stopReason,
+      elapsedMs,
     }),
   )
 
   return Response.json({
-    processed: ids.length,
-    embedded,
-    batch: BATCH_SIZE,
-    upsertFailures: upsertErrors.length,
-    skippedNoTitle,
+    batchesRun,
+    totalEmbedded,
+    totalSkippedNoTitle,
+    totalUpsertFailures,
+    stopReason,
+    elapsedMs,
+    batchSize: BATCH_SIZE,
   })
 }
