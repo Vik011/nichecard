@@ -56,12 +56,37 @@ export interface Edge {
   similarity: number
 }
 
-const TITLE_SIM_THRESHOLD = 0.85
-const TRANSCRIPT_SIM_THRESHOLD = 0.80
-const THUMBNAIL_HAMMING_THRESHOLD = 6
-const MIN_MEMBERS = 5
-const MIN_DISTINCT_CHANNELS = 3
-const DEFAULT_HOURS_WINDOW = 48
+// Cluster-detection thresholds. Defaults match the Sprint B spec for a
+// mature dataset (5000+ videos per category). For bootstrap (current scale,
+// ~50 videos per category) the minimum sizes are too restrictive — every
+// category yields zero clusters because a 5-video, 3-channel coincidence in
+// 48h is statistically rare. The env vars below let us run looser bootstrap
+// thresholds in production while keeping spec defaults for tests and local.
+//
+// Bootstrap recommendation (until /admin → "Active clusters" > 0):
+//   CLUSTER_MIN_MEMBERS=3
+//   CLUSTER_MIN_DISTINCT_CHANNELS=2
+// Tighten back to 5 / 3 once we have 1000+ snapshots/category.
+function envInt(name: string, fallback: number): number {
+  const raw = process.env[name]
+  if (!raw) return fallback
+  const parsed = parseInt(raw, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+function envFloat(name: string, fallback: number): number {
+  const raw = process.env[name]
+  if (!raw) return fallback
+  const parsed = parseFloat(raw)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+const TITLE_SIM_THRESHOLD = envFloat('CLUSTER_TITLE_SIM_THRESHOLD', 0.85)
+const TRANSCRIPT_SIM_THRESHOLD = envFloat('CLUSTER_TRANSCRIPT_SIM_THRESHOLD', 0.80)
+const THUMBNAIL_HAMMING_THRESHOLD = envInt('CLUSTER_THUMBNAIL_HAMMING_THRESHOLD', 6)
+const MIN_MEMBERS = envInt('CLUSTER_MIN_MEMBERS', 5)
+const MIN_DISTINCT_CHANNELS = envInt('CLUSTER_MIN_DISTINCT_CHANNELS', 3)
+const DEFAULT_HOURS_WINDOW = envInt('CLUSTER_HOURS_WINDOW', 48)
 
 // ─── Cosine similarity (pure) ────────────────────────────────────────────
 
