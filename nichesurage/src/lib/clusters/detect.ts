@@ -261,10 +261,13 @@ interface VideoRow {
   channel_id: string | null
   category: CategoryEnum | null
 }
+// Title/transcript come back as either a parsed array or a pgvector-string
+// like "[0.123, 0.456, ...]" depending on PostgREST quirks. The buildEdges
+// parser below handles both shapes; types reflect that union.
 interface EmbeddingRow {
   video_id: string
-  title_embedding: number[] | null
-  transcript_embedding: number[] | null
+  title_embedding: number[] | string | null
+  transcript_embedding: number[] | string | null
 }
 interface PhashRow {
   video_id: string
@@ -279,6 +282,29 @@ function toBigInt(v: string | number | bigint): bigint {
   return BigInt(v)
 }
 
+/**
+ * Parse a pgvector value as a number[]. PostgREST returns vectors as either
+ * a JSON-serialized array or a Postgres array-literal string like
+ * "[0.1,0.2,...]" depending on context. Diagnostic SQL confirmed that real
+ * cosine similarity exists between many of our title vectors (Postgres-side
+ * via the `<=>` operator), but this route's earlier `Array.isArray()` check
+ * was rejecting every vector that came back as a string — emptying titleVecs
+ * and producing zero edges across all categories. Returns null on any
+ * unrecognized shape.
+ */
+function parseVector(v: unknown): number[] | null {
+  if (Array.isArray(v) && v.length > 0) return v as number[]
+  if (typeof v === 'string' && v.length > 2 && v.startsWith('[') && v.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(v)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed as number[]
+    } catch {
+      // Not JSON-shaped; fall through to null.
+    }
+  }
+  return null
+}
+
 function buildEdges(
   videoIds: string[],
   embeddings: EmbeddingRow[],
@@ -289,11 +315,13 @@ function buildEdges(
   const transcriptVecs: { id: string; vec: number[] }[] = []
   for (const e of embeddings) {
     if (!idSet.has(e.video_id)) continue
-    if (Array.isArray(e.title_embedding) && e.title_embedding.length > 0) {
-      titleVecs.push({ id: e.video_id, vec: e.title_embedding })
+    const titleVec = parseVector(e.title_embedding)
+    if (titleVec) {
+      titleVecs.push({ id: e.video_id, vec: titleVec })
     }
-    if (Array.isArray(e.transcript_embedding) && e.transcript_embedding.length > 0) {
-      transcriptVecs.push({ id: e.video_id, vec: e.transcript_embedding })
+    const transcriptVec = parseVector(e.transcript_embedding)
+    if (transcriptVec) {
+      transcriptVecs.push({ id: e.video_id, vec: transcriptVec })
     }
   }
   const phashList: { id: string; h: bigint }[] = []
@@ -402,6 +430,24 @@ export async function detectReplicationClusters(
   if (phashErr) throw new Error(`detect: video_thumbnail_phash query failed: ${phashErr.message}`)
 
   // 4. Build edges & cluster.
-  const edges = buildEdges(candidateIds, (embRows ?? []) as EmbeddingRow[], (phashRows ?? []) as PhashRow[])
+  const edges = buildEdges(
+    candidateIds,
+    (embRows ?? []) as EmbeddingRow[],
+    (phashRows ?? []) as PhashRow[],
+  )
+  console.log(
+    '[clusters/detect] category sizes',
+    JSON.stringify({
+      category,
+      windowedIds: windowedIds.size,
+      candidates: candidateIds.length,
+      embeddingRows: (embRows ?? []).length,
+      phashRows: (phashRows ?? []).length,
+      edgesBuilt: edges.length,
+      titleEdges: edges.filter((e) => e.signal === 'title').length,
+      transcriptEdges: edges.filter((e) => e.signal === 'transcript').length,
+      thumbnailEdges: edges.filter((e) => e.signal === 'thumbnail').length,
+    }),
+  )
   return clusterFromEdges(candidateIds, edges, channelOf)
 }
