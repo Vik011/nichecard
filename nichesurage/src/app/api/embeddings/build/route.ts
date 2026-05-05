@@ -50,14 +50,21 @@ interface BatchOutcome {
   skippedNoTitle: number
   embedded: number
   upsertFailures: number
+  // video_ids the route just attempted to upsert. The outer loop accumulates
+  // these and passes them as the exclude list on the next RPC call so the
+  // function never re-returns them, even if the PostgREST pool connection
+  // hasn't picked up our flag write yet.
+  processedVideoIds: string[]
 }
 
 async function processOneBatch(
   supabase: ReturnType<typeof createServiceClient>,
+  excludeIds: string[],
 ): Promise<BatchOutcome | 'empty'> {
   const t0 = Date.now()
   const { data: rpcData, error: rpcErr } = await supabase.rpc('next_unembedded_video_ids', {
     batch_size: BATCH_SIZE,
+    exclude_ids: excludeIds,
   })
   if (rpcErr) {
     console.error('[embeddings/build] rpc failed', rpcErr)
@@ -85,6 +92,7 @@ async function processOneBatch(
       skippedNoTitle,
       embedded: 0,
       upsertFailures: 0,
+      processedVideoIds: rows.map((r) => r.video_id),
     }
   }
 
@@ -139,6 +147,7 @@ async function processOneBatch(
     skippedNoTitle,
     embedded,
     upsertFailures,
+    processedVideoIds: ids,
   }
 }
 
@@ -157,6 +166,11 @@ export async function GET(request: Request) {
   let totalEmbedded = 0
   let totalUpsertFailures = 0
   let stopReason: 'queue_empty' | 'max_batches' | 'time_budget' | 'error' = 'queue_empty'
+  // Accumulate processed video_ids so each iteration's RPC call excludes
+  // them explicitly. Diagnostic showed PostgREST pool connections don't
+  // reliably see prior-call upserts within the same Vercel invocation, so
+  // we cannot rely on title_embedded_at IS NOT NULL alone to gate batches.
+  const processedIds: string[] = []
 
   try {
     for (let i = 0; i < MAX_BATCHES_PER_INVOCATION; i++) {
@@ -164,7 +178,7 @@ export async function GET(request: Request) {
         stopReason = 'time_budget'
         break
       }
-      const result = await processOneBatch(supabase)
+      const result = await processOneBatch(supabase, processedIds)
       if (result === 'empty') {
         stopReason = 'queue_empty'
         break
@@ -175,6 +189,7 @@ export async function GET(request: Request) {
       totalSkippedNoTitle += result.skippedNoTitle
       totalEmbedded += result.embedded
       totalUpsertFailures += result.upsertFailures
+      processedIds.push(...result.processedVideoIds)
 
       if (i === MAX_BATCHES_PER_INVOCATION - 1) {
         stopReason = 'max_batches'
