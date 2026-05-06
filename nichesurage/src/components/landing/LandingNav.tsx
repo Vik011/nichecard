@@ -75,15 +75,27 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
         <div className="hidden md:flex items-center gap-3">
           {userLoading ? null : isLoggedIn ? (
             <>
-              <TierBadge tier={tier} copy={copy} />
-              {email && (
-                <span className="text-sm text-slate-400 max-w-[180px] truncate" title={email}>
-                  {email}
-                </span>
-              )}
+              {/* Tier + email merged into a single identity pill so they
+                  read as one logical block ("you are signed in as X with
+                  plan Y") instead of three competing elements with gaps. */}
+              <div className="flex items-center gap-2 rounded-lg border border-slate-800 bg-charcoal-900/60 backdrop-blur-md px-2 py-1">
+                <TierBadge tier={tier} copy={copy} />
+                {email && (
+                  <span className="text-[13px] text-slate-400 max-w-[180px] truncate" title={email}>
+                    {email}
+                  </span>
+                )}
+              </div>
               <Link
                 href="/discover"
-                className="text-sm font-semibold px-4 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-brand-indigo-bright hover:from-indigo-500 hover:to-brand-indigo-bright transition-all text-white"
+                className={[
+                  'text-[13px] font-semibold px-4 py-2 rounded-lg text-white',
+                  'bg-gradient-to-r from-indigo-600 to-brand-indigo-bright',
+                  'shadow-[0_4px_18px_-6px_rgba(124,131,240,0.45)]',
+                  'transition-[transform,box-shadow,filter] duration-200 ease-out',
+                  'hover:-translate-y-[1px] hover:brightness-[1.08] hover:shadow-[0_6px_24px_-6px_rgba(124,131,240,0.6)]',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
+                ].join(' ')}
               >
                 {copy.navOpenApp}
               </Link>
@@ -92,13 +104,20 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
             <>
               <Link
                 href="/login"
-                className="text-sm text-slate-400 hover:text-slate-100 transition-colors px-3 py-1.5 rounded-lg border border-slate-700 hover:border-slate-500"
+                className="text-[13px] text-slate-400 hover:text-slate-100 transition-colors px-3 py-2 rounded-lg border border-slate-700 hover:border-slate-500"
               >
                 {copy.navLogin}
               </Link>
               <Link
                 href="/login"
-                className="text-sm font-semibold px-4 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-brand-indigo-bright hover:from-indigo-500 hover:to-brand-indigo-bright transition-all text-white"
+                className={[
+                  'text-[13px] font-semibold px-4 py-2 rounded-lg text-white',
+                  'bg-gradient-to-r from-indigo-600 to-brand-indigo-bright',
+                  'shadow-[0_4px_18px_-6px_rgba(124,131,240,0.45)]',
+                  'transition-[transform,box-shadow,filter] duration-200 ease-out',
+                  'hover:-translate-y-[1px] hover:brightness-[1.08] hover:shadow-[0_6px_24px_-6px_rgba(124,131,240,0.6)]',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
+                ].join(' ')}
               >
                 {copy.navCta}
               </Link>

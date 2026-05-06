@@ -4,7 +4,9 @@ export const COPY = {
   en: {
     navDiscover: 'Discover',
     navPricing: 'Pricing',
-    navDashboard: 'Dashboard',
+    // Renamed from "Dashboard" to match the in-app nav (PR #16). Same
+    // route (/dashboard) — only the user-facing label changed.
+    navDashboard: 'My Channels',
     navLogin: 'Login',
     navCta: 'Start Free',
     navOpenApp: 'Open app',
@@ -194,8 +196,10 @@ export const COPY = {
 
     heroEyebrow: 'YouTube niche intelligence',
     // SEO-anchored H1 (matches title metadata, contains primary keyword
-    // 'YouTube niches'). Founder narrative kept below as personal tagline.
-    heroHeadline: 'Find YouTube niches before they explode.',
+    // 'YouTube niches'). Marketing convention: no full stop at the end
+    // of a hero headline — terminating punctuation reads as "this is a
+    // sentence" rather than "this is a banner statement".
+    heroHeadline: 'Find YouTube niches before they explode',
     heroNarrative: 'I built this because YouTube research was eating my weekends.',
     heroSub: 'SurgeNiche scans 230+ small channels every hour and flags the ones spiking before anyone else notices. No keyword guessing, no copy-paste tactics, just the small accounts that started moving.',
     heroBadge: '47 channels spiked in the last hour',
@@ -328,7 +332,7 @@ export const COPY = {
   de: {
     navDiscover: 'Entdecken',
     navPricing: 'Preise',
-    navDashboard: 'Dashboard',
+    navDashboard: 'Meine Kanäle',
     navLogin: 'Anmelden',
     navCta: 'Kostenlos starten',
     navOpenApp: 'App öffnen',
@@ -516,7 +520,7 @@ export const COPY = {
     relatedEmpty: 'Aktuell keine ähnlichen Nischen.',
 
     heroEyebrow: 'YouTube-Nischen-Intelligenz',
-    heroHeadline: 'Finde YouTube-Nischen, bevor sie explodieren.',
+    heroHeadline: 'Finde YouTube-Nischen, bevor sie explodieren',
     heroNarrative: 'Ich habe das gebaut, weil YouTube-Recherche meine Wochenenden gefressen hat.',
     heroSub: 'SurgeNiche scannt stündlich 230+ kleine Kanäle und markiert die, die zu steigen beginnen, bevor es jemand anderes bemerkt. Kein Keyword-Raten, keine Copy-Paste-Taktik.',
     heroBadge: '47 Kanäle sind in der letzten Stunde gestiegen',
