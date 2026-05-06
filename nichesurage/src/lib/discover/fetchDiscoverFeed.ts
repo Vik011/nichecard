@@ -100,16 +100,18 @@ async function fetchHotMode(
   if (scanErr) return { data: [], error: 'Discover fetch failed' }
   const scan = (scanRows ?? []) as ScanResultWithCluster[]
 
-  // Step 3: re-sort by tier_entered_at desc (primary), outlier_ratio desc
-  // (secondary). Channels without scan_results just don't appear yet —
-  // they'll surface after their first scan tick writes a row.
+  // Step 3: re-sort by opportunity_score desc (primary), tier_entered_at
+  // desc (secondary tiebreaker). Score is the big number on the card so
+  // users expect "Hot Now" to surface highest-score recent discoveries
+  // first. Recency only matters as a tiebreaker between channels with
+  // identical scores.
   scan.sort((a, b) => {
+    const sa = a.opportunity_score ?? 0
+    const sb = b.opportunity_score ?? 0
+    if (sa !== sb) return sb - sa
     const ea = enteredAtById.get(a.youtube_channel_id) ?? ''
     const eb = enteredAtById.get(b.youtube_channel_id) ?? ''
-    if (ea !== eb) return eb.localeCompare(ea)
-    const ra = a.outlier_ratio ?? 0
-    const rb = b.outlier_ratio ?? 0
-    return rb - ra
+    return eb.localeCompare(ea)
   })
 
   return {
@@ -122,10 +124,13 @@ async function fetchAllMode(
   supabase: ReturnType<typeof createClient>,
   limit: number,
 ): Promise<{ data: NicheCardData[]; error: string | null }> {
+  // Sort by opportunity_score desc to match the visible big number on the
+  // card. Users expect "Best first" to mean the score they see, not the
+  // raw outlier_ratio (which is a smaller-text supporting metric).
   const { data, error } = await supabase
     .from('scan_results_latest')
     .select('*, niche_clusters(id, label)')
-    .order('outlier_ratio', { ascending: false, nullsFirst: false })
+    .order('opportunity_score', { ascending: false, nullsFirst: false })
     .limit(limit)
 
   if (error) return { data: [], error: 'Discover fetch failed' }

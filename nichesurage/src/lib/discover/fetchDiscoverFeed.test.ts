@@ -128,30 +128,53 @@ describe('fetchDiscoverFeed — hot mode', () => {
     expect(result.data).toEqual([])
   })
 
-  it('sorts hot results by tier_entered_at desc (recent first), tiebreaks by outlier_ratio desc', async () => {
+  it('sorts hot results by opportunity_score desc, tiebreaks by tier_entered_at desc (recent wins ties)', async () => {
     setupMock({
       watchlist: {
         data: [
           { youtube_channel_id: 'UCa', tier_entered_at: '2026-05-06T10:00:00Z' },
           { youtube_channel_id: 'UCb', tier_entered_at: '2026-05-05T10:00:00Z' },
-          { youtube_channel_id: 'UCc', tier_entered_at: '2026-05-06T10:00:00Z' },
+          { youtube_channel_id: 'UCc', tier_entered_at: '2026-05-06T11:00:00Z' },
         ],
         error: null,
       },
       scanResults: {
         data: [
-          fixtureScanRow({ id: 'b-row', youtube_channel_id: 'UCb', outlier_ratio: 9 }),
-          fixtureScanRow({ id: 'a-row', youtube_channel_id: 'UCa', outlier_ratio: 3 }),
-          fixtureScanRow({ id: 'c-row', youtube_channel_id: 'UCc', outlier_ratio: 7 }),
+          // UCb has highest score (70), UCa middle (50), UCc lowest (30).
+          // UCa and UCc are both within window; UCb is too. Pure score sort.
+          fixtureScanRow({ id: 'b-row', youtube_channel_id: 'UCb', opportunity_score: 70, outlier_ratio: 1 }),
+          fixtureScanRow({ id: 'a-row', youtube_channel_id: 'UCa', opportunity_score: 50, outlier_ratio: 9 }),
+          fixtureScanRow({ id: 'c-row', youtube_channel_id: 'UCc', opportunity_score: 30, outlier_ratio: 12 }),
         ],
         error: null,
       },
     })
     const result = await fetchDiscoverFeed({ mode: 'hot' })
     expect(result.error).toBeNull()
-    // UCa and UCc both entered on 05-06 — among them, UCc has higher outlier
-    // so it comes first. UCb (older 05-05) comes last.
-    expect(result.data.map((d) => d.id)).toEqual(['c-row', 'a-row', 'b-row'])
+    // Pure score desc — outlier_ratio doesn't matter, recency doesn't matter
+    // when scores differ.
+    expect(result.data.map((d) => d.id)).toEqual(['b-row', 'a-row', 'c-row'])
+  })
+
+  it('uses tier_entered_at as tiebreaker when opportunity_scores are equal', async () => {
+    setupMock({
+      watchlist: {
+        data: [
+          { youtube_channel_id: 'UCold', tier_entered_at: '2026-05-04T10:00:00Z' },
+          { youtube_channel_id: 'UCnew', tier_entered_at: '2026-05-06T10:00:00Z' },
+        ],
+        error: null,
+      },
+      scanResults: {
+        data: [
+          fixtureScanRow({ id: 'old-row', youtube_channel_id: 'UCold', opportunity_score: 50 }),
+          fixtureScanRow({ id: 'new-row', youtube_channel_id: 'UCnew', opportunity_score: 50 }),
+        ],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ mode: 'hot' })
+    expect(result.data.map((d) => d.id)).toEqual(['new-row', 'old-row'])
   })
 
   it('skips channels in watchlist that have no scan_results yet', async () => {
