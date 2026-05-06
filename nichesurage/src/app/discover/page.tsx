@@ -256,6 +256,7 @@ function DiscoverPageInner() {
         eyebrow={copy.discoverTrendingTopics}
         emptyHint={copy.discoverTrendingEmpty}
         activeClusterId={activeClusterId}
+        contentType={filters.contentType}
       />
 
       {/* Reveal countdown / tier badge — placed above the search form so

@@ -122,16 +122,29 @@ async function fetchQualityNiches(
   // Sonar default sort: outlier_ratio desc. "newest" preserved for users who
   // want the freshest discoveries regardless of magnitude.
   const orderColumn = filters.sortBy === 'newest' ? 'scanned_at' : 'outlier_ratio'
+
+  // When a cluster filter is active (user clicked a Trending Topics chip),
+  // the user has explicitly chosen "show me what is in THIS group". Stacking
+  // the global is_spike + outlier floor on top is over-filtering — empirically
+  // (verified 2026-05-06) it can drop a 16-member cluster to 0 visible
+  // because no current member is spiking right now. Cluster context replaces
+  // those floors as the relevance signal.
+  const inClusterMode = Boolean(options.clusterId)
+
   let query = supabase
     .from('scan_results_latest')
     .select('*, niche_clusters(id, label)')
     .eq('content_type', filters.contentType)
-    .eq('is_spike', true)
-    .gte('outlier_ratio', SONAR_UI_THRESHOLD)
     .gte('subscriber_count', filters.subscriberMin)
     .lte('subscriber_count', filters.subscriberMax)
     .order(orderColumn, { ascending: false, nullsFirst: false })
     .limit(20)
+
+  if (!inClusterMode) {
+    query = query
+      .eq('is_spike', true)
+      .gte('outlier_ratio', SONAR_UI_THRESHOLD)
+  }
 
   if (options.clusterId) {
     query = query.eq('cluster_id', options.clusterId)
@@ -230,21 +243,87 @@ async function fetchHotNiches(
   return { data: mapped, error: null }
 }
 
-export async function fetchTrendingClusters(limit = 8): Promise<TrendingCluster[]> {
+/**
+ * Fetch trending niche clusters with LIVE member counts.
+ *
+ * Why not read niche_clusters.member_count directly: that field is a
+ * frozen historical count that does not get updated when channels are
+ * evicted, deactivated, or roll out of scan_results_latest. Empirically
+ * (verified 2026-05-06): a cluster shown as "16 members" in the carousel
+ * had ZERO matching rows in scan_results_latest. Carousel was lying.
+ *
+ * Approach: aggregate scan_results_latest by cluster_id (current source
+ * of truth for "who is in a cluster RIGHT NOW"), filter by the page's
+ * content_type so a longform page does not surface shorts-only clusters
+ * (and vice versa), join niche_clusters for labels. Clusters with zero
+ * current members are silently dropped.
+ *
+ * The carousel chip count now matches what the user sees when they click
+ * the chip (modulo additional user filters like subscriber range).
+ */
+export async function fetchTrendingClusters(
+  contentType: 'shorts' | 'longform',
+  limit = 8,
+): Promise<TrendingCluster[]> {
   const supabase = createClient()
-  const { data, error } = await supabase
+
+  // Step 1: pull all scan_results_latest rows with cluster_id for the given
+  // content_type. Bounded by current universe size (~hundreds at MVP scale),
+  // so pulling and aggregating client-side is cheaper than an RPC.
+  const { data: members, error: membersErr } = await supabase
+    .from('scan_results_latest')
+    .select('cluster_id')
+    .eq('content_type', contentType)
+    .not('cluster_id', 'is', null)
+    .limit(50_000)
+
+  if (membersErr || !members || members.length === 0) return []
+
+  // Aggregate counts per cluster.
+  const counts = new Map<string, number>()
+  for (const row of members as Array<{ cluster_id: string }>) {
+    if (!row.cluster_id) continue
+    counts.set(row.cluster_id, (counts.get(row.cluster_id) ?? 0) + 1)
+  }
+  if (counts.size === 0) return []
+
+  // Pick top N by count.
+  const topIds = Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([id]) => id)
+
+  // Step 2: fetch labels + metadata for top clusters.
+  const { data: clusters, error: clustersErr } = await supabase
     .from('niche_clusters')
-    .select('id, label, member_count, language, content_type')
-    .order('member_count', { ascending: false })
-    .limit(limit)
-  if (error || !data) return []
-  return data.map((c: { id: string; label: string; member_count: number; language: 'en' | 'de' | null; content_type: 'shorts' | 'longform' | 'both' | null }) => ({
-    id: c.id,
-    label: c.label,
-    memberCount: c.member_count,
-    language: c.language,
-    contentType: c.content_type,
-  }))
+    .select('id, label, language, content_type')
+    .in('id', topIds)
+
+  if (clustersErr || !clusters) return []
+
+  // Preserve top-N order from counts (Supabase doesn't honor IN-list order).
+  const byId = new Map(
+    (clusters as Array<{
+      id: string
+      label: string
+      language: 'en' | 'de' | null
+      content_type: 'shorts' | 'longform' | 'both' | null
+    }>).map((c) => [c.id, c]),
+  )
+
+  const out: TrendingCluster[] = []
+  for (const id of topIds) {
+    const c = byId.get(id)
+    if (!c) continue // lost FK or RLS-blocked cluster row
+    out.push({
+      id: c.id,
+      label: c.label,
+      memberCount: counts.get(id) ?? 0,
+      language: c.language,
+      contentType: c.content_type,
+    })
+  }
+  return out
 }
 
 export async function fetchRelatedNiches(source: NicheCardData, limit = 3): Promise<NicheCardData[]> {

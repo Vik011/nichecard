@@ -20,7 +20,7 @@ describe('TrendingTopics', () => {
       { id: 'c1', label: 'Underground AI Automation', memberCount: 12, language: 'en', contentType: 'longform' },
       { id: 'c2', label: 'Faceless Stoic Productivity', memberCount: 7,  language: 'en', contentType: 'shorts' },
     ])
-    render(<TrendingTopics eyebrow="Trending topics" />)
+    render(<TrendingTopics eyebrow="Trending topics" contentType="longform" />)
     await waitFor(() => {
       expect(screen.getByText('Underground AI Automation')).toBeInTheDocument()
       expect(screen.getByText('Faceless Stoic Productivity')).toBeInTheDocument()
@@ -29,7 +29,7 @@ describe('TrendingTopics', () => {
 
   it('renders the empty hint when fetch returns []', async () => {
     (queries.fetchTrendingClusters as jest.Mock).mockResolvedValueOnce([])
-    render(<TrendingTopics eyebrow="Trending topics" emptyHint="No clusters yet" />)
+    render(<TrendingTopics eyebrow="Trending topics" emptyHint="No clusters yet" contentType="longform" />)
     await waitFor(() => {
       expect(screen.getByText('No clusters yet')).toBeInTheDocument()
     })
@@ -39,7 +39,7 @@ describe('TrendingTopics', () => {
     (queries.fetchTrendingClusters as jest.Mock).mockResolvedValueOnce([
       { id: 'c1', label: 'Quiet Luxury Fashion', memberCount: 5, language: 'en', contentType: 'shorts' },
     ])
-    render(<TrendingTopics eyebrow="Trending topics" activeClusterId="c1" />)
+    render(<TrendingTopics eyebrow="Trending topics" activeClusterId="c1" contentType="shorts" />)
     await waitFor(() => {
       const link = screen.getByRole('listitem')
       expect(link.className).toMatch(/ring-glow-indigo/)
@@ -51,7 +51,7 @@ describe('TrendingTopics', () => {
     ;(queries.fetchTrendingClusters as jest.Mock).mockResolvedValueOnce([
       { id: 'c1', label: 'Stoic Mind Rewiring', memberCount: 24, language: 'en', contentType: 'longform' },
     ])
-    render(<TrendingTopics eyebrow="Trending topics" />)
+    render(<TrendingTopics eyebrow="Trending topics" contentType="longform" />)
     await waitFor(() => {
       const link = screen.getByRole('listitem') as HTMLAnchorElement
       // href should contain BOTH cluster=c1 AND type=longform (and any other preserved params)
@@ -65,7 +65,7 @@ describe('TrendingTopics', () => {
     ;(queries.fetchTrendingClusters as jest.Mock).mockResolvedValueOnce([
       { id: 'c1', label: 'Faceless AI Income Blueprint', memberCount: 17, language: 'en', contentType: 'shorts' },
     ])
-    render(<TrendingTopics eyebrow="Trending topics" />)
+    render(<TrendingTopics eyebrow="Trending topics" contentType="longform" />)
     await waitFor(() => {
       const link = screen.getByRole('listitem') as HTMLAnchorElement
       expect(link.getAttribute('href')).toBe('/discover?cluster=c1')
