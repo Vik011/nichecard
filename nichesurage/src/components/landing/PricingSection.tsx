@@ -64,7 +64,7 @@ export function PricingSection({ copy }: PricingSectionProps) {
   return (
     <section id="pricing" className="py-24 px-6">
       <div className="max-w-5xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-semibold text-center mb-8 text-slate-100 tracking-tight text-balance">
+        <h2 className="font-display text-4xl md:text-5xl font-normal text-center mb-8 text-slate-100 tracking-[-0.01em] text-balance">
           {copy.pricingTitle}
         </h2>
 

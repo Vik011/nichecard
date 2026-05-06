@@ -21,7 +21,7 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
   return (
     <section id="how" className="py-24 px-6 scroll-mt-20">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-semibold text-center mb-14 text-slate-100 tracking-tight">
+        <h2 className="font-display text-4xl md:text-5xl font-normal text-center mb-14 text-slate-100 tracking-[-0.01em]">
           {copy.featuresTitle}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

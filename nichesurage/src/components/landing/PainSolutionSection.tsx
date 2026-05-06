@@ -9,7 +9,7 @@ export function PainSolutionSection({ copy }: PainSolutionSectionProps) {
   return (
     <section className="py-24 px-6">
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-semibold text-center mb-14 text-slate-100 tracking-tight text-balance">
+        <h2 className="font-display text-4xl md:text-5xl font-normal text-center mb-14 text-slate-100 tracking-[-0.01em] text-balance">
           {copy.painHeadline}
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

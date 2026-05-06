@@ -13,7 +13,7 @@ export function FinalCTASection({ copy, isLoggedIn = false }: FinalCTASectionPro
         className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(124,131,240,0.10),_transparent_60%)]"
       />
       <div className="relative max-w-3xl mx-auto text-center">
-        <h2 className="text-3xl md:text-5xl font-semibold tracking-tight text-slate-100 mb-8 text-balance">
+        <h2 className="font-display text-4xl md:text-6xl font-normal tracking-[-0.01em] text-slate-100 mb-8 text-balance">
           {copy.ctaHeadline}
         </h2>
         <a

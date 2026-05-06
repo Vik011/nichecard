@@ -15,7 +15,7 @@ export function AppPreviewSection({ niches, copy, isLoggedIn = false }: AppPrevi
       <div className="max-w-6xl mx-auto">
         {/* Heading */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-semibold mb-3 text-slate-100 tracking-tight text-balance">
+          <h2 className="font-display text-4xl md:text-5xl font-normal mb-3 text-slate-100 tracking-[-0.01em] text-balance">
             {copy.previewTitle}
           </h2>
           <p className="text-slate-400 text-[17px]">{copy.previewSub}</p>
