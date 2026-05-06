@@ -3,23 +3,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { List, X } from '@phosphor-icons/react/dist/ssr'
 import { LanguageToggle } from './LanguageToggle'
+import { AvatarMenu } from './AvatarMenu'
 import type { CopyKeys, Lang } from './copy'
 import { useUser } from '@/lib/context/UserContext'
-import type { UserTier } from '@/lib/types/database'
-
-// 3-tier badge consistent with TopNav. Previously LandingNav only had a
-// 2-way ternary (premium vs everything else) which made BASIC users show as
-// FREE on the landing page even though /discover correctly read them as
-// BASIC — i.e. tier display was inconsistent across the app shell.
-function TierBadge({ tier, copy }: { tier: UserTier; copy: CopyKeys }) {
-  const isElevated = tier === 'premium' || tier === 'basic'
-  const className = isElevated
-    ? 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-glow-indigo/15 text-indigo-200 ring-1 ring-glow-indigo/40'
-    : 'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md bg-slate-800 text-slate-400 ring-1 ring-slate-700'
-  const label =
-    tier === 'premium' ? copy.tierPremium : tier === 'basic' ? copy.tierBasic : copy.tierFree
-  return <span className={className}>{label}</span>
-}
 
 interface LandingNavProps {
   copy: CopyKeys
@@ -75,25 +61,24 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
         <div className="hidden md:flex items-center gap-3">
           {userLoading ? null : isLoggedIn ? (
             <>
-              {/* Tier + email merged into a single identity pill so they
-                  read as one logical block ("you are signed in as X with
-                  plan Y") instead of three competing elements with gaps. */}
-              <div className="flex items-center gap-2 rounded-lg border border-slate-800 bg-charcoal-900/60 backdrop-blur-md px-2 py-1">
-                <TierBadge tier={tier} copy={copy} />
-                {email && (
-                  <span className="text-[13px] text-slate-400 max-w-[180px] truncate" title={email}>
-                    {email}
-                  </span>
-                )}
-              </div>
+              {/* Avatar + dropdown replaces the previous tier+email pill.
+                  Tier signal moves into the avatar's ring colour; email
+                  + sign-out hidden inside the dropdown so the nav row
+                  carries less visual weight. Pattern matches the in-app
+                  TopNav for consistency. */}
+              <AvatarMenu copy={copy} email={email ?? null} tier={tier} />
+              {/* Open app demoted to ghost/outlined style — was duplicating
+                  the visual prominence of the hero CTA. Header version
+                  stays a clear affordance but reads as secondary so the
+                  hero "Open app →" remains the screen's primary action. */}
               <Link
                 href="/discover"
                 className={[
-                  'text-[13px] font-semibold px-4 py-2 rounded-lg text-white',
-                  'bg-gradient-to-r from-indigo-600 to-brand-indigo-bright',
-                  'shadow-[0_4px_18px_-6px_rgba(124,131,240,0.45)]',
-                  'transition-[transform,box-shadow,filter] duration-200 ease-out',
-                  'hover:-translate-y-[1px] hover:brightness-[1.08] hover:shadow-[0_6px_24px_-6px_rgba(124,131,240,0.6)]',
+                  'text-[13px] font-semibold px-4 py-2 rounded-lg',
+                  'text-slate-200 hover:text-white',
+                  'border border-slate-700 hover:border-glow-indigo/60',
+                  'bg-charcoal-900/40 hover:bg-charcoal-800/60 backdrop-blur-sm',
+                  'transition-colors duration-200',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
                 ].join(' ')}
               >
@@ -156,8 +141,27 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
           <LanguageToggle lang={lang} onChange={onLangChange} />
           {userLoading ? null : isLoggedIn ? (
             <>
+              {/* Mobile drawer keeps the tier+email inline (no avatar
+                  dropdown — it'd be a menu inside a menu on mobile).
+                  Standalone tier pill replaces the previous TierBadge
+                  helper since AvatarMenu now owns desktop tier display. */}
               <div className="flex items-center gap-2 pt-1">
-                <TierBadge tier={tier} copy={copy} />
+                <span
+                  className={[
+                    'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md',
+                    tier === 'premium'
+                      ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30'
+                      : tier === 'basic'
+                      ? 'bg-glow-indigo/15 text-indigo-200 ring-1 ring-glow-indigo/40'
+                      : 'bg-slate-800 text-slate-400 ring-1 ring-slate-700',
+                  ].join(' ')}
+                >
+                  {tier === 'premium'
+                    ? copy.topNavTierPremium
+                    : tier === 'basic'
+                    ? copy.topNavTierBasic
+                    : copy.topNavTierFree}
+                </span>
                 {email && (
                   <span className="text-sm text-slate-400 truncate" title={email}>
                     {email}
