@@ -5,6 +5,7 @@ import { COPY } from './copy'
 import { useLang } from '@/lib/i18n/useLang'
 import { useUser } from '@/lib/context/UserContext'
 import { LandingNav } from './LandingNav'
+import { LiveTickerBar } from './LiveTickerBar'
 import { HeroSection } from './HeroSection'
 import { AppPreviewSection } from './AppPreviewSection'
 import { PainSolutionSection } from './PainSolutionSection'
@@ -38,6 +39,11 @@ export function LandingPage({ niches, radar }: LandingPageProps) {
   return (
     <div className="relative min-h-screen text-slate-100">
       <LandingNav copy={copy} lang={lang} onLangChange={setLang} />
+      <LiveTickerBar
+        copy={copy}
+        spikedLastHour={47}
+        nichesSurfacedToday={radar.channelsLast24h}
+      />
       <HeroSection copy={copy} isLoggedIn={isLoggedIn} radar={radar} />
       <Reveal><AppPreviewSection niches={niches} copy={copy} isLoggedIn={isLoggedIn} /></Reveal>
       <Reveal><PainSolutionSection copy={copy} /></Reveal>

@@ -12,12 +12,18 @@ import type { RadarPing } from '@/lib/landing/fetchRadarPings'
 interface HeroBackdropProps {
   copy: CopyKeys
   pings: RadarPing[]
+  /**
+   * Retained for type-compat with LandingPage/HeroSection callers; no
+   * longer rendered in the backdrop now that the live channel-count
+   * lives in the LiveTickerBar above the hero. Marked with `void` below.
+   */
   channelsLast24h: number
 }
 
 const ROTATION_MS = 3200
 
 export function HeroBackdrop({ copy, pings, channelsLast24h }: HeroBackdropProps) {
+  void channelsLast24h
   const [index, setIndex] = useState(0)
 
   useEffect(() => {
@@ -62,30 +68,11 @@ export function HeroBackdrop({ copy, pings, channelsLast24h }: HeroBackdropProps
         <div className="scan-line" />
       </div>
 
-      {/* Layer 3 — TOP-LEFT: floating LIVE counter chip.
-          Defensive structure: outer div owns the absolute positioning,
-          inner div owns the chip styling. Mixing display:flex with
-          position:absolute on the same element was producing erratic
-          positioning in production (chip stretching across viewport
-          and ignoring its `top-8 left-8` anchor). */}
-      <div className="absolute top-8 left-8 z-20 hidden md:block">
-        <div className="inline-flex items-center gap-2 bg-charcoal-900/70 backdrop-blur-md gborder rounded-full px-4 py-2 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]">
-          <span aria-hidden="true" className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
-          </span>
-          <span className="text-emerald-300/95 text-[10px] font-semibold uppercase tracking-[0.22em]">
-            {copy.radarLive}
-          </span>
-          <span className="text-slate-300 text-[12px] font-medium whitespace-nowrap">
-            · {copy.radarChannelsLast24h(channelsLast24h)}
-          </span>
-        </div>
-      </div>
-
-      {/* Layer 4 — BOTTOM-LEFT: next-scan countdown. Dopamine driver — gives
-          the visitor a reason to wait or come back. */}
-      <NextScanCountdown copy={copy} />
+      {/* Top-left LIVE chip and bottom-left NextScanCountdown previously
+          floated here were hoisted into the LiveTickerBar and the
+          HeroStatsBar respectively. Both stats now live in dedicated
+          horizontal strips so the corners of the hero stage stay clean
+          and the radar visual breathes without competing chips. */}
 
       {/* Layer 5 — BOTTOM-RIGHT: floating "channel discovered" notification. */}
       <div
@@ -132,41 +119,9 @@ export function HeroBackdrop({ copy, pings, channelsLast24h }: HeroBackdropProps
   )
 }
 
-// Bottom-left telemetry overlay: live countdown to the top of the next hour
-// (when the hourly-scan cron fires). Re-renders every second.
-function NextScanCountdown({ copy }: { copy: CopyKeys }) {
-  const [now, setNow] = useState<Date | null>(null)
-
-  useEffect(() => {
-    setNow(new Date())
-    const t = window.setInterval(() => setNow(new Date()), 1000)
-    return () => window.clearInterval(t)
-  }, [])
-
-  if (!now) return null
-
-  // Time remaining until top of next hour.
-  const remainingMs =
-    (60 - now.getMinutes()) * 60 * 1000 -
-    now.getSeconds() * 1000 -
-    now.getMilliseconds()
-  const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000))
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-
-  return (
-    <div className="absolute bottom-8 left-8 z-20 hidden md:block">
-      <div className="inline-flex flex-col gap-1 bg-charcoal-900/70 backdrop-blur-md gborder rounded-2xl px-4 py-3 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]">
-        <span className="text-slate-500 text-[9px] font-semibold uppercase tracking-[0.22em] whitespace-nowrap">
-          {copy.heroNextScanLabel}
-        </span>
-        <span className="text-slate-100 text-base font-semibold tabular-nums tracking-tight whitespace-nowrap">
-          {copy.heroNextScanFormat(minutes, seconds)}
-        </span>
-      </div>
-    </div>
-  )
-}
+// (NextScanCountdown was removed when the timer was hoisted into the
+//  HeroStatsBar that sits inline at the bottom of the hero copy. The
+//  countdown logic lives on as a hook inside HeroStatsBar.tsx.)
 
 // Three strategic detection dots — placed on different ring radii so the
 // composition reads as "depth", not as a flat scatter. One bright outer

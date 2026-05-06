@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { CopyKeys } from './copy'
 import type { RadarSnapshot } from '@/lib/landing/fetchRadarPings'
 import { HeroBackdrop } from './HeroBackdrop'
+import { HeroStatsBar } from './HeroStatsBar'
 
 interface HeroSectionProps {
   copy: CopyKeys
@@ -30,23 +31,12 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
           layout + pt/pb gives the absolute corners their actual top/bottom
           anchors back. */}
       <div className="relative z-10 max-w-2xl mx-auto w-full flex flex-col items-center">
-        {/* Live "47 channels spiked" badge promoted to first element —
-            the eyebrow used to sit above this and read as a duplicate
-            of the page title metadata. The badge alone is the strongest
-            "this is alive" signal a hero can carry. */}
-        <div
-          role="status"
-          aria-label={copy.heroBadge}
-          className="inline-flex items-center gap-2 bg-charcoal-900/70 backdrop-blur-md gborder rounded-full px-4 py-1.5 mb-8"
-        >
-          <span aria-hidden="true" className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
-          </span>
-          <span aria-hidden="true" className="text-emerald-300/90 text-[13px] font-medium tracking-tight">
-            {copy.heroBadge}
-          </span>
-        </div>
+        {/* The standalone "47 channels spiked" badge previously rendered
+            here was hoisted into the LiveTickerBar that sits below the
+            LandingNav (rendered by LandingPage). Single live-activity
+            row at the top of the page is a stronger "this is alive"
+            signal than a chip floating between sub-elements of the
+            hero. Hero content can now lead straight with the H1. */}
 
         {/* SEO-anchored H1. Display serif (Instrument Serif via
             font-display) gives editorial character that contrasts the
@@ -96,6 +86,13 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
             {copy.heroCta2}
           </a>
         </div>
+
+        {/* Bottom-of-hero stats strip. Anchors the visual rhythm: scan
+            cadence on the left, live progress + spike count in the
+            center, scan interval on the right. Replaces the orphan
+            NextScanCountdown chip that lived in the bottom-left corner
+            of HeroBackdrop. */}
+        <HeroStatsBar copy={copy} spikingNow={47} />
       </div>
     </section>
   )
