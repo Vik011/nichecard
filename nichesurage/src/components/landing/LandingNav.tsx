@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { List, X } from '@phosphor-icons/react/dist/ssr'
 import { LanguageToggle } from './LanguageToggle'
 import type { CopyKeys, Lang } from './copy'
 import { useUser } from '@/lib/context/UserContext'
@@ -56,7 +57,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
 
         {/* Desktop links */}
         <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
-          <Link href="/discover/shorts" className="hover:text-slate-100 transition-colors">
+          <Link href="/discover" className="hover:text-slate-100 transition-colors">
             {copy.navDiscover}
           </Link>
           <a href="#pricing" className="hover:text-slate-100 transition-colors">
@@ -81,7 +82,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
                 </span>
               )}
               <Link
-                href="/discover/shorts"
+                href="/discover"
                 className="text-sm font-semibold px-4 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-brand-indigo-bright hover:from-indigo-500 hover:to-brand-indigo-bright transition-all text-white"
               >
                 {copy.navOpenApp}
@@ -113,14 +114,16 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
           aria-expanded={menuOpen}
           aria-controls="mobile-nav-drawer"
         >
-          {menuOpen ? '✕' : '☰'}
+          {menuOpen
+            ? <X weight="bold" size={20} aria-hidden />
+            : <List weight="bold" size={20} aria-hidden />}
         </button>
       </div>
 
       {/* Mobile drawer */}
       {menuOpen && (
         <div id="mobile-nav-drawer" className="md:hidden bg-slate-900 border-t border-slate-800 px-6 py-4 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-4rem)]">
-          <Link href="/discover/shorts" className="text-slate-300 hover:text-white transition-colors py-2.5 block" onClick={() => setMenuOpen(false)}>
+          <Link href="/discover" className="text-slate-300 hover:text-white transition-colors py-2.5 block" onClick={() => setMenuOpen(false)}>
             {copy.navDiscover}
           </Link>
           <a href="#pricing" className="text-slate-300 hover:text-white transition-colors py-2.5 block" onClick={() => setMenuOpen(false)}>
@@ -143,7 +146,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
                 )}
               </div>
               <Link
-                href="/discover/shorts"
+                href="/discover"
                 className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-brand-indigo-bright text-white"
                 onClick={() => setMenuOpen(false)}
               >

@@ -1,3 +1,4 @@
+import { XCircle, CheckCircle } from '@phosphor-icons/react/dist/ssr'
 import type { CopyKeys } from './copy'
 
 interface PainSolutionSectionProps {
@@ -20,7 +21,12 @@ export function PainSolutionSection({ copy }: PainSolutionSectionProps) {
             <ul className="space-y-4">
               {copy.painItems.map((item, i) => (
                 <li key={i} className="flex items-start gap-3 text-slate-400">
-                  <span aria-hidden="true" className="text-red-500/80 mt-0.5 shrink-0">✕</span>
+                  <XCircle
+                    aria-hidden
+                    weight="fill"
+                    size={18}
+                    className="text-red-500/80 mt-0.5 shrink-0"
+                  />
                   <span className="leading-relaxed">{item}</span>
                 </li>
               ))}
@@ -34,7 +40,12 @@ export function PainSolutionSection({ copy }: PainSolutionSectionProps) {
             <ul className="space-y-4">
               {copy.solutionItems.map((item, i) => (
                 <li key={i} className="flex items-start gap-3 text-slate-100">
-                  <span aria-hidden="true" className="text-emerald-400/90 mt-0.5 shrink-0">✓</span>
+                  <CheckCircle
+                    aria-hidden
+                    weight="fill"
+                    size={18}
+                    className="text-emerald-400/90 mt-0.5 shrink-0"
+                  />
                   <span className="leading-relaxed">{item}</span>
                 </li>
               ))}

@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { CheckCircle } from '@phosphor-icons/react/dist/ssr'
 import type { CopyKeys } from './copy'
 import { MotionCard } from '@/components/ui/MotionCard'
 import { captureClient } from '@/lib/analytics/posthog-client'
@@ -143,7 +144,12 @@ export function PricingSection({ copy }: PricingSectionProps) {
                 <ul className="space-y-3 mb-8">
                   {tier.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2 text-sm text-slate-300">
-                      <span className="text-emerald-400/90 mt-0.5 shrink-0">✓</span>
+                      <CheckCircle
+                        aria-hidden
+                        weight="fill"
+                        size={16}
+                        className="text-emerald-400/90 mt-0.5 shrink-0"
+                      />
                       <span>{feature}</span>
                     </li>
                   ))}
