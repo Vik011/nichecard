@@ -13,7 +13,7 @@ interface HeroSectionProps {
 
 export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProps) {
   return (
-    <section className="relative overflow-hidden pt-16 pb-28 px-6 text-center min-h-[78vh]">
+    <section className="relative overflow-hidden pt-16 pb-16 px-6 text-center min-h-[68vh]">
       <HeroBackdrop copy={copy} pings={radar.pings} channelsLast24h={radar.channelsLast24h} />
 
       {/* Bottom fade — softens the radar's hard edge into the next section
@@ -109,12 +109,18 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
               className="transition-transform duration-200 ease-out group-hover:translate-x-0.5"
             />
           </Link>
+          {/* Secondary CTA — same matched-ghost shape as primary so the
+              pair reads as "two routes forward," but the border opacity
+              is dropped to /50 to introduce subtle visual hierarchy.
+              Audit feedback (2026-05-06 round 2): full-opacity border
+              made both buttons equally weighty; halving border alpha
+              keeps the symmetry without competing with "Open app". */}
           <a
             href="#how"
             className={[
               'inline-flex items-center w-full sm:w-auto justify-center',
               'text-[15px] font-semibold px-6 py-3 rounded-xl',
-              'border border-slate-700 bg-charcoal-900/40 backdrop-blur-sm text-slate-100',
+              'border border-slate-700/50 bg-charcoal-900/40 backdrop-blur-sm text-slate-200',
               'transition-colors duration-200 ease-out',
               'hover:border-glow-indigo/60 hover:bg-charcoal-800/60 hover:text-white',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
