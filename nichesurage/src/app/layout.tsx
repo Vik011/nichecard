@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Instrument_Serif } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import { UserProvider } from "@/lib/context/UserContext";
@@ -16,6 +17,18 @@ const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
   weight: "100 900",
+});
+
+// Display serif for landing-page hero/section headings. Pairs with the
+// Geist Sans body — sans + editorial serif gives the page an "authored
+// by a human" character that matches the founder narrative tagline. The
+// only weight Instrument Serif ships in is 400; that's the canonical
+// usage. display: 'swap' avoids FOIT (per Quick Reference §3 font-loading).
+const instrumentSerif = Instrument_Serif({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-instrument-serif",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -49,7 +62,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-carbon-950 text-slate-100`}
+        className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased bg-carbon-950 text-slate-100`}
       >
         <AmbientBackground />
         <Suspense fallback={null}>
