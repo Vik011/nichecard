@@ -31,7 +31,7 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
           ended up vertically centered alongside the hero copy. Plain block
           layout + pt/pb gives the absolute corners their actual top/bottom
           anchors back. */}
-      <div className="relative z-10 max-w-2xl mx-auto w-full flex flex-col items-center">
+      <div className="relative z-10 max-w-3xl mx-auto w-full flex flex-col items-center">
         {/* Green pulse pill — present-tense action ("scanning right
             now") that complements the LiveTickerBar above (which
             carries backward-looking stats). Sets the atmospheric
@@ -55,10 +55,10 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
             gives the H1 typographic momentum and matches an editorial
             section-header cadence (vs a flat single-line banner). */}
         <h1 className="font-display tracking-[-0.02em] text-slate-100 text-balance mb-5 drop-shadow-[0_2px_24px_rgba(6,9,16,0.85)]">
-          <span className="block text-[40px] sm:text-[52px] md:text-[64px] font-normal leading-[1.04]">
+          <span className="block text-[44px] sm:text-[58px] md:text-[72px] font-normal leading-[1.02]">
             {copy.heroHeadlineMain}
           </span>
-          <span className="block italic font-normal text-[34px] sm:text-[44px] md:text-[54px] leading-[1.04] text-slate-200">
+          <span className="block italic font-normal text-[40px] sm:text-[52px] md:text-[68px] leading-[1.02] text-slate-200">
             {copy.heroHeadlineEmphasis}
           </span>
         </h1>
@@ -82,19 +82,22 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
           {copy.heroSubTrailing}
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
+        {/* Matched CTA pair — both as ghost outlined buttons sharing
+            border, radius, padding, type-size. Mockup-driven. The
+            previous "primary gradient + secondary text link" layout
+            read as mismatched: visually the pair didn't telegraph
+            "two routes forward from here" (one to start using the app,
+            one to learn how it works). The new pair does. The arrow on
+            "Open app" is the only differentiator and is enough. */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
-            // Unified Discover surface — go straight to /discover instead
-            // of /discover/shorts (which is now a redirect). Skips a
-            // round-trip and matches the new top nav structure.
             href={isLoggedIn ? '/discover' : '/login'}
             className={[
               'group inline-flex items-center gap-2 w-full sm:w-auto justify-center',
-              'text-[15px] font-semibold px-7 py-3 rounded-xl text-white',
-              'bg-gradient-to-br from-brand-indigo to-brand-indigo-bright',
-              'shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]',
-              'transition-[transform,box-shadow,filter] duration-200 ease-out',
-              'hover:-translate-y-[1px] hover:brightness-[1.08] hover:shadow-[0_12px_32px_-8px_rgba(124,131,240,0.6)]',
+              'text-[15px] font-semibold px-6 py-3 rounded-xl',
+              'border border-slate-700 bg-charcoal-900/40 backdrop-blur-sm text-slate-100',
+              'transition-colors duration-200 ease-out',
+              'hover:border-glow-indigo/60 hover:bg-charcoal-800/60 hover:text-white',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
             ].join(' ')}
           >
@@ -106,14 +109,16 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
               className="transition-transform duration-200 ease-out group-hover:translate-x-0.5"
             />
           </Link>
-          {/* Secondary CTA demoted from outlined button to text link.
-              Audit rule: each screen should have only one primary CTA
-              (Apple HIG primary-action). Equal-weight buttons forced
-              the eye to choose between two equally-styled actions; a
-              text link is unambiguously secondary. */}
           <a
             href="#how"
-            className="text-slate-300 hover:text-slate-100 underline-offset-4 hover:underline transition-colors text-[15px]"
+            className={[
+              'inline-flex items-center w-full sm:w-auto justify-center',
+              'text-[15px] font-semibold px-6 py-3 rounded-xl',
+              'border border-slate-700 bg-charcoal-900/40 backdrop-blur-sm text-slate-100',
+              'transition-colors duration-200 ease-out',
+              'hover:border-glow-indigo/60 hover:bg-charcoal-800/60 hover:text-white',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
+            ].join(' ')}
           >
             {copy.heroCta2}
           </a>
