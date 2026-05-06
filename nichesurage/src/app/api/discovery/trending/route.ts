@@ -76,6 +76,80 @@ interface SeedKeywordRow {
 }
 
 /**
+ * Parse YouTube ISO-8601 video duration (e.g. "PT4M13S", "PT45S") to seconds.
+ * Returns 0 for unparseable input. YouTube videos never use H/D/Y so we only
+ * accept H/M/S.
+ */
+function parseIsoDuration(s: string | undefined | null): number {
+  if (!s) return 0
+  const m = s.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/)
+  if (!m) return 0
+  const [, h, mi, se] = m
+  return parseInt(h ?? '0') * 3600 + parseInt(mi ?? '0') * 60 + parseInt(se ?? '0')
+}
+
+/**
+ * Batch-fetch durations for the matched videos via videos.list. 1 quota
+ * unit per call, up to 50 video ids per call.
+ *
+ * Returns Map<videoId, durationSeconds>. Videos not found or with
+ * unparseable duration are simply absent from the map; callers should
+ * treat absence as "unknown" and default to longform.
+ */
+async function fetchVideoDurations(
+  apiKey: string,
+  videoIds: string[],
+): Promise<Map<string, number>> {
+  const out = new Map<string, number>()
+  if (videoIds.length === 0) return out
+
+  for (let i = 0; i < videoIds.length; i += 50) {
+    const batch = videoIds.slice(i, i + 50)
+    const url = new URL(`${YT_BASE}/videos`)
+    url.searchParams.set('key', apiKey)
+    url.searchParams.set('part', 'contentDetails')
+    url.searchParams.set('id', batch.join(','))
+    url.searchParams.set('maxResults', '50')
+
+    const res = await fetch(url.toString())
+    if (!res.ok) {
+      console.error(
+        '[discovery/trending] videos.list duration fetch failed',
+        res.status,
+        (await res.text()).slice(0, 200),
+      )
+      continue
+    }
+    const json = (await res.json()) as {
+      items?: Array<{ id: string; contentDetails?: { duration?: string } }>
+    }
+    for (const item of json.items ?? []) {
+      const sec = parseIsoDuration(item.contentDetails?.duration)
+      if (sec > 0) out.set(item.id, sec)
+    }
+  }
+  return out
+}
+
+/**
+ * Decide whether a channel is a shorts or longform creator based on the
+ * single matched search-result video for that channel.
+ *
+ * SurgeNiche serves shorts and longform tabs as separate surfaces. A
+ * shorts channel mistagged as longform leads to wrong-tab feed
+ * pollution. The only signal we have at insert time is the matched
+ * video's duration — if it's <=60s, the search hit was a short, so the
+ * channel is at least partially shorts-focused. >60s means the matched
+ * video was a longform piece. Defaults to longform when duration is
+ * unknown (safer fallback because longform has wider subscriber range
+ * and fewer false-positive niche mismatches).
+ */
+function inferContentType(durationSeconds: number | undefined): 'shorts' | 'longform' {
+  if (durationSeconds === undefined || durationSeconds <= 0) return 'longform'
+  return durationSeconds <= 60 ? 'shorts' : 'longform'
+}
+
+/**
  * Fetch the top N active longform EN seed keywords from the canonical
  * seed_keywords table. These were curated in Sprint A.8 (migration 0022)
  * to target known small-channel-rich niches.
@@ -217,6 +291,9 @@ export async function GET(request: Request) {
   // multiple keyword results should be hydrated + inserted once.
   const seenChannelIdsThisRun = new Set<string>()
   const channelFirstVideo = new Map<string, ExplodingVideo>()
+  // Cache video duration across seeds. We batch-fetch durations once per
+  // seed loop and reuse the cache when classifying each channel.
+  const durationByVideoId = new Map<string, number>()
 
   for (const seedRow of seeds) {
     const outcome: SeedOutcome = {
@@ -258,6 +335,23 @@ export async function GET(request: Request) {
       const hydrated = await hydrateChannels(apiKey, newIds)
       outcome.hydrationFailed = newIds.length - hydrated.length
 
+      // Fetch durations for the matched videos of NEW channels only.
+      // We use this to detect whether each channel is shorts-focused
+      // (matched video <=60s) or longform (>60s). Without this, all
+      // channels were nasilno tagovani 'longform' and ended up in the
+      // wrong tab. Batched 50/call so quota cost is 1 unit per ~50
+      // channels processed per seed.
+      const newVideoIds = hydrated
+        .map((ch) => channelFirstVideo.get(ch.channelId)?.videoId)
+        .filter((v): v is string => Boolean(v))
+        .filter((v) => !durationByVideoId.has(v))
+      if (newVideoIds.length > 0) {
+        const fetched = await fetchVideoDurations(apiKey, newVideoIds)
+        for (const [vid, sec] of Array.from(fetched.entries())) {
+          durationByVideoId.set(vid, sec)
+        }
+      }
+
       for (const ch of hydrated) {
         if (ch.subscriberCount < MIN_SUBS || ch.subscriberCount > MAX_SUBS) {
           outcome.outOfBand++
@@ -270,6 +364,10 @@ export async function GET(request: Request) {
 
         const firstVid = channelFirstVideo.get(ch.channelId)
         const sampleTitles = firstVid?.title ? [firstVid.title] : []
+        const matchedDuration = firstVid
+          ? durationByVideoId.get(firstVid.videoId)
+          : undefined
+        const detectedContentType = inferContentType(matchedDuration)
 
         let category
         try {
@@ -292,7 +390,7 @@ export async function GET(request: Request) {
           youtubeChannelId: ch.channelId,
           channelName: ch.title,
           category,
-          contentType: 'longform',
+          contentType: detectedContentType,
           language: 'en',
           discoveredVia: 'trending_feed',
           nicheLabel: seedRow.term,
