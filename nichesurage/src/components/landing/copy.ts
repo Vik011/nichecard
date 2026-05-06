@@ -195,13 +195,25 @@ export const COPY = {
     relatedEmpty: 'No similar niches found right now.',
 
     heroEyebrow: 'YouTube niche intelligence',
-    // SEO-anchored H1 (matches title metadata, contains primary keyword
-    // 'YouTube niches'). Marketing convention: no full stop at the end
-    // of a hero headline — terminating punctuation reads as "this is a
-    // sentence" rather than "this is a banner statement".
-    heroHeadline: 'Find YouTube niches before they explode',
-    heroNarrative: 'I built this because YouTube research was eating my weekends.',
-    heroSub: 'SurgeNiche scans 230+ small channels every hour and flags the ones spiking before anyone else notices. No keyword guessing, no copy-paste tactics, just the small accounts that started moving.',
+    // Green pulse pill above the H1 — "what the system is doing right
+    // NOW". Different angle from the LiveTickerBar (which carries
+    // backward-looking stats). Adds present-tense atmosphere.
+    heroPulse: 'Scanning 230+ channels / hour',
+    // SEO-anchored H1 split into two visual lines: regular weight on
+    // the keyword phrase, italic on the action verb. The split came from
+    // the external Claude AI mockup that drove this polish round —
+    // gives the H1 typographic momentum and matches an editorial
+    // "section header" cadence rather than a flat single-line banner.
+    heroHeadlineMain: 'Find YouTube niches',
+    heroHeadlineEmphasis: 'before they explode',
+    heroNarrative: 'I built this because research was eating my weekends.',
+    // Bolded fragment in the sub paragraph anchors the value prop
+    // ("small accounts that started moving"). The "scans 230+ small
+    // channels every hour" data has been moved into the HeroStatsBar
+    // (230+ CHANNELS / SCAN), so the sub can pivot straight to value.
+    heroSubLeading: 'SurgeNiche flags',
+    heroSubBold: 'the small accounts that started moving',
+    heroSubTrailing: ' — before anyone else notices. No keyword guessing, no copy-paste tactics.',
     heroBadge: '47 channels spiked in the last hour',
     heroCta: 'Try it free',
     heroCta2: 'How it works',
@@ -538,9 +550,13 @@ export const COPY = {
     relatedEmpty: 'Aktuell keine ähnlichen Nischen.',
 
     heroEyebrow: 'YouTube-Nischen-Intelligenz',
-    heroHeadline: 'Finde YouTube-Nischen, bevor sie explodieren',
-    heroNarrative: 'Ich habe das gebaut, weil YouTube-Recherche meine Wochenenden gefressen hat.',
-    heroSub: 'SurgeNiche scannt stündlich 230+ kleine Kanäle und markiert die, die zu steigen beginnen, bevor es jemand anderes bemerkt. Kein Keyword-Raten, keine Copy-Paste-Taktik.',
+    heroPulse: 'Scannt 230+ Kanäle / Stunde',
+    heroHeadlineMain: 'Finde YouTube-Nischen,',
+    heroHeadlineEmphasis: 'bevor sie explodieren',
+    heroNarrative: 'Ich habe das gebaut, weil Recherche meine Wochenenden gefressen hat.',
+    heroSubLeading: 'SurgeNiche markiert',
+    heroSubBold: 'die kleinen Accounts, die zu steigen beginnen',
+    heroSubTrailing: ' — bevor es jemand anderes bemerkt. Kein Keyword-Raten, keine Copy-Paste-Taktik.',
     heroBadge: '47 Kanäle sind in der letzten Stunde gestiegen',
     heroCta: 'Kostenlos ausprobieren',
     heroCta2: 'Wie es funktioniert',
