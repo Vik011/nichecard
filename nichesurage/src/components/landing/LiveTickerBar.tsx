@@ -30,7 +30,11 @@ export function LiveTickerBar({
     <div
       role="status"
       aria-label={`Live activity: ${copy.tickerSpikedLastHour(spikedLastHour)}, ${copy.tickerNichesToday(nichesSurfacedToday)}`}
-      className="border-b border-white/[0.05] bg-charcoal-900/30 backdrop-blur-md"
+      // mt-16 (= h-16, same as LandingNav height) pushes the ticker
+      // BELOW the fixed nav. Without it, the nav (position:fixed) takes
+      // no vertical space in flow and the ticker renders at top:0,
+      // overlapping the logo and clipping behind the right-side controls.
+      className="mt-16 border-b border-white/[0.05] bg-charcoal-900/30 backdrop-blur-md"
     >
       <div className="max-w-6xl mx-auto px-6 py-2 flex items-center justify-center gap-3 sm:gap-5 text-[12px] sm:text-[13px]">
         {/* LIVE pulse + label */}

@@ -142,7 +142,11 @@ const PING_POSITIONS: Array<{
 
 function RadarVisual() {
   return (
-    <div className="relative w-[36rem] h-[36rem] sm:w-[44rem] sm:h-[44rem] md:w-[52rem] md:h-[52rem]">
+    // Sized up the radar dish across breakpoints so the visual reads as
+    // a hero atmospheric element rather than a small badge in the middle.
+    // The mockup that drove this polish round had the radar dominating
+    // the hero's vertical real estate; matching that intensity here.
+    <div className="relative w-[42rem] h-[42rem] sm:w-[52rem] sm:h-[52rem] md:w-[64rem] md:h-[64rem] lg:w-[72rem] lg:h-[72rem]">
       {/* Concentric rings — slightly brighter than the previous pass so the
           radar reads at 55% opacity without mix-blend tricks. */}
       <div className="absolute inset-0       rounded-full border border-glow-indigo/35" />

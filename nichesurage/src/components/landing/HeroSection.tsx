@@ -12,7 +12,7 @@ interface HeroSectionProps {
 
 export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProps) {
   return (
-    <section className="relative overflow-hidden pt-32 pb-28 px-6 text-center min-h-[78vh]">
+    <section className="relative overflow-hidden pt-16 pb-28 px-6 text-center min-h-[78vh]">
       <HeroBackdrop copy={copy} pings={radar.pings} channelsLast24h={radar.channelsLast24h} />
 
       {/* Bottom fade — softens the radar's hard edge into the next section
