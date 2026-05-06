@@ -1,6 +1,21 @@
 import type { NicheCardData, ShortsNicheCardData, LongformNicheCardData, UserTier, ViralityRating, ContentLanguage, SpikePoint, TrendData } from '@/lib/types'
 import Link from 'next/link'
-import { LockSimple } from '@phosphor-icons/react/dist/ssr'
+import {
+  LockSimple,
+  Television,
+  UsersThree,
+  Lightning,
+  Flame,
+  TrendUp,
+  MagnifyingGlass,
+  Sword,
+  Eye,
+  Clock,
+  Target,
+  Sparkle,
+  Star,
+  Minus,
+} from '@phosphor-icons/react/dist/ssr'
 import { LockedField } from './LockedField'
 import { BookmarkButton } from './BookmarkButton'
 import { HealthCheckButton } from './HealthCheckButton'
@@ -41,6 +56,10 @@ interface NicheCardProps {
   trendData?: TrendData
 }
 
+// Country flag remains as Unicode (regional indicator pair). Native
+// browser/OS rendering is consistent enough and pure-text alternatives
+// ("EN", "DE") lose recognizability. Phosphor doesn't ship country
+// flags so SVG-replacement would mean adding an icon library.
 const LANG_FLAG: Record<ContentLanguage, string> = { en: '🇬🇧', de: '🇩🇪' }
 
 const VIRALITY_STYLE: Record<ViralityRating, string> = {
@@ -50,9 +69,16 @@ const VIRALITY_STYLE: Record<ViralityRating, string> = {
 }
 
 const VIRALITY_LABEL: Record<ViralityRating, string> = {
-  excellent: '✨ Excellent',
-  good: '⭐ Good',
-  average: '~ Average',
+  excellent: 'Excellent',
+  good: 'Good',
+  average: 'Average',
+}
+
+// Phosphor icon map per virality rating (replaces emoji prefixes ✨ ⭐ ~).
+const VIRALITY_ICON: Record<ViralityRating, typeof Sparkle> = {
+  excellent: Sparkle,
+  good: Star,
+  average: Minus,
 }
 
 function formatK(n: number): string {
@@ -84,17 +110,26 @@ function scoreTier(score: number): ScoreTier {
   }
 }
 
+// Shared chip styling — pulled out so every metric chip on the card has
+// matching height, padding, gap, and rounded radius. Type variants
+// (data colour, icon colour) are applied via additional classes per chip.
+const CHIP_BASE =
+  'inline-flex items-center gap-1 bg-slate-800/70 px-2 py-0.5 rounded-full text-xs'
+const CHIP_ICON_SIZE = 11
+
 function ShortsMetrics({ data, locked }: { data: ShortsNicheCardData; locked: boolean }) {
   return (
     <>
       {!locked && data.avgViewDurationPct !== undefined && (
-        <span className="bg-slate-800/70 text-indigo-300 px-2 py-0.5 rounded-full text-xs">
-          ⏱ {data.avgViewDurationPct}% duration
+        <span className={`${CHIP_BASE} text-indigo-300`}>
+          <Clock size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
+          {data.avgViewDurationPct}% duration
         </span>
       )}
       {!locked && data.hookScore !== undefined && (
-        <span className="bg-slate-800/70 text-indigo-300 px-2 py-0.5 rounded-full text-xs">
-          🎣 hook {data.hookScore}
+        <span className={`${CHIP_BASE} text-indigo-300`}>
+          <Target size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
+          hook {data.hookScore}
         </span>
       )}
     </>
@@ -105,18 +140,21 @@ function LongformMetrics({ data, locked }: { data: LongformNicheCardData; locked
   return (
     <>
       {!locked && data.searchVolume !== undefined && (
-        <span className="bg-slate-800/70 text-blue-300 px-2 py-0.5 rounded-full text-xs">
-          🔍 {formatK(data.searchVolume)} searches
+        <span className={`${CHIP_BASE} text-blue-300`}>
+          <MagnifyingGlass size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
+          {formatK(data.searchVolume)} searches
         </span>
       )}
       {!locked && data.competitionScore !== undefined && (
-        <span className="bg-slate-800/70 text-orange-300 px-2 py-0.5 rounded-full text-xs">
-          ⚔️ {data.competitionScore}% comp
+        <span className={`${CHIP_BASE} text-orange-300`}>
+          <Sword size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
+          {data.competitionScore}% comp
         </span>
       )}
       {!locked && data.avgViewsPerVideo !== undefined && (
-        <span className="bg-slate-800/70 text-slate-300 px-2 py-0.5 rounded-full text-xs">
-          👁 {formatK(data.avgViewsPerVideo)} views/video
+        <span className={`${CHIP_BASE} text-slate-300`}>
+          <Eye size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
+          {formatK(data.avgViewsPerVideo)} views/video
         </span>
       )}
     </>
@@ -147,7 +185,19 @@ export function NicheCard({
   // button when locked so clicks raise an upsell modal instead of leaking
   // through to the detail page. Same outer styling so the visual swap is
   // invisible.
-  const wrapperClass = `glass ${isHero ? 'glass-glow' : ''} rounded-xl p-4 block w-full text-left transition-all duration-200 hover:scale-[1.02] hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60`
+  //
+  // Hover: subtle 2px lift + indigo-tinted soft glow (was scale[1.02] +
+  // brightness[110] which read as harsh and animated layout). transition
+  // is now scoped to transform + box-shadow only — no `transition-all`
+  // since it would also animate text colour shifts and incur layout work.
+  const wrapperClass = [
+    'glass',
+    isHero ? 'glass-glow' : '',
+    'rounded-xl p-4 block w-full text-left',
+    'transition-[transform,box-shadow] duration-200 ease-out',
+    'hover:-translate-y-[2px] hover:shadow-[0_10px_28px_-14px_rgba(99,102,241,0.55)]',
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60',
+  ].filter(Boolean).join(' ')
 
   const cardBody = (
     <>
@@ -232,31 +282,43 @@ export function NicheCard({
 
       {/* Badge row */}
       <div className="flex flex-wrap gap-1.5">
-        <span className="bg-slate-800/70 text-slate-300 px-2 py-0.5 rounded-full text-xs">
-          📺 {data.videoCount} videos
+        <span className={`${CHIP_BASE} text-slate-300`}>
+          <Television size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
+          {data.videoCount} videos
         </span>
-        <span className="bg-slate-800/70 text-slate-300 px-2 py-0.5 rounded-full text-xs">
-          👥 {data.subscriberRange}
+        <span className={`${CHIP_BASE} text-slate-300`}>
+          <UsersThree size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
+          {data.subscriberRange}
         </span>
         <LockedField locked={locked}>
-          <span className={`bg-slate-800/70 px-2 py-0.5 rounded-full text-xs ${VIRALITY_STYLE[data.viralityRating]}`}>
+          <span className={`${CHIP_BASE} ${VIRALITY_STYLE[data.viralityRating]}`}>
+            {(() => {
+              const ViralityIcon = VIRALITY_ICON[data.viralityRating]
+              return <ViralityIcon size={CHIP_ICON_SIZE} weight="fill" aria-hidden />
+            })()}
             {VIRALITY_LABEL[data.viralityRating]}
           </span>
         </LockedField>
-        <span className="bg-slate-800/70 text-slate-300 px-2 py-0.5 rounded-full text-xs">
-          {LANG_FLAG[data.language]} {data.language.toUpperCase()}
+        <span className={`${CHIP_BASE} text-slate-300`}>
+          <span aria-hidden className="leading-none text-[11px]">
+            {LANG_FLAG[data.language]}
+          </span>
+          {data.language.toUpperCase()}
         </span>
-        <span className="bg-orange-950/60 text-orange-300 px-2 py-0.5 rounded-full text-xs font-semibold">
-          ⚡ {data.spikeMultiplier}×
+        <span className="inline-flex items-center gap-1 bg-orange-950/60 text-orange-300 px-2 py-0.5 rounded-full text-xs font-semibold">
+          <Lightning size={CHIP_ICON_SIZE} weight="fill" aria-hidden />
+          {data.spikeMultiplier}×
         </span>
         {data.trending && (
-          <span className="bg-orange-950/60 text-orange-300 px-2 py-0.5 rounded-full text-xs font-semibold">
-            🔥 Trending
+          <span className="inline-flex items-center gap-1 bg-orange-950/60 text-orange-300 px-2 py-0.5 rounded-full text-xs font-semibold">
+            <Flame size={CHIP_ICON_SIZE} weight="fill" aria-hidden />
+            Trending
           </span>
         )}
         {!locked && data.engagementRate !== undefined && (
-          <span className="bg-slate-800/70 text-slate-300 px-2 py-0.5 rounded-full text-xs">
-            📈 {data.engagementRate}% eng
+          <span className={`${CHIP_BASE} text-slate-300`}>
+            <TrendUp size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
+            {data.engagementRate}% eng
           </span>
         )}
         {data.contentType === 'shorts'

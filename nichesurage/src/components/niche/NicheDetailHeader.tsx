@@ -1,5 +1,6 @@
 import type { NicheCardData } from '@/lib/types'
 import type { CopyKeys } from '@/components/landing/copy'
+import { YoutubeLogo } from '@phosphor-icons/react/dist/ssr'
 
 interface ScoreTier {
   textClass: string
@@ -57,9 +58,30 @@ export function NicheDetailHeader({ niche, copy }: NicheDetailHeaderProps) {
               href={niche.channelUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block mt-4 text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-charcoal-800/60 text-slate-200 hover:bg-charcoal-700/60 transition-colors"
+              aria-label={`${copy.detailVisitYouTube} (opens in new tab)`}
+              className={[
+                // Real YouTube brand red — #FF0000 maps to Tailwind red-600
+                // close enough for our palette. Solid fill is the canonical
+                // YouTube CTA treatment.
+                'inline-flex items-center gap-2 mt-4',
+                'rounded-lg px-4 py-2 text-[13px] font-semibold',
+                'bg-[#FF0000] text-white',
+                // Hover: slight lift + soft red glow that matches the brand
+                // colour so the motion feels native, not synthetic.
+                'transition-all duration-150 ease-out',
+                'hover:-translate-y-[1px] hover:bg-[#E60000]',
+                'hover:shadow-[0_4px_18px_-4px_rgba(255,0,0,0.55)]',
+                'active:translate-y-0',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0000]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
+              ].join(' ')}
             >
-              {copy.detailVisitYouTube}
+              <YoutubeLogo
+                weight="fill"
+                size={18}
+                aria-hidden
+                className="shrink-0"
+              />
+              <span>{copy.detailVisitYouTube}</span>
             </a>
           )}
         </div>
