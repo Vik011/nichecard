@@ -26,7 +26,7 @@ export function HeroStatsBar({ copy, spikingNow }: HeroStatsBarProps) {
   const { minutes, seconds, progressPct } = useNextScanCountdown()
 
   return (
-    <div className="mt-12 sm:mt-16 max-w-3xl mx-auto px-2 grid grid-cols-3 gap-4 sm:gap-6 items-center">
+    <div className="mt-8 sm:mt-12 max-w-3xl mx-auto px-2 grid grid-cols-[1fr_1.5fr_1fr] gap-4 sm:gap-6 items-center">
       {/* Left: channels per scan */}
       <div className="flex flex-col items-center sm:items-start gap-1">
         <span className="font-display text-3xl sm:text-4xl text-slate-100 leading-none">
@@ -37,9 +37,13 @@ export function HeroStatsBar({ copy, spikingNow }: HeroStatsBarProps) {
         </span>
       </div>
 
-      {/* Center: next scan progress + countdown + spiking-now */}
+      {/* Center: next scan progress + countdown + spiking-now.
+          Gets 1.5fr column weight (vs 1fr for sides) so the live
+          progress row breathes instead of feeling squeezed between
+          the 230+ and 1h numerals. Inner max-width cap removed so
+          the bar fills its cell. */}
       <div className="flex flex-col items-center gap-2">
-        <div className="w-full max-w-[200px] flex items-center gap-2">
+        <div className="w-full flex items-center gap-2">
           <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 whitespace-nowrap">
             {copy.heroStatsNextScan}
           </span>
