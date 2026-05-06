@@ -39,7 +39,8 @@ export function AppPreviewSection({ niches, copy, isLoggedIn = false }: AppPrevi
         {/* CTA below the grid */}
         <div className="text-center mt-10">
           <Link
-            href={isLoggedIn ? '/discover/shorts' : '/login'}
+            // Unified Discover surface — point straight at /discover.
+            href={isLoggedIn ? '/discover' : '/login'}
             className="inline-block text-[15px] font-semibold px-7 py-3 rounded-xl bg-gradient-to-br from-brand-indigo to-brand-indigo-bright hover:brightness-110 hover:shadow-glow-cyan transition-all text-white shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
           >
             {isLoggedIn ? copy.navOpenApp : copy.previewCta}
