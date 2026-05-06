@@ -218,6 +218,24 @@ export const COPY = {
     radarChannelsLast24h: (n: number) =>
       `${n.toLocaleString('en-US')} channels surfaced in the last 24h`,
 
+    // Live ticker strip below the LandingNav. Replaces the standalone
+    // top-left LIVE chip + bottom-right ping notification with a single
+    // multi-stat row.
+    tickerLive: 'LIVE',
+    tickerSpikedLastHour: (n: number) =>
+      `${n} channels spiked in the last hour`,
+    tickerNichesToday: (n: number) =>
+      `${n} new niches surfaced today`,
+
+    // Hero stats bar (3 columns) anchoring the bottom of the hero. Frames
+    // the system rhythm: how much we scan, when next scan fires, how
+    // many spikes we caught right now.
+    heroStatsChannelsScan: 'CHANNELS / SCAN',
+    heroStatsNextScan: 'Next scan',
+    heroStatsSpikingNow: 'SPIKING NOW',
+    heroStatsScanInterval: 'SCAN INTERVAL',
+    heroStatsScanIntervalValue: '1h',
+
     previewTitle: 'These niches are moving right now.',
     previewSub: 'Sign up free to see channel names and full metrics.',
     previewCta: 'Unlock all results',
@@ -538,6 +556,18 @@ export const COPY = {
     radarFormatLongform: 'Longform',
     radarChannelsLast24h: (n: number) =>
       `${n.toLocaleString('de-DE')} Kanäle in den letzten 24 Stunden entdeckt`,
+
+    tickerLive: 'LIVE',
+    tickerSpikedLastHour: (n: number) =>
+      `${n} Kanäle stiegen in der letzten Stunde`,
+    tickerNichesToday: (n: number) =>
+      `${n} neue Nischen heute entdeckt`,
+
+    heroStatsChannelsScan: 'KANÄLE / SCAN',
+    heroStatsNextScan: 'Nächster Scan',
+    heroStatsSpikingNow: 'STEIGEN GERADE',
+    heroStatsScanInterval: 'SCAN-INTERVALL',
+    heroStatsScanIntervalValue: '1h',
 
     previewTitle: 'Diese Nischen steigen gerade.',
     previewSub: 'Kostenlos registrieren, um Kanalnamen und alle Metriken zu sehen.',
