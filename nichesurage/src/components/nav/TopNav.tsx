@@ -17,25 +17,20 @@ export function TopNav() {
   const [lang] = useLang()
   const copy = COPY[lang]
 
-  // The shorts/longform pages are served from /discover with a ?type= param
-  // (the /discover/shorts and /discover/longform routes are just redirects).
-  // So active-state matching has to look at the query param too.
-  const onDiscover = pathname === '/discover'
-  const currentType = searchParams?.get('type') ?? 'shorts'
+  // Unified Discover surface (no shorts/longform tab split). Shorts and
+  // longform now coexist in one grid with a per-card ContentTypeBadge.
+  // Saved niches surface kept on /dashboard but renamed "My Channels".
+  void searchParams // intentionally unused after the type-tab removal
+  const onDiscover = pathname === '/discover' || pathname?.startsWith('/discover/')
   const TABS: Array<{ href: string; label: string; isActive: boolean }> = [
     {
-      href: '/discover?type=shorts',
-      label: copy.topNavShorts,
-      isActive: onDiscover && currentType !== 'longform',
-    },
-    {
-      href: '/discover?type=longform',
-      label: copy.topNavLongform,
-      isActive: onDiscover && currentType === 'longform',
+      href: '/discover',
+      label: copy.discoverNav,
+      isActive: Boolean(onDiscover),
     },
     {
       href: '/dashboard',
-      label: copy.topNavSaved,
+      label: copy.myChannelsNav,
       isActive: pathname === '/dashboard',
     },
   ]

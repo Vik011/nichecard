@@ -43,7 +43,7 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8 max-w-2xl mx-auto">
         <div>
-          <h1 className="text-2xl font-bold">My Saved Niches</h1>
+          <h1 className="text-2xl font-bold">My Channels</h1>
           <p className="text-slate-500 text-sm mt-0.5">{email}</p>
         </div>
         <div className="text-right">

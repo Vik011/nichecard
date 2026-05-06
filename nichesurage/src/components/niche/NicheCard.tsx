@@ -7,6 +7,7 @@ import { HealthCheckButton } from './HealthCheckButton'
 import { Sparkline, tierFromScore } from './Sparkline'
 import { SpikingBadge } from './SpikingBadge'
 import { TrendBadge } from './TrendBadge'
+import { ContentTypeBadge } from './ContentTypeBadge'
 
 const SPIKING_NOW_THRESHOLD = Number(process.env.NEXT_PUBLIC_SPIKING_NOW_THRESHOLD ?? '10')
 
@@ -150,12 +151,13 @@ export function NicheCard({
 
   const cardBody = (
     <>
-      {/* Header: rank label + actions */}
+      {/* Header: rank label + format badge + actions */}
       <div className="flex justify-between items-start mb-1">
         <div className="flex items-center gap-2 min-w-0">
           <div className="text-slate-500 text-[10px] uppercase tracking-[0.18em] font-semibold shrink-0">
             Niche #{rank}
           </div>
+          <ContentTypeBadge type={data.contentType} />
           {(data.outlierRatio ?? 0) >= SPIKING_NOW_THRESHOLD && <SpikingBadge />}
         </div>
         <div className="flex items-center gap-0.5 -mt-1 -mr-1">

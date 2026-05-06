@@ -16,6 +16,14 @@ export const COPY = {
     discoverShortsHeadline: "Today's top viral Shorts opportunities",
     discoverLongformEyebrow: 'Longform Niche Discovery',
     discoverLongformHeadline: "Today's high-potential Longform opportunities",
+    // Unified Discover surface (replaces format-split tabs)
+    discoverEyebrow: 'Niche Discovery',
+    discoverHeadline: "Today's most promising niches",
+    discoverModeHotNow: 'Hot Now',
+    discoverModeAllChannels: 'All Channels',
+    discoverModeAria: 'Discover feed mode',
+    myChannelsNav: 'My Channels',
+    discoverNav: 'Discover',
     discoverSubline: 'Refreshed daily · Ranked by opportunity score',
     discoverSearchBtn: 'Search Niches',
     // Sprint A.7 reveal mechanic copy
@@ -327,6 +335,13 @@ export const COPY = {
 
     discoverShortsEyebrow: 'Shorts-Nischenfinder',
     discoverShortsHeadline: 'Die heißesten Shorts-Nischen heute',
+    discoverEyebrow: 'Nischenfinder',
+    discoverHeadline: 'Die vielversprechendsten Nischen heute',
+    discoverModeHotNow: 'Heiß jetzt',
+    discoverModeAllChannels: 'Alle Kanäle',
+    discoverModeAria: 'Discover-Modus',
+    myChannelsNav: 'Meine Kanäle',
+    discoverNav: 'Entdecken',
     discoverLongformEyebrow: 'Longform-Nischenfinder',
     discoverLongformHeadline: 'Longform-Nischen mit dem größten Potenzial heute',
     discoverSubline: 'Täglich aktualisiert · Sortiert nach Opportunity-Score',
