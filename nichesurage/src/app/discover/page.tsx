@@ -1,82 +1,34 @@
 'use client'
 
-import { Suspense, useMemo, useState, useEffect } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { SearchFilters } from '@/components/search/SearchFilters'
 import { NicheCard } from '@/components/niche/NicheCard'
 import { NicheCardSkeleton } from '@/components/niche/NicheCardSkeleton'
 import { RevealCountdown } from '@/components/niche/RevealCountdown'
 import { UpsellModal } from '@/components/niche/UpsellModal'
-import { fetchNiches, fetchSpikeHistory, type DiscoverMode } from '@/lib/supabase/queries'
-import { fetchTrendingByChannel } from '@/lib/discover/fetchTrending'
+import { fetchSpikeHistory } from '@/lib/supabase/queries'
 import { fetchSavedNicheIds } from '@/lib/supabase/savedNiches'
-import { filtersToParams, paramsToFilters, type ReadableParams } from '@/lib/supabase/filterParams'
+import {
+  fetchDiscoverFeed,
+  type DiscoverFeedMode,
+} from '@/lib/discover/fetchDiscoverFeed'
 import { useUser } from '@/lib/context/UserContext'
 import { useLang } from '@/lib/i18n/useLang'
-import { COPY, type CopyKeys } from '@/components/landing/copy'
+import { COPY } from '@/components/landing/copy'
 import { StaggerList } from '@/components/ui/StaggerList'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { EmptyMagnifier } from '@/components/ui/illustrations/EmptyMagnifier'
 import { SonarEmptyState } from '@/components/ui/SonarEmptyState'
-import { TrendingTopics } from '@/components/niche/TrendingTopics'
-import { HotNowFilter } from '@/components/discover/HotNowFilter'
 import { getRevealedIds } from '@/lib/tier/reveal'
-import type {
-  SearchFilters as SearchFiltersType,
-  NicheCardData,
-  SpikePoint,
-  ContentType,
-  TrendData,
-} from '@/lib/types'
+import type { NicheCardData, SpikePoint } from '@/lib/types'
 
-// Sprint B Phase 7A: bootstrapping flag. While the trend engine is still
-// warming up (Phases 4-6 just deployed, video_metrics partially populated),
-// default the page to legacy 'quality' mode and surface a banner. Flip this
-// env var to 'true' once production has 48-72h of trend coverage.
-const TREND_ENGINE_BOOTSTRAPPED =
-  process.env.NEXT_PUBLIC_TREND_ENGINE_BOOTSTRAPPED === 'true'
+// Pagination step. Initial render shows the first STEP cards; each
+// "Show more" reveals another STEP. Backed by a 60-row server fetch in
+// fetchDiscoverFeed (DEFAULT_LIMIT). Show-more capped at fetched count.
+const VISIBLE_STEP = 12
 
-// Sonar default: surface nano-creators (sub <1K) by default — they're where
-// the highest outlier ratios live. Users can narrow via the SearchFilters UI.
-const DEFAULTS: Record<ContentType, { subscriberMin: number; subscriberMax: number }> = {
-  shorts:   { subscriberMin: 0, subscriberMax: 100_000 },
-  longform: { subscriberMin: 0, subscriberMax: 500_000 },
-}
-
-const VISIBLE_STEP = 5
-
-function defaultFilters(contentType: ContentType): SearchFiltersType {
-  return {
-    contentType,
-    subscriberMin: DEFAULTS[contentType].subscriberMin,
-    subscriberMax: DEFAULTS[contentType].subscriberMax,
-    channelAge: 'any',
-    onlyRecentlyViral: false,
-    sortBy: 'score',
-  }
-}
-
-function resolveContentType(params: ReadableParams): ContentType {
-  return params.get('type') === 'longform' ? 'longform' : 'shorts'
-}
-
-function resolveDiscoverMode(params: ReadableParams): DiscoverMode {
-  const raw = params.get('mode')
-  if (raw === 'hot' || raw === 'quality' || raw === 'all') return raw
-  return TREND_ENGINE_BOOTSTRAPPED ? 'hot' : 'quality'
-}
-
-function headings(copy: CopyKeys, contentType: ContentType) {
-  if (contentType === 'longform') {
-    return {
-      eyebrow: copy.discoverLongformEyebrow,
-      headline: copy.discoverLongformHeadline,
-    }
-  }
-  return {
-    eyebrow: copy.discoverShortsEyebrow,
-    headline: copy.discoverShortsHeadline,
-  }
+function resolveMode(params: URLSearchParams): DiscoverFeedMode {
+  const m = params.get('mode')
+  if (m === 'all' || m === 'hot') return m
+  return 'hot'
 }
 
 export default function DiscoverPage() {
@@ -91,7 +43,7 @@ function DiscoverFallback() {
   return (
     <main className="min-h-screen text-slate-100 px-4 py-8 max-w-6xl mx-auto overflow-x-hidden">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[1, 2, 3, 4, 5].map(i => <NicheCardSkeleton key={i} />)}
+        {[1, 2, 3, 4, 5, 6].map((i) => <NicheCardSkeleton key={i} />)}
       </div>
     </main>
   )
@@ -103,138 +55,72 @@ function DiscoverPageInner() {
   const { tier: userTier, userId, loading: userLoading } = useUser()
   const [lang] = useLang()
   const copy = COPY[lang]
-  // Tracks an in-flight upsell modal opened by clicking a locked card.
-  const [upsellOpen, setUpsellOpen] = useState(false)
 
-  const initialContentType = resolveContentType(searchParams)
-
-  const [filters, setFilters] = useState<SearchFiltersType>(() =>
-    paramsToFilters(searchParams, initialContentType, DEFAULTS[initialContentType])
-  )
   const [results, setResults] = useState<NicheCardData[]>([])
   const [histories, setHistories] = useState<Map<string, SpikePoint[]>>(new Map())
-  const [trendByChannel, setTrendByChannel] = useState<Map<string, TrendData>>(new Map())
   const [loading, setLoading] = useState(false)
-  const [searched, setSearched] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [savedCount, setSavedCount] = useState(0)
   const [visibleCount, setVisibleCount] = useState(VISIBLE_STEP)
+  const [upsellOpen, setUpsellOpen] = useState(false)
 
-  const activeClusterId = searchParams.get('cluster')
-  // The format (shorts/longform) lives in the URL — top nav navigates by changing
-  // ?type=. We watch this param so re-search fires when the user clicks a tab.
-  const urlContentType = resolveContentType(searchParams)
-  const mode = resolveDiscoverMode(searchParams)
+  const mode: DiscoverFeedMode = resolveMode(searchParams)
 
-  async function handleSearch(filtersOverride?: SearchFiltersType, modeOverride?: DiscoverMode) {
-    const f = filtersOverride ?? filters
-    const m = modeOverride ?? mode
+  async function handleFetch(nextMode: DiscoverFeedMode) {
     setVisibleCount(VISIBLE_STEP)
     setLoading(true)
-    setSearched(true)
     setError(null)
-    const { data, error: fetchError } = await fetchNiches(f, {
-      clusterId: activeClusterId ?? undefined,
-      mode: m,
+    const { data, error: fetchError } = await fetchDiscoverFeed({
+      mode: nextMode,
+      limit: 60,
     })
     setResults(data)
     setError(fetchError)
     setLoading(false)
     if (data.length > 0) {
-      const channelIds = data.map(n => n.youtubeChannelId)
-      const [points, trendMap] = await Promise.all([
-        Promise.all(data.map(n => fetchSpikeHistory(n.youtubeChannelId))),
-        fetchTrendingByChannel(channelIds),
-      ])
+      const points = await Promise.all(
+        data.map((n) => fetchSpikeHistory(n.youtubeChannelId)),
+      )
       const histMap = new Map<string, SpikePoint[]>()
       data.forEach((n, i) => histMap.set(n.id, points[i]))
       setHistories(histMap)
-      setTrendByChannel(trendMap)
     } else {
       setHistories(new Map())
-      setTrendByChannel(new Map())
     }
   }
 
-  function handleModeChange(next: DiscoverMode) {
-    // Update URL — the useEffect that watches `mode` will pick up the change
-    // and trigger handleSearch with the new mode. Avoids double-fetching.
+  function handleModeChange(next: DiscoverFeedMode) {
     const params = new URLSearchParams(searchParams.toString())
     params.set('mode', next)
     router.replace(`/discover?${params.toString()}`)
   }
 
-  function handleFiltersChange(updated: SearchFiltersType) {
-    if (updated.contentType !== filters.contentType) {
-      const nextDefaults = DEFAULTS[updated.contentType]
-      const isCurrentDefault =
-        filters.subscriberMin === DEFAULTS[filters.contentType].subscriberMin &&
-        filters.subscriberMax === DEFAULTS[filters.contentType].subscriberMax
-      const reconciled: SearchFiltersType = isCurrentDefault
-        ? { ...updated, subscriberMin: nextDefaults.subscriberMin, subscriberMax: nextDefaults.subscriberMax }
-        : updated
-      const params = filtersToParams(reconciled)
-      params.set('type', reconciled.contentType)
-      router.replace(`/discover?${params}`)
-      setFilters(reconciled)
-      return
-    }
-    setFilters(updated)
-  }
-
-  function handleResetFilters() {
-    const reset = defaultFilters(filters.contentType)
-    setFilters(reset)
-    handleSearch(reset)
-    const params = filtersToParams(reset)
-    params.set('type', reset.contentType)
-    router.replace(`/discover?${params}`)
-  }
-
   function handleBookmarkToggle(id: string, saved: boolean) {
-    setSavedIds(prev => {
+    setSavedIds((prev) => {
       const next = new Set(prev)
       if (saved) next.add(id)
       else next.delete(id)
       return next
     })
-    setSavedCount(prev => saved ? prev + 1 : prev - 1)
+    setSavedCount((prev) => (saved ? prev + 1 : prev - 1))
   }
 
   useEffect(() => {
     if (!userLoading) {
-      fetchSavedNicheIds().then(ids => {
+      fetchSavedNicheIds().then((ids) => {
         setSavedIds(ids)
         setSavedCount(ids.size)
       })
-      const ct = resolveContentType(searchParams)
-      const f = paramsToFilters(searchParams, ct, DEFAULTS[ct])
-      setFilters(f)
-      handleSearch(f, mode)
+      handleFetch(mode)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLoading, activeClusterId, urlContentType, mode])
+  }, [userLoading, mode])
 
-  const { eyebrow, headline } = headings(copy, filters.contentType)
-  const fromUrl = (() => {
-    const p = filtersToParams(filters)
-    p.set('type', filters.contentType)
-    return `/discover?${p.toString()}`
-  })()
-
-  // Reveal set for the current user/tier. Recomputed when results change
-  // (the underlying niche IDs change with filters and re-searches). userId
-  // is null briefly during initial UserContext load — getRevealedIds is
-  // safe with the empty string (just produces a stable but anonymous
-  // reveal slot), and we re-render once userId resolves.
+  // Reveal set for free tier is recomputed when results change.
   const revealedIds = useMemo(() => {
-    const ids = results.map(n => n.id)
+    const ids = results.map((n) => n.id)
     return getRevealedIds(userTier, ids, userId ?? '', new Date())
-    // We deliberately don't depend on the current Date — re-rendering
-    // every second to advance the reveal isn't useful here, the next
-    // 6h-window flip happens on the time scale of hours, not seconds.
-    // Page reloads or filter changes will pick up the latest window.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results, userTier, userId])
 
@@ -242,92 +128,65 @@ function DiscoverPageInner() {
     <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto overflow-x-hidden">
       <div className="text-center mb-8">
         <div className="inline-block text-[10px] font-semibold tracking-[0.22em] text-glow-indigo uppercase mb-2">
-          {eyebrow}
+          {copy.discoverEyebrow}
         </div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-100 mb-2">
-          {headline}
+          {copy.discoverHeadline}
         </h1>
         <p className="text-slate-500 text-sm">
           {copy.discoverSubline}
         </p>
       </div>
 
-      <TrendingTopics
-        eyebrow={copy.discoverTrendingTopics}
-        emptyHint={copy.discoverTrendingEmpty}
-        activeClusterId={activeClusterId}
-        contentType={filters.contentType}
-      />
-
-      {/* Reveal countdown / tier badge — placed above the search form so
-          it reads as page-level state, not part of the results section. */}
       {!userLoading && (
         <div className="flex justify-center mb-5">
           <RevealCountdown tier={userTier} copy={copy} />
         </div>
       )}
 
-      <div className="flex flex-col items-center gap-2 mb-4">
-        <HotNowFilter mode={mode} onChange={handleModeChange} copy={copy} />
-        <a
-          href="/discover/trending"
-          className="text-xs text-indigo-300 hover:text-indigo-200 underline-offset-2 hover:underline"
-        >
-          {copy.discoverTrendingViewClustersLink}
-        </a>
-      </div>
-
-      {!TREND_ENGINE_BOOTSTRAPPED && mode !== 'hot' && (
+      {/* Two-mode toggle. The whole filter UI was removed in favour of this
+          single switch — mode IS the filter. Hot Now surfaces freshly
+          discovered channels (last 14d), All sorts everything by outlier_ratio. */}
+      <div className="flex justify-center mb-6">
         <div
-          role="status"
-          aria-live="polite"
-          className="mb-4 max-w-2xl mx-auto rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200"
+          role="tablist"
+          aria-label={copy.discoverModeAria}
+          className="inline-flex rounded-full bg-slate-900/70 border border-slate-800 p-1"
         >
-          {copy.discoverBootstrapBanner}
+          <ModeTab
+            label={copy.discoverModeHotNow}
+            active={mode === 'hot'}
+            onClick={() => handleModeChange('hot')}
+          />
+          <ModeTab
+            label={copy.discoverModeAllChannels}
+            active={mode === 'all'}
+            onClick={() => handleModeChange('all')}
+          />
         </div>
-      )}
-
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 max-w-2xl mx-auto">
-        <SearchFilters value={filters} onChange={handleFiltersChange} copy={copy} mode={mode} />
-        <button
-          type="button"
-          onClick={() => handleSearch()}
-          disabled={loading || userLoading}
-          className="mt-5 w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition-colors"
-        >
-          {loading ? copy.discoverSearchingBtn : copy.discoverSearchBtn}
-        </button>
-        {error && (
-          <p className="mt-3 text-red-400 text-sm text-center">{error}</p>
-        )}
       </div>
+
+      {error && (
+        <p className="text-center text-red-400 text-sm mb-4">{error}</p>
+      )}
 
       {(userLoading || loading) && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5].map(i => <NicheCardSkeleton key={i} />)}
+          {[1, 2, 3, 4, 5, 6].map((i) => <NicheCardSkeleton key={i} />)}
         </div>
       )}
 
-      {!userLoading && !loading && searched && results.length === 0 && !error && (
-        activeClusterId ? (
-          <EmptyState
-            illustration={<EmptyMagnifier size={96} />}
-            title={copy.discoverEmptyTitle}
-            body={copy.discoverEmptyBody}
-            cta={{ label: copy.discoverResetBtn, onClick: handleResetFilters }}
-          />
-        ) : (
-          <SonarEmptyState
-            caption={copy.discoverScanningDeepWeb}
-            hint={copy.discoverEmptyBody}
-          />
-        )
+      {!userLoading && !loading && results.length === 0 && !error && (
+        <SonarEmptyState
+          caption={copy.discoverScanningDeepWeb}
+          hint={copy.discoverEmptyBody}
+        />
       )}
 
       {!userLoading && !loading && results.length > 0 && (
         <>
           <StaggerList
-            key={`grid-${visibleCount}-${results.length}`}
+            key={`grid-${mode}-${visibleCount}-${results.length}`}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
           >
             {results.slice(0, visibleCount).map((niche, i) => (
@@ -341,9 +200,8 @@ function DiscoverPageInner() {
                 isSaved={savedIds.has(niche.id)}
                 savedCount={savedCount}
                 spikeHistory={histories.get(niche.id)}
-                fromUrl={fromUrl}
+                fromUrl="/discover"
                 onBookmarkToggle={handleBookmarkToggle}
-                trendData={trendByChannel.get(niche.youtubeChannelId)}
               />
             ))}
           </StaggerList>
@@ -351,7 +209,7 @@ function DiscoverPageInner() {
             <div className="flex justify-center mt-6">
               <button
                 type="button"
-                onClick={() => setVisibleCount(c => Math.min(c + VISIBLE_STEP, results.length))}
+                onClick={() => setVisibleCount((c) => Math.min(c + VISIBLE_STEP, results.length))}
                 className="bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 text-slate-200 hover:text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
               >
                 {copy.discoverShowMore(results.length - visibleCount)}
@@ -365,5 +223,29 @@ function DiscoverPageInner() {
         <UpsellModal tier={userTier} copy={copy} onClose={() => setUpsellOpen(false)} />
       )}
     </main>
+  )
+}
+
+interface ModeTabProps {
+  label: string
+  active: boolean
+  onClick: () => void
+}
+
+function ModeTab({ label, active, onClick }: ModeTabProps) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={
+        active
+          ? 'rounded-full px-4 py-1.5 text-sm font-semibold bg-indigo-600 text-white'
+          : 'rounded-full px-4 py-1.5 text-sm font-medium text-slate-400 hover:text-slate-200'
+      }
+    >
+      {label}
+    </button>
   )
 }

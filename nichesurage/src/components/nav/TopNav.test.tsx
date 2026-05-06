@@ -21,55 +21,50 @@ jest.mock('@/lib/supabase/client', () => ({
   createClient: () => ({ auth: { signOut: jest.fn() } }),
 }))
 
-describe('TopNav active state', () => {
+describe('TopNav active state (unified Discover surface)', () => {
   beforeEach(() => {
     mockPathname = '/discover'
     mockSearchParams = new URLSearchParams()
   })
 
-  it('marks Shorts active when on /discover with no type param (shorts is the default)', () => {
+  it('marks Discover active when on /discover root', () => {
     mockPathname = '/discover'
-    mockSearchParams = new URLSearchParams()
     render(<TopNav />)
-    const shortsLink = screen.getByRole('link', { name: /shorts/i })
-    expect(shortsLink.getAttribute('aria-current')).toBe('page')
+    const discoverLink = screen.getByRole('link', { name: /discover/i })
+    expect(discoverLink.getAttribute('aria-current')).toBe('page')
   })
 
-  it('marks Shorts active when on /discover?type=shorts', () => {
+  it('marks Discover active when on /discover with any query (mode=hot etc.)', () => {
     mockPathname = '/discover'
-    mockSearchParams = new URLSearchParams('type=shorts')
+    mockSearchParams = new URLSearchParams('mode=hot')
     render(<TopNav />)
-    const shortsLink = screen.getByRole('link', { name: /shorts/i })
-    expect(shortsLink.getAttribute('aria-current')).toBe('page')
-    const longformLink = screen.getByRole('link', { name: /longform/i })
-    expect(longformLink.getAttribute('aria-current')).toBeNull()
+    const discoverLink = screen.getByRole('link', { name: /discover/i })
+    expect(discoverLink.getAttribute('aria-current')).toBe('page')
   })
 
-  it('marks Longform active when on /discover?type=longform', () => {
-    mockPathname = '/discover'
-    mockSearchParams = new URLSearchParams('type=longform')
+  it('marks Discover active for legacy /discover/longform path (the redirect target reaches /discover, but during transition the path may briefly be subroute)', () => {
+    mockPathname = '/discover/longform'
     render(<TopNav />)
-    const longformLink = screen.getByRole('link', { name: /longform/i })
-    expect(longformLink.getAttribute('aria-current')).toBe('page')
-    const shortsLink = screen.getByRole('link', { name: /shorts/i })
-    expect(shortsLink.getAttribute('aria-current')).toBeNull()
+    const discoverLink = screen.getByRole('link', { name: /discover/i })
+    expect(discoverLink.getAttribute('aria-current')).toBe('page')
   })
 
-  it('marks Saved active when on /dashboard', () => {
+  it('marks My Channels active when on /dashboard', () => {
     mockPathname = '/dashboard'
-    mockSearchParams = new URLSearchParams()
     render(<TopNav />)
-    const savedLink = screen.getByRole('link', { name: /saved/i })
-    expect(savedLink.getAttribute('aria-current')).toBe('page')
+    const myChannelsLink = screen.getByRole('link', { name: /my channels/i })
+    expect(myChannelsLink.getAttribute('aria-current')).toBe('page')
   })
 
-  it('shorts/longform tab hrefs point directly to /discover with type query (skip the redirect)', () => {
-    mockPathname = '/discover'
-    mockSearchParams = new URLSearchParams()
+  it('Discover link points to /discover (no type query)', () => {
     render(<TopNav />)
-    const shortsLink = screen.getByRole('link', { name: /shorts/i })
-    expect(shortsLink.getAttribute('href')).toBe('/discover?type=shorts')
-    const longformLink = screen.getByRole('link', { name: /longform/i })
-    expect(longformLink.getAttribute('href')).toBe('/discover?type=longform')
+    const discoverLink = screen.getByRole('link', { name: /discover/i })
+    expect(discoverLink.getAttribute('href')).toBe('/discover')
+  })
+
+  it('does not render legacy Shorts or Longform tabs', () => {
+    render(<TopNav />)
+    expect(screen.queryByRole('link', { name: /^shorts$/i })).toBeNull()
+    expect(screen.queryByRole('link', { name: /^longform$/i })).toBeNull()
   })
 })
