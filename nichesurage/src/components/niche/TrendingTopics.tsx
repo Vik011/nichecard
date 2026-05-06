@@ -10,19 +10,32 @@ interface TrendingTopicsProps {
   emptyHint?: string
   activeClusterId?: string | null
   basePath?: string
+  /**
+   * Filters carousel to clusters that contain channels of this content_type.
+   * Without this prop, clicking a chip from the wrong format (e.g. a
+   * shorts-only cluster on the longform tab) sends user to a guaranteed
+   * empty feed. Required.
+   */
+  contentType: 'shorts' | 'longform'
 }
 
-export function TrendingTopics({ eyebrow, emptyHint, activeClusterId, basePath = '/discover' }: TrendingTopicsProps) {
+export function TrendingTopics({
+  eyebrow,
+  emptyHint,
+  activeClusterId,
+  basePath = '/discover',
+  contentType,
+}: TrendingTopicsProps) {
   const [clusters, setClusters] = useState<TrendingCluster[] | null>(null)
   const searchParams = useSearchParams()
 
   useEffect(() => {
     let cancelled = false
-    fetchTrendingClusters(8).then(rows => {
+    fetchTrendingClusters(contentType, 8).then(rows => {
       if (!cancelled) setClusters(rows)
     })
     return () => { cancelled = true }
-  }, [])
+  }, [contentType])
 
   // Preserve current searchParams (e.g. ?type=longform) when applying the cluster
   // filter. Otherwise navigating to ?cluster=X drops the format toggle and the
