@@ -21,7 +21,7 @@ export function FaqSection({ copy }: FaqSectionProps) {
   return (
     <section id="faq" className="py-20 px-6">
       <div className="max-w-3xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-semibold text-center text-slate-100 tracking-tight mb-10">
+        <h2 className="font-display text-4xl md:text-5xl font-normal text-center text-slate-100 tracking-[-0.01em] mb-10">
           {copy.faqTitle}
         </h2>
         <div className="flex flex-col gap-3">
