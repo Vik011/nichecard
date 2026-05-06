@@ -193,8 +193,11 @@ export const COPY = {
     relatedEmpty: 'No similar niches found right now.',
 
     heroEyebrow: 'YouTube niche intelligence',
-    heroHeadline: "I built this because YouTube research was eating my weekends.",
-    heroSub: "SurgeNiche scans 230+ small channels every hour and flags the ones spiking before anyone else notices. No keyword guessing, no copy-paste tactics — just the small accounts that started moving.",
+    // SEO-anchored H1 (matches title metadata, contains primary keyword
+    // 'YouTube niches'). Founder narrative kept below as personal tagline.
+    heroHeadline: 'Find YouTube niches before they explode.',
+    heroNarrative: 'I built this because YouTube research was eating my weekends.',
+    heroSub: 'SurgeNiche scans 230+ small channels every hour and flags the ones spiking before anyone else notices. No keyword guessing, no copy-paste tactics, just the small accounts that started moving.',
     heroBadge: '47 channels spiked in the last hour',
     heroCta: 'Try it free',
     heroCta2: 'How it works',
@@ -513,8 +516,9 @@ export const COPY = {
     relatedEmpty: 'Aktuell keine ähnlichen Nischen.',
 
     heroEyebrow: 'YouTube-Nischen-Intelligenz',
-    heroHeadline: "Ich habe das gebaut, weil YouTube-Recherche meine Wochenenden gefressen hat.",
-    heroSub: "SurgeNiche scannt stündlich 230+ kleine Kanäle und markiert die, die zu steigen beginnen — bevor es jemand anderes bemerkt. Kein Keyword-Raten, keine Copy-Paste-Taktik.",
+    heroHeadline: 'Finde YouTube-Nischen, bevor sie explodieren.',
+    heroNarrative: 'Ich habe das gebaut, weil YouTube-Recherche meine Wochenenden gefressen hat.',
+    heroSub: 'SurgeNiche scannt stündlich 230+ kleine Kanäle und markiert die, die zu steigen beginnen, bevor es jemand anderes bemerkt. Kein Keyword-Raten, keine Copy-Paste-Taktik.',
     heroBadge: '47 Kanäle sind in der letzten Stunde gestiegen',
     heroCta: 'Kostenlos ausprobieren',
     heroCta2: 'Wie es funktioniert',

@@ -30,16 +30,14 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
           layout + pt/pb gives the absolute corners their actual top/bottom
           anchors back. */}
       <div className="relative z-10 max-w-2xl mx-auto w-full flex flex-col items-center">
-        {/* Eyebrow — product positioning above the narrative headline. */}
-        <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-glow-indigo mb-5">
-          {copy.heroEyebrow}
-        </span>
-
-        {/* Live "47 channels spiked" badge */}
+        {/* Live "47 channels spiked" badge promoted to first element —
+            the eyebrow used to sit above this and read as a duplicate
+            of the page title metadata. The badge alone is the strongest
+            "this is alive" signal a hero can carry. */}
         <div
           role="status"
           aria-label={copy.heroBadge}
-          className="inline-flex items-center gap-2 bg-charcoal-900/70 backdrop-blur-md gborder rounded-full px-4 py-1.5 mb-7"
+          className="inline-flex items-center gap-2 bg-charcoal-900/70 backdrop-blur-md gborder rounded-full px-4 py-1.5 mb-8"
         >
           <span aria-hidden="true" className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -50,15 +48,27 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
           </span>
         </div>
 
-        {/* Headline — narrative voice, sized down from 64 → 52 so the sub
-            (which carries the actual product value) gets its share of weight. */}
-        <h1 className="text-3xl sm:text-4xl md:text-[52px] font-medium tracking-[-0.02em] leading-[1.08] text-slate-100 text-balance mb-5 drop-shadow-[0_2px_24px_rgba(6,9,16,0.85)]">
+        {/* SEO-anchored H1. Display serif (Instrument Serif via
+            font-display) gives editorial character that contrasts the
+            sans body and signals "this was authored by a human, not a
+            template". Sized larger than before (52→60) since it's now
+            doing both the SEO and the visual-hook job. text-balance
+            avoids ragged 2-word last lines. */}
+        <h1 className="font-display text-[40px] sm:text-[52px] md:text-[64px] font-normal tracking-[-0.02em] leading-[1.04] text-slate-100 text-balance mb-5 drop-shadow-[0_2px_24px_rgba(6,9,16,0.85)]">
           {copy.heroHeadline}
         </h1>
 
-        {/* Sub — value prop. Bumped to 20px, slate-300 for stronger contrast,
-            tightened max-width so reading rhythm is predictable. */}
-        <p className="text-[17px] sm:text-[20px] text-slate-300 mb-10 max-w-xl mx-auto leading-[1.55] text-balance">
+        {/* Founder narrative kept as italic tagline directly under the
+            H1 — preserves the "personally crafted" voice while letting
+            the SEO H1 do its job. Italic + slate-400 keeps it
+            subordinate visually. */}
+        <p className="font-display italic text-[17px] sm:text-[19px] text-slate-400 mb-7 max-w-md mx-auto leading-[1.45] text-balance">
+          {copy.heroNarrative}
+        </p>
+
+        {/* Sub — sans body, value-prop. Sits below the narrative as the
+            "what it actually does" paragraph. */}
+        <p className="text-[16px] sm:text-[18px] text-slate-300 mb-9 max-w-xl mx-auto leading-[1.55] text-balance">
           {copy.heroSub}
         </p>
 
@@ -68,10 +78,14 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
             // of /discover/shorts (which is now a redirect). Skips a
             // round-trip and matches the new top nav structure.
             href={isLoggedIn ? '/discover' : '/login'}
-            className="w-full sm:w-auto text-[15px] font-semibold px-7 py-3 rounded-xl
-                       bg-gradient-to-br from-brand-indigo to-brand-indigo-bright
-                       hover:brightness-110 hover:shadow-glow-cyan transition-all text-white
-                       shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
+            className={[
+              'w-full sm:w-auto text-[15px] font-semibold px-7 py-3 rounded-xl text-white',
+              'bg-gradient-to-br from-brand-indigo to-brand-indigo-bright',
+              'shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]',
+              'transition-[transform,box-shadow,filter] duration-200 ease-out',
+              'hover:-translate-y-[1px] hover:brightness-[1.08] hover:shadow-[0_12px_32px_-8px_rgba(124,131,240,0.6)]',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
+            ].join(' ')}
           >
             {isLoggedIn ? copy.navOpenApp : copy.heroCta}
           </Link>

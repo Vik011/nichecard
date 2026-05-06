@@ -40,6 +40,11 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
+        // Editorial serif used for hero/section H1 display headings.
+        // Pairs with Geist Sans body (sans-serif) to give the page an
+        // "authored by a human" feel that matches the founder narrative
+        // tagline. Loaded via next/font/google in src/app/layout.tsx.
+        display: ["var(--font-instrument-serif)", "Georgia", "serif"],
       },
       letterSpacing: {
         eyebrow: "0.22em",
