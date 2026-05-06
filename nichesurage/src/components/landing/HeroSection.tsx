@@ -64,7 +64,10 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
           <Link
-            href={isLoggedIn ? '/discover/shorts' : '/login'}
+            // Unified Discover surface — go straight to /discover instead
+            // of /discover/shorts (which is now a redirect). Skips a
+            // round-trip and matches the new top nav structure.
+            href={isLoggedIn ? '/discover' : '/login'}
             className="w-full sm:w-auto text-[15px] font-semibold px-7 py-3 rounded-xl
                        bg-gradient-to-br from-brand-indigo to-brand-indigo-bright
                        hover:brightness-110 hover:shadow-glow-cyan transition-all text-white

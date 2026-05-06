@@ -59,7 +59,9 @@ describe('NicheCard', () => {
 
     expect(document.querySelector('[style*="blur"] span')).not.toBeNull()
 
-    const viralityEl = screen.getByText('✨ Excellent')
+    // Virality label was emoji-prefixed ("✨ Excellent"); polish pass moved
+    // the emoji to a Phosphor Sparkle icon, so the text alone is matched now.
+    const viralityEl = screen.getByText('Excellent')
     expect(viralityEl.closest('[style*="blur"]')).not.toBeNull()
 
     expect(screen.queryByText(/eng/)).toBeNull()
@@ -117,7 +119,9 @@ describe('NicheCard', () => {
 
     expect(screen.getByText('Tech Tutorials DE')).toBeTruthy()
 
-    const viralityEl = screen.getByText('✨ Excellent')
+    // Virality label was emoji-prefixed ("✨ Excellent"); polish pass moved
+    // the emoji to a Phosphor Sparkle icon, so the text alone is matched now.
+    const viralityEl = screen.getByText('Excellent')
     expect(viralityEl.closest('[style*="blur"]')).toBeNull()
 
     expect(screen.getByText(/4\.2% eng/i)).toBeTruthy()
