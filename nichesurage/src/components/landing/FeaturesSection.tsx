@@ -84,18 +84,25 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
         </div>
 
         {/* Regular features — supporting capabilities in the original
-            3-col grid treatment. With 5 cards, the second row will have
-            two left-aligned cards; this is intentional and reads as
-            "tier 2" support beneath the AI spotlight pair above. */}
+            3-col grid treatment. With 5 cards, row 2 has only 2 cards;
+            we force the 4th card to col-start-2 on lg so the orphan
+            pair reads as a centered "tier 2 support" duo rather than
+            a left-aligned remainder with empty space hanging right. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {regularFeatures.map((feature) => {
+          {regularFeatures.map((feature, i) => {
             const Icon = ICON_MAP[feature.icon]
             const isPremium = feature.tier === 'premium'
             const status = 'status' in feature ? feature.status : undefined
+            // 4th card (index 3) starts at column 2 on lg; the 5th card
+            // naturally lands in column 3 next to it. Result: bottom row
+            // is centered (col-2 + col-3) with col-1 left empty. Only
+            // applies when there are exactly 5 regulars — if the count
+            // changes later, revisit this rule.
+            const orphanCenterClass = i === 3 ? 'lg:col-start-2' : ''
             return (
               <MotionCard
                 key={feature.title}
-                className={`relative rounded-xl p-6 bg-charcoal-900 ${isPremium ? 'glass glass-glow' : 'gborder'}`}
+                className={`relative rounded-xl p-6 bg-charcoal-900 ${isPremium ? 'glass glass-glow' : 'gborder'} ${orphanCenterClass}`}
               >
                 {isPremium && (
                   <span

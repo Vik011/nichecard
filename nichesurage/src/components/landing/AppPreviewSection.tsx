@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ArrowRight } from '@phosphor-icons/react/dist/ssr'
 import { NicheCard } from '@/components/niche/NicheCard'
 import type { NicheCardData } from '@/lib/types'
 import type { CopyKeys } from './copy'
@@ -11,7 +12,12 @@ interface AppPreviewSectionProps {
 
 export function AppPreviewSection({ niches, copy, isLoggedIn = false }: AppPreviewSectionProps) {
   return (
-    <section className="py-24 px-6">
+    // py-24 -> py-16: round 3 microfix — the hero ends with a min-h-[68vh]
+    // bottom and a radar fade, and AppPreview adding pt-24 on top of that
+    // leaves a visible void between the hero stats bar and "These niches
+    // are moving right now." Trimming both top and bottom padding closes
+    // that gap without crowding the section heading.
+    <section className="py-16 px-6">
       <div className="max-w-6xl mx-auto">
         {/* Heading */}
         <div className="text-center mb-12">
@@ -36,14 +42,33 @@ export function AppPreviewSection({ niches, copy, isLoggedIn = false }: AppPrevi
           />
         </div>
 
-        {/* CTA below the grid */}
-        <div className="text-center mt-10">
+        {/* CTA below the grid — wrapped in a relative container with a
+            subtle radial halo behind the button so it doesn't read as a
+            stranded element floating between sections. The halo echoes
+            the hero / FinalCTA radial-glow visual language. The button
+            also gains an ArrowRight icon to match the hero "Open app →"
+            CTA's affordance. */}
+        <div className="relative text-center mt-10">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 -inset-y-8"
+            style={{
+              background:
+                'radial-gradient(ellipse 35% 100% at center, rgba(124,131,240,0.10), transparent 70%)',
+            }}
+          />
           <Link
             // Unified Discover surface — point straight at /discover.
             href={isLoggedIn ? '/discover' : '/login'}
-            className="inline-block text-[15px] font-semibold px-7 py-3 rounded-xl bg-gradient-to-br from-brand-indigo to-brand-indigo-bright hover:brightness-110 hover:shadow-glow-cyan transition-all text-white shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
+            className="group relative inline-flex items-center gap-2 text-[15px] font-semibold px-7 py-3 rounded-xl bg-gradient-to-br from-brand-indigo to-brand-indigo-bright hover:brightness-110 hover:shadow-glow-cyan transition-all text-white shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
           >
-            {isLoggedIn ? copy.navOpenApp : copy.previewCta}
+            <span>{isLoggedIn ? copy.navOpenApp : copy.previewCta}</span>
+            <ArrowRight
+              size={16}
+              weight="bold"
+              aria-hidden
+              className="transition-transform duration-200 ease-out group-hover:translate-x-0.5"
+            />
           </Link>
         </div>
       </div>
