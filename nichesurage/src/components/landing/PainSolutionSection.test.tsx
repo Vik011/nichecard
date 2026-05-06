@@ -34,9 +34,19 @@ describe('PainSolutionSection', () => {
     })
   })
 
-  it('has an element with indigo-800 border class (separator)', () => {
+  it('solution card carries indigo visual emphasis vs pain card', () => {
+    // After the comparison-drama redesign (2026-05-06 round 3), the
+    // solution card uses ring-glow-indigo + glass-glow + drop-shadow
+    // rather than a border-indigo-800/0 placeholder. The pain card is
+    // de-emphasized via opacity-75 + slate desaturation. Test asserts
+    // the data-tone hooks exist so future styling rewrites have a
+    // stable selector + the indigo ring class is present on the
+    // solution card specifically.
     const { container } = render(<PainSolutionSection copy={copy} />)
-    const el = container.querySelector('[class*="border-indigo-800"]')
-    expect(el).toBeInTheDocument()
+    const pain = container.querySelector('[data-tone="pain"]')
+    const solution = container.querySelector('[data-tone="solution"]')
+    expect(pain).toBeInTheDocument()
+    expect(solution).toBeInTheDocument()
+    expect(solution?.className).toMatch(/ring-glow-indigo/)
   })
 })
