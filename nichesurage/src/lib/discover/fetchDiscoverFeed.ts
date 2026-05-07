@@ -1,18 +1,27 @@
 import { createClient } from '@/lib/supabase/client'
 import { mapRow } from '@/lib/supabase/queries'
 import type { DbScanResult } from '@/lib/types/database'
-import type { NicheCardData } from '@/lib/types'
+import type { NicheCardData, UserTier } from '@/lib/types'
 
 export type DiscoverFeedMode = 'hot' | 'all'
 
 export interface FetchDiscoverFeedOptions {
   mode: DiscoverFeedMode
-  /** Soft cap on rows returned. Defaults to 60 (matches the unified grid's
-   *  paginated step). Use higher for "Show more" expansions. */
+  /** Soft cap on rows returned. Defaults change by tier (see DEFAULT_LIMIT
+   *  / PREMIUM_LIMIT below). Caller can override for "Show more" expansions. */
   limit?: number
+  /**
+   * When 'premium', the 14-day window cap is dropped and a larger fetch
+   * budget is used so paying users can browse the full niche pool, not
+   * just recent additions. Free/Basic keep the windowed Hot mode so the
+   * top of their grid feels alive (fresh discoveries first), with the
+   * paywall still gating how many of those they can actually see.
+   */
+  tier?: UserTier
 }
 
 const DEFAULT_LIMIT = 60
+const PREMIUM_LIMIT = 200
 const HOT_WINDOW_DAYS = 14
 
 type ScanResultWithCluster = DbScanResult & {
@@ -49,8 +58,21 @@ type ScanResultWithCluster = DbScanResult & {
 export async function fetchDiscoverFeed(
   opts: FetchDiscoverFeedOptions,
 ): Promise<{ data: NicheCardData[]; error: string | null }> {
-  const limit = opts.limit ?? DEFAULT_LIMIT
+  const tier = opts.tier ?? 'free'
+  const isPremium = tier === 'premium'
+  const limit = opts.limit ?? (isPremium ? PREMIUM_LIMIT : DEFAULT_LIMIT)
   const supabase = createClient()
+
+  // Premium pool access (2026-05-07): paying users get the full
+  // scan_results_latest sorted by opportunity_score, no recency cap.
+  // Otherwise a high-outlier niche that entered the watchlist 30 days
+  // ago is invisible to them — exactly what surfaced in the smoke test
+  // when "Erased Republic" (40.5× outlier, SPIKING NOW) didn't appear
+  // anywhere in the user's top 25 because tier_entered_at was outside
+  // the 14-day Hot window.
+  if (isPremium) {
+    return fetchAllMode(supabase, limit)
+  }
 
   if (opts.mode === 'hot') {
     return fetchHotMode(supabase, limit)
