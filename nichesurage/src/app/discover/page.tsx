@@ -70,7 +70,7 @@ function DiscoverPageInner() {
     setError(null)
     const { data, error: fetchError } = await fetchDiscoverFeed({
       mode: 'hot',
-      limit: 60,
+      tier: userTier,
     })
     setResults(data)
     setError(fetchError)
@@ -106,7 +106,7 @@ function DiscoverPageInner() {
       handleFetch()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLoading])
+  }, [userLoading, userTier])
 
   // Reveal set for free tier is recomputed when results change.
   const revealedIds = useMemo(() => {
@@ -286,6 +286,9 @@ function DiscoverPageInner() {
             history={modalHistory}
             tier={userTier}
             copy={copy}
+            isSaved={savedIds.has(modalNiche.id)}
+            savedCount={savedCount}
+            onBookmarkToggle={handleBookmarkToggle}
           />
         )}
       </NicheDetailModal>

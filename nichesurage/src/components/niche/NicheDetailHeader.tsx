@@ -1,6 +1,7 @@
-import type { NicheCardData } from '@/lib/types'
+import type { NicheCardData, UserTier } from '@/lib/types'
 import type { CopyKeys } from '@/components/landing/copy'
 import { YoutubeLogo } from '@phosphor-icons/react/dist/ssr'
+import { BookmarkButton } from '@/components/niche/BookmarkButton'
 
 interface ScoreTier {
   textClass: string
@@ -34,9 +35,27 @@ function scoreTier(score: number): ScoreTier {
 interface NicheDetailHeaderProps {
   niche: NicheCardData
   copy: CopyKeys
+  /**
+   * Save-niche state. Optional so callers that don't have the saved-set
+   * (e.g. the standalone /discover/niche/[id] page before SSR fully
+   * wires it up) can render the header without the bookmark button.
+   * Pass all three together — the BookmarkButton itself enforces tier
+   * limits and the upgrade tooltip.
+   */
+  userTier?: UserTier
+  isSaved?: boolean
+  savedCount?: number
+  onBookmarkToggle?: (id: string, saved: boolean) => void
 }
 
-export function NicheDetailHeader({ niche, copy }: NicheDetailHeaderProps) {
+export function NicheDetailHeader({
+  niche,
+  copy,
+  userTier,
+  isSaved,
+  savedCount,
+  onBookmarkToggle,
+}: NicheDetailHeaderProps) {
   const tier = scoreTier(niche.opportunityScore)
   const eyebrow = niche.contentType === 'shorts' ? copy.discoverShortsEyebrow : copy.discoverLongformEyebrow
 
@@ -53,37 +72,53 @@ export function NicheDetailHeader({ niche, copy }: NicheDetailHeaderProps) {
           {niche.nicheLabel && (
             <p className="text-indigo-300 text-sm mt-1.5 truncate">{niche.nicheLabel}</p>
           )}
-          {niche.channelUrl && (
-            <a
-              href={niche.channelUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`${copy.detailVisitYouTube} (opens in new tab)`}
-              className={[
-                // Real YouTube brand red — #FF0000 maps to Tailwind red-600
-                // close enough for our palette. Solid fill is the canonical
-                // YouTube CTA treatment.
-                'inline-flex items-center gap-2 mt-4',
-                'rounded-lg px-4 py-2 text-[13px] font-semibold',
-                'bg-[#FF0000] text-white',
-                // Hover: slight lift + soft red glow that matches the brand
-                // colour so the motion feels native, not synthetic.
-                'transition-all duration-150 ease-out',
-                'hover:-translate-y-[1px] hover:bg-[#E60000]',
-                'hover:shadow-[0_4px_18px_-4px_rgba(255,0,0,0.55)]',
-                'active:translate-y-0',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0000]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
-              ].join(' ')}
-            >
-              <YoutubeLogo
-                weight="fill"
-                size={18}
-                aria-hidden
-                className="shrink-0"
+          <div className="flex items-center gap-3 mt-4">
+            {niche.channelUrl && (
+              <a
+                href={niche.channelUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${copy.detailVisitYouTube} (opens in new tab)`}
+                className={[
+                  // Real YouTube brand red — #FF0000. Solid fill is the
+                  // canonical YouTube CTA treatment.
+                  'inline-flex items-center gap-2',
+                  'rounded-lg px-4 py-2 text-[13px] font-semibold',
+                  'bg-[#FF0000] text-white',
+                  // Hover: slight lift + soft red glow that matches the brand
+                  // colour so the motion feels native, not synthetic.
+                  'transition-all duration-150 ease-out',
+                  'hover:-translate-y-[1px] hover:bg-[#E60000]',
+                  'hover:shadow-[0_4px_18px_-4px_rgba(255,0,0,0.55)]',
+                  'active:translate-y-0',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0000]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
+                ].join(' ')}
+              >
+                <YoutubeLogo
+                  weight="fill"
+                  size={18}
+                  aria-hidden
+                  className="shrink-0"
+                />
+                <span>{copy.detailVisitYouTube}</span>
+              </a>
+            )}
+            {/* Save niche — heart toggle. Sits beside the YouTube CTA so the
+                two primary actions ("go look at the channel" / "keep this
+                one") are paired. BookmarkButton enforces tier limits
+                internally (free → upgrade tooltip, basic at 10/10 →
+                premium tooltip) and short-circuits when any of the props
+                isn't supplied. */}
+            {userTier && onBookmarkToggle && (
+              <BookmarkButton
+                nicheId={niche.id}
+                isSaved={isSaved ?? false}
+                userTier={userTier}
+                savedCount={savedCount ?? 0}
+                onToggle={onBookmarkToggle}
               />
-              <span>{copy.detailVisitYouTube}</span>
-            </a>
-          )}
+            )}
+          </div>
         </div>
         <div className="shrink-0 text-right">
           <div className={`text-7xl font-extrabold leading-none tabular-nums ${tier.textClass} ${tier.glowShadow}`}>
