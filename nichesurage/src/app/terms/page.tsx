@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "Terms of Service — SurgeNiche",
 };
 
+const EFFECTIVE_DATE = "May 7, 2026";
+const SUPPORT_EMAIL = "support@surgeniche.com";
+
 export default function TermsPage() {
   return (
     <main className="max-w-3xl mx-auto px-6 py-16">
@@ -19,7 +22,7 @@ export default function TermsPage() {
         Terms of Service
       </h1>
       <p className="text-slate-500 text-sm mb-10">
-        Effective date: May 2, 2026
+        Effective date: {EFFECTIVE_DATE}
       </p>
 
       <hr className="border-slate-800 mb-10" />
@@ -31,14 +34,13 @@ export default function TermsPage() {
       <p className="text-slate-400 leading-relaxed mb-4">
         By accessing or using SurgeNiche (the &quot;Service&quot;), you agree to
         be bound by these Terms of Service (&quot;Terms&quot;). If you do not
-        agree to these Terms, you must not use the Service. These Terms
-        constitute a legally binding agreement between you and SurgeNiche
+        agree, you must not use the Service. These Terms form a legally binding
+        agreement between you and the operator identified in Section 12 below
         (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;).
       </p>
       <p className="text-slate-400 leading-relaxed mb-4">
-        We reserve the right to update these Terms at any time. Continued use of
-        the Service after any changes constitutes your acceptance of the revised
-        Terms.
+        We may update these Terms at any time. Continued use of the Service
+        after any changes constitutes your acceptance of the revised Terms.
       </p>
 
       {/* 2. Service description */}
@@ -55,8 +57,9 @@ export default function TermsPage() {
         All data and insights provided by SurgeNiche are{" "}
         <span className="text-slate-300 font-medium">informational only</span>.
         Nothing on the platform constitutes financial, investment, or business
-        advice. Past spike patterns and opportunity scores are analytical tools,
-        not guarantees of future performance or channel growth.
+        advice. Past spike patterns and opportunity scores are analytical
+        signals, not guarantees of future channel performance, growth, or
+        revenue.
       </p>
 
       {/* 3. Subscriptions & billing */}
@@ -73,34 +76,86 @@ export default function TermsPage() {
         </li>
         <li>
           <span className="text-slate-300 font-medium">Basic — €9/month</span>{" "}
-          — expanded niche discovery, spike alerts, and opportunity scoring.
+          (or €90/year) — expanded niche discovery, spike alerts, and
+          opportunity scoring.
         </li>
         <li>
           <span className="text-slate-300 font-medium">
             Premium — €19/month
           </span>{" "}
-          — full access including advanced filters, trend history, and priority
-          data refresh.
+          (or €190/year) — full access including advanced filters, trend
+          history, and priority data refresh.
         </li>
       </ul>
       <p className="text-slate-400 leading-relaxed mb-4">
-        All payments are processed by Stripe. By subscribing, you authorize
-        Stripe to charge your payment method on a recurring basis. You may
-        cancel your subscription at any time from your account settings or by
-        contacting us; cancellation takes effect at the end of the current
-        billing period.
-      </p>
-      <p className="text-slate-400 leading-relaxed mb-4">
-        <span className="text-slate-300 font-medium">Refund policy:</span>{" "}
-        Monthly subscriptions are non-refundable for partial billing periods.
-        Annual plans are non-refundable once purchased. If you believe you were
-        charged in error, contact us at vikmartin.online@gmail.com within 14
-        days of the charge and we will review the case.
+        All payments are processed by Stripe Payments Europe, Limited. By
+        subscribing, you authorize Stripe to charge your payment method on a
+        recurring basis until you cancel. Prices include any applicable
+        value-added tax where required.
       </p>
 
-      {/* 4. Acceptable use */}
+      {/* 4. Refund policy */}
       <h2 className="text-slate-100 font-semibold text-xl mt-10 mb-3">
-        4. Acceptable Use
+        4. Refund Policy
+      </h2>
+      <p className="text-slate-400 leading-relaxed mb-4">
+        <span className="text-slate-300 font-medium">All sales are final.</span>{" "}
+        We do not offer refunds for any reason, including unused time on a
+        billing period, accidental purchases, or dissatisfaction with the
+        Service.
+      </p>
+      <p className="text-slate-400 leading-relaxed mb-4">
+        SurgeNiche relies on third-party AI providers (Anthropic, OpenAI) and
+        infrastructure providers (Supabase, Vercel) whose costs are incurred
+        immediately as you use the Service. AI features such as Niche Health
+        Check, Content Angles, and replication clustering execute paid API
+        calls the moment you trigger them. Because those costs cannot be
+        recovered, we cannot return them to you in the form of a refund.
+      </p>
+      <p className="text-slate-400 leading-relaxed mb-4">
+        <span className="text-slate-300 font-medium">
+          EU 14-day right of withdrawal — express consent and waiver:
+        </span>{" "}
+        Under Art. 16(m) of EU Directive 2011/83/EU and §356 (5) BGB, the
+        14-day right of withdrawal for digital content does not apply once
+        performance has begun with your express prior consent and acknowledgment
+        that you thereby lose the right of withdrawal. By initiating a paid
+        subscription and using any feature of the Service before the 14-day
+        window elapses, you give your express consent for performance to begin
+        immediately and acknowledge that you waive your right of withdrawal.
+        The Stripe checkout flow asks you to confirm this consent before
+        completing payment.
+      </p>
+      <p className="text-slate-400 leading-relaxed mb-4">
+        <span className="text-slate-300 font-medium">Exceptions.</span> We may
+        review individual cases on request for: (a) duplicate charges caused
+        by a payment-processor fault, (b) extended Service outages of more than
+        48 continuous hours, (c) charges made after a cancellation we failed to
+        register. To request a review, email {SUPPORT_EMAIL} within 14 days of
+        the charge.
+      </p>
+
+      {/* 5. Cancellation */}
+      <h2 className="text-slate-100 font-semibold text-xl mt-10 mb-3">
+        5. Cancellation
+      </h2>
+      <p className="text-slate-400 leading-relaxed mb-4">
+        You may cancel your subscription at any time from the &quot;Manage
+        subscription&quot; link in your account dashboard or by contacting us.
+        Cancellation takes effect at the end of the current paid period; until
+        then you retain full access to your tier&apos;s features. We do not
+        prorate or refund the unused portion of a billing period.
+      </p>
+      <p className="text-slate-400 leading-relaxed mb-4">
+        After your subscription ends, your account moves to the Free tier. Your
+        saved niches and account history are retained but features that exceed
+        the Free tier limits become read-only or inaccessible until you
+        re-subscribe.
+      </p>
+
+      {/* 6. Acceptable use */}
+      <h2 className="text-slate-100 font-semibold text-xl mt-10 mb-3">
+        6. Acceptable Use
       </h2>
       <p className="text-slate-400 leading-relaxed mb-4">
         You agree to use the Service only for lawful purposes and in accordance
@@ -125,7 +180,7 @@ export default function TermsPage() {
         </li>
         <li>
           Use the Service in any way that could impair its performance,
-          availability, or integrity.
+          availability, or integrity, or that could harm other users.
         </li>
       </ul>
       <p className="text-slate-400 leading-relaxed mb-4">
@@ -133,15 +188,16 @@ export default function TermsPage() {
         account without refund.
       </p>
 
-      {/* 5. Intellectual property */}
+      {/* 7. Intellectual property */}
       <h2 className="text-slate-100 font-semibold text-xl mt-10 mb-3">
-        5. Intellectual Property
+        7. Intellectual Property
       </h2>
       <p className="text-slate-400 leading-relaxed mb-4">
         SurgeNiche and its original content, features, and functionality are
-        owned by Viktor Martin and are protected by applicable intellectual
-        property laws. You may not reproduce, distribute, or create derivative
-        works from any part of the Service without explicit written permission.
+        owned by ELM Social Media (Viktor Martinovic) and are protected by
+        applicable intellectual property laws. You may not reproduce,
+        distribute, or create derivative works from any part of the Service
+        without explicit written permission.
       </p>
       <p className="text-slate-400 leading-relaxed mb-4">
         YouTube channel data displayed within the Service is sourced via the
@@ -167,9 +223,9 @@ export default function TermsPage() {
         channel data.
       </p>
 
-      {/* 6. Disclaimer */}
+      {/* 8. Disclaimer */}
       <h2 className="text-slate-100 font-semibold text-xl mt-10 mb-3">
-        6. Disclaimer of Warranties
+        8. Disclaimer of Warranties
       </h2>
       <p className="text-slate-400 leading-relaxed mb-4">
         The Service is provided on an &quot;as is&quot; and &quot;as
@@ -184,51 +240,95 @@ export default function TermsPage() {
         accuracy, completeness, or timeliness of the data provided.
       </p>
 
-      {/* 7. Limitation of liability */}
+      {/* 9. Limitation of liability */}
       <h2 className="text-slate-100 font-semibold text-xl mt-10 mb-3">
-        7. Limitation of Liability
+        9. Limitation of Liability
       </h2>
       <p className="text-slate-400 leading-relaxed mb-4">
-        To the maximum extent permitted by applicable law, SurgeNiche and its
-        operators shall not be liable for any indirect, incidental, special,
-        consequential, or punitive damages, including but not limited to loss of
-        profits, data, or goodwill, arising from your use of or inability to use
-        the Service.
+        To the maximum extent permitted by applicable law, we shall not be
+        liable for any indirect, incidental, special, consequential, or
+        punitive damages, including but not limited to loss of profits, data,
+        or goodwill, arising from your use of or inability to use the Service.
       </p>
       <p className="text-slate-400 leading-relaxed mb-4">
         In no event shall our total aggregate liability to you exceed the total
         amount you paid for the Service in the three (3) months immediately
-        preceding the event giving rise to the claim.
+        preceding the event giving rise to the claim. Mandatory statutory
+        liability under applicable consumer-protection law remains unaffected.
       </p>
 
-      {/* 8. Changes to terms */}
+      {/* 10. Governing law */}
       <h2 className="text-slate-100 font-semibold text-xl mt-10 mb-3">
-        8. Changes to These Terms
+        10. Governing Law &amp; Jurisdiction
       </h2>
       <p className="text-slate-400 leading-relaxed mb-4">
-        We may update these Terms of Service from time to time to reflect
-        changes in the Service, applicable law, or our business practices. When
-        we make material changes, we will update the effective date at the top of
-        this page. We may also notify you by email.
+        These Terms are governed by the laws of the Federal Republic of
+        Germany, excluding its conflict-of-law rules and the UN Convention on
+        Contracts for the International Sale of Goods. The exclusive place of
+        jurisdiction for all disputes arising out of or in connection with
+        these Terms is Mülheim an der Ruhr, to the extent permitted by law.
+      </p>
+      <p className="text-slate-400 leading-relaxed mb-4">
+        Mandatory consumer-protection provisions of the country in which you
+        habitually reside remain unaffected.
+      </p>
+
+      {/* 11. Changes to terms */}
+      <h2 className="text-slate-100 font-semibold text-xl mt-10 mb-3">
+        11. Changes to These Terms
+      </h2>
+      <p className="text-slate-400 leading-relaxed mb-4">
+        We may update these Terms from time to time to reflect changes in the
+        Service, applicable law, or our business practices. When we make
+        material changes, we will update the effective date at the top of this
+        page and may also notify you by email.
       </p>
       <p className="text-slate-400 leading-relaxed mb-4">
         Your continued use of the Service after the revised Terms have been
-        posted constitutes your acceptance of those changes. If you do not agree
-        to the revised Terms, you must stop using the Service.
+        posted constitutes your acceptance of those changes. If you do not
+        agree to the revised Terms, you must stop using the Service.
       </p>
 
-      {/* 9. Contact */}
+      {/* 12. Imprint / Operator */}
       <h2 className="text-slate-100 font-semibold text-xl mt-10 mb-3">
-        9. Contact
+        12. Operator &amp; Imprint (Anbieterkennzeichnung gem. § 5 TMG)
       </h2>
+      <div className="text-slate-400 leading-relaxed mb-4 space-y-1">
+        <p>ELM Social Media</p>
+        <p>Inhaber: Viktor Martinovic</p>
+        <p>Hingbergstr. 322</p>
+        <p>45472 Mülheim an der Ruhr</p>
+        <p>Germany</p>
+      </div>
       <p className="text-slate-400 leading-relaxed mb-4">
-        If you have any questions about these Terms of Service, please contact
-        us at{" "}
+        Contact:{" "}
         <a
-          href="mailto:vikmartin.online@gmail.com"
+          href={`mailto:${SUPPORT_EMAIL}`}
           className="text-slate-300 underline underline-offset-2 hover:text-slate-100 transition-colors"
         >
-          vikmartin.online@gmail.com
+          {SUPPORT_EMAIL}
+        </a>
+      </p>
+      <p className="text-slate-400 leading-relaxed mb-4">
+        VAT identification number: not applicable. Operates as Kleinunternehmer
+        per § 19 UStG; no VAT is shown or charged.
+      </p>
+      <p className="text-slate-400 leading-relaxed mb-4">
+        Person responsible for content within the meaning of § 18 (2) MStV:
+        Viktor Martinovic (address as above).
+      </p>
+
+      {/* 13. Contact */}
+      <h2 className="text-slate-100 font-semibold text-xl mt-10 mb-3">
+        13. Contact
+      </h2>
+      <p className="text-slate-400 leading-relaxed mb-4">
+        Questions about these Terms? Email us at{" "}
+        <a
+          href={`mailto:${SUPPORT_EMAIL}`}
+          className="text-slate-300 underline underline-offset-2 hover:text-slate-100 transition-colors"
+        >
+          {SUPPORT_EMAIL}
         </a>
         .
       </p>
