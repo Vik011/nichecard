@@ -59,6 +59,7 @@ export function HealthCheckInline({ scanResultId, userTier, copy }: HealthCheckI
   useEffect(() => {
     if (!allowed) return
     let cancelled = false
+    let retryTimer: ReturnType<typeof setTimeout> | null = null
     async function run() {
       setState({ kind: 'loading' })
       try {
@@ -68,6 +69,14 @@ export function HealthCheckInline({ scanResultId, userTier, copy }: HealthCheckI
           if (cancelled) return
           if (res.status === 429 && body?.error === 'daily_limit' && body?.resetAt) {
             setState({ kind: 'quota_exhausted', resetAt: new Date(body.resetAt) })
+            return
+          }
+          // Sprint A.9 Phase B: demo-niche pre-warm hasn't finished. Stay
+          // in loading and retry after the suggested back-off so the user
+          // never sees the locked teaser flash for the demo niche.
+          if (res.status === 503 && body?.error === 'warming_up') {
+            const wait = Number(body.retryAfterSeconds ?? 5) * 1000
+            retryTimer = setTimeout(() => { if (!cancelled) run() }, wait)
             return
           }
           setState({ kind: 'error', message: body?.error ?? `Request failed (${res.status})` })
@@ -80,7 +89,10 @@ export function HealthCheckInline({ scanResultId, userTier, copy }: HealthCheckI
       }
     }
     run()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      if (retryTimer) clearTimeout(retryTimer)
+    }
   }, [scanResultId, allowed])
 
   if (!allowed) {
