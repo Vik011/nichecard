@@ -61,6 +61,57 @@ export function LoginForm() {
     }
   }, [callbackError])
 
+  // Already-logged-in shortcut: if a Basic user clicks "Upgrade to Premium"
+  // on /#pricing, the link drops them at /login?plan=premium&billing=monthly.
+  // Without this effect they'd see the Sign-in form and clicking Google
+  // would start a fresh OAuth flow that rotates session cookies, breaking
+  // the auth-callback → /api/stripe/checkout fetch (the forwarded cookie
+  // header lags the new session, the API returns 401, and the user gets
+  // bounced back to /discover with no checkout). Detect the existing
+  // session client-side and POST straight to /api/stripe/checkout — the
+  // browser fetch carries the *current* cookies, so the API sees the user.
+  useEffect(() => {
+    if (!plan || !billing) return
+    if (callbackError) return // surface the error, don't auto-retry
+
+    let cancelled = false
+    const supabase = createClient()
+    void supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (cancelled || !user) return
+      setStatus('redirecting')
+      try {
+        const res = await fetch('/api/stripe/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tier: plan, interval: billing }),
+        })
+        if (cancelled) return
+        if (!res.ok) {
+          setStatus('error')
+          setErrorMessage(
+            "We couldn't start checkout. Please try again or contact support@surgeniche.com.",
+          )
+          return
+        }
+        const data = (await res.json()) as { url?: string }
+        if (data.url) {
+          window.location.href = data.url
+        } else {
+          setStatus('error')
+          setErrorMessage('Checkout returned no redirect URL. Please try again.')
+        }
+      } catch {
+        if (!cancelled) {
+          setStatus('error')
+          setErrorMessage('Network error while starting checkout. Try again.')
+        }
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [plan, billing, callbackError])
+
   // Render the Turnstile widget once the script has loaded. We use explicit
   // render instead of the auto-render `class="cf-turnstile"` pattern so the
   // token state lives in React, not on a global window callback.
