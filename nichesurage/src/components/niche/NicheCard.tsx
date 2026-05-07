@@ -1,4 +1,4 @@
-import type { NicheCardData, ShortsNicheCardData, LongformNicheCardData, UserTier, ViralityRating, ContentLanguage, SpikePoint, TrendData } from '@/lib/types'
+import type { NicheCardData, ShortsNicheCardData, LongformNicheCardData, UserTier, ViralityRating, ContentLanguage, SpikePoint } from '@/lib/types'
 import Link from 'next/link'
 import {
   LockSimple,
@@ -21,7 +21,8 @@ import { BookmarkButton } from './BookmarkButton'
 import { HealthCheckButton } from './HealthCheckButton'
 import { Sparkline, tierFromScore } from './Sparkline'
 import { SpikingBadge } from './SpikingBadge'
-import { TrendBadge } from './TrendBadge'
+// TrendBadge removed in 2026-05-07 trend-engine deprecation — Sprint B
+// trend_score / archetype overlay was never bootstrapped in production.
 import { ContentTypeBadge } from './ContentTypeBadge'
 
 const SPIKING_NOW_THRESHOLD = Number(process.env.NEXT_PUBLIC_SPIKING_NOW_THRESHOLD ?? '10')
@@ -55,13 +56,6 @@ interface NicheCardProps {
   spikeHistory?: SpikePoint[]
   fromUrl?: string
   onBookmarkToggle?: (id: string, saved: boolean) => void
-  /**
-   * Sprint B Phase 7A: optional trend overlay (lifecycle, cluster size,
-   * archetype). When omitted, no TrendBadge renders. The badge itself
-   * silently no-ops if both score and cluster are below threshold, so it's
-   * safe to pass partial/empty data.
-   */
-  trendData?: TrendData
 }
 
 // Country flag remains as Unicode (regional indicator pair). Native
@@ -181,7 +175,6 @@ export function NicheCard({
   spikeHistory,
   fromUrl,
   onBookmarkToggle,
-  trendData,
 }: NicheCardProps) {
   const locked = !revealed
   const tier = scoreTier(data.opportunityScore)
@@ -280,14 +273,6 @@ export function NicheCard({
           </div>
         </div>
       </div>
-
-      {/* Trend overlay (Sprint B Phase 7A) — renders only when score or
-          cluster size crosses threshold; silently null otherwise. */}
-      {trendData && (
-        <div className="mb-2">
-          <TrendBadge data={trendData} />
-        </div>
-      )}
 
       {/* Badge row */}
       <div className="flex flex-wrap gap-1.5">
