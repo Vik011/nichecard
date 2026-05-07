@@ -102,6 +102,8 @@ export const COPY = {
     discoverEmptyBody: 'Try widening the subscriber range or relaxing the channel age filter.',
     discoverResetBtn: 'Reset filters',
     discoverShowMore: (n: number) => `Show more (${n} remaining)`,
+    discoverShowMoreFreeUpsell: (n: number) =>
+      `Unlock ${n} more niche${n === 1 ? '' : 's'} — upgrade to Basic`,
     discoverTrendingTopics: 'Trending topics',
     discoverTrendingEmpty: "We're still naming the first niches — fresh AI-labeled topics will appear here within 24h.",
     discoverScanningDeepWeb: 'Scanning the deep web…',
@@ -471,6 +473,8 @@ export const COPY = {
     discoverEmptyBody: 'Erweitere den Abonnenten-Bereich oder lockere den Kanal-Alter-Filter.',
     discoverResetBtn: 'Filter zurücksetzen',
     discoverShowMore: (n: number) => `Mehr anzeigen (${n} übrig)`,
+    discoverShowMoreFreeUpsell: (n: number) =>
+      `${n} weitere Nische${n === 1 ? '' : 'n'} freischalten · Upgrade auf Basic`,
     discoverTrendingTopics: 'Trending-Themen',
     discoverTrendingEmpty: 'Wir benennen die ersten Nischen — frische KI-Labels erscheinen hier innerhalb von 24 Stunden.',
     discoverScanningDeepWeb: 'Durchsuche das tiefe Netz…',
