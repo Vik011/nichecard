@@ -11,27 +11,26 @@ import { AIContentAngles } from '@/components/niche/AIContentAngles'
 import { ChannelVideoGrid } from '@/components/niche/ChannelVideoGrid'
 import { RelatedNiches } from '@/components/niche/RelatedNiches'
 import { tierFromScore } from '@/components/niche/Sparkline'
+import { useFreeDemoState } from '@/lib/demo/useFreeDemoState'
 
 // Shared niche-detail body. Used by both the standalone /discover/niche/[id]
 // page (direct URL access, bookmarks, link shares) and the in-app modal that
-// opens over /discover when a user clicks a card. Keeping a single source
-// avoids drift between the two surfaces.
+// opens over /discover when a user clicks a card.
 //
 // The component intentionally has no page chrome (no <main>, no max-width
 // wrapper, no back link). Wrappers add those: the page wraps with
 // max-w-6xl + main; the modal wraps with its own dialog container.
 //
-// `tier` is the user's actual subscription tier; `effectiveTier` is what
-// the AI-feature components see for gating purposes. They diverge in the
-// first-login WOW demo flow where a free user temporarily renders as
-// premium so today's pinned niche shows pre-cached AI results.
+// Demo-niche unlock (Sprint A.9 Phase B): when the URL+cookie+pinned-id
+// triple validation says this is the legitimate first-login WOW demo,
+// the AI components see `effectiveTier='premium'` and render unlocked.
+// The API routes for those components are also bypassed server-side
+// for the same scan_id — the two layers agree, no quota burn, no spoof.
 
 export interface NicheDetailContentProps {
   niche: NicheCardData
   history: SpikePoint[]
   tier: UserTier
-  /** Tier passed to AI-feature components for gating. Defaults to `tier`. */
-  effectiveTier?: UserTier
   copy: CopyKeys
 }
 
@@ -39,10 +38,16 @@ export function NicheDetailContent({
   niche,
   history,
   tier,
-  effectiveTier,
   copy,
 }: NicheDetailContentProps) {
-  const aiTier = effectiveTier ?? tier
+  const demoState = useFreeDemoState(niche.id)
+  // While we don't yet know whether this is the legit demo, render the
+  // AI sections at the user's real tier. The auth-callback redirect for
+  // brand-new free users only flips this to 'legitimate' for the actual
+  // pinned scan_id; everywhere else it resolves to 'not-demo' and
+  // nothing changes.
+  const aiTier: UserTier = demoState === 'legitimate' && tier === 'free' ? 'premium' : tier
+
   return (
     <>
       <FreeDemoBanner nicheId={niche.id} copy={copy} />

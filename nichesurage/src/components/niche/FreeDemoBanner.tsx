@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Sparkle, ArrowRight } from '@phosphor-icons/react/dist/ssr'
 import type { CopyKeys } from '@/components/landing/copy'
+import { useFreeDemoState } from '@/lib/demo/useFreeDemoState'
 
 interface FreeDemoBannerProps {
   /** scan_result.id of the niche being rendered. Compared against the */
@@ -12,50 +12,15 @@ interface FreeDemoBannerProps {
   copy: CopyKeys
 }
 
-const DEMO_COOKIE_NAME = 'surgeniche_demo_seen'
-
 /**
  * Welcome banner shown on the user's first-login demo niche detail page.
- *
- * Three-way validation:
- *   1. ?freeDemo=true is in the URL (signal from the auth callback redirect).
- *   2. The `surgeniche_demo_seen` cookie is set (server-issued; can't be
- *      forged easily via copy-pasted URL).
- *   3. The niche id matches the server-pinned daily demo (final guard
- *      against stale shared links).
- *
- * If any of those fails, render nothing — the user lands on a regular
- * niche detail page without the welcome flourish.
+ * The validation logic lives in `useFreeDemoState` so this component and
+ * NicheDetailContent agree on whether the niche is legitimately today's
+ * demo (and therefore whether to unlock the AI sections).
  */
 export function FreeDemoBanner({ nicheId, copy }: FreeDemoBannerProps) {
-  const [show, setShow] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    async function validate() {
-      // 1. URL flag
-      const params = new URLSearchParams(window.location.search)
-      if (params.get('freeDemo') !== 'true') return
-
-      // 2. Server-issued cookie
-      if (!hasDemoCookie()) return
-
-      // 3. Match against today's pinned niche
-      try {
-        const res = await fetch('/api/demo/today', { cache: 'no-store' })
-        if (!res.ok) return
-        const data = (await res.json()) as { scanResultId: string | null }
-        if (cancelled) return
-        if (data.scanResultId === nicheId) setShow(true)
-      } catch {
-        // network error → silently skip the banner
-      }
-    }
-    validate()
-    return () => { cancelled = true }
-  }, [nicheId])
-
-  if (!show) return null
+  const state = useFreeDemoState(nicheId)
+  if (state !== 'legitimate') return null
 
   return (
     <section
@@ -83,8 +48,4 @@ export function FreeDemoBanner({ nicheId, copy }: FreeDemoBannerProps) {
       </Link>
     </section>
   )
-}
-
-function hasDemoCookie(): boolean {
-  return document.cookie.split(';').some((c) => c.trim().startsWith(`${DEMO_COOKIE_NAME}=`))
 }
