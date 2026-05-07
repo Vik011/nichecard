@@ -32,6 +32,15 @@ export interface NicheDetailContentProps {
   history: SpikePoint[]
   tier: UserTier
   copy: CopyKeys
+  /**
+   * Save state forwarded to NicheDetailHeader so the heart button can
+   * sit beside the "Visit on YouTube" CTA. Optional — when omitted the
+   * header just doesn't render the bookmark control (fine for the very
+   * first paint while the parent is still loading the saved-set).
+   */
+  isSaved?: boolean
+  savedCount?: number
+  onBookmarkToggle?: (id: string, saved: boolean) => void
 }
 
 export function NicheDetailContent({
@@ -39,6 +48,9 @@ export function NicheDetailContent({
   history,
   tier,
   copy,
+  isSaved,
+  savedCount,
+  onBookmarkToggle,
 }: NicheDetailContentProps) {
   const demoState = useFreeDemoState(niche.id)
   // While we don't yet know whether this is the legit demo, render the
@@ -51,7 +63,14 @@ export function NicheDetailContent({
   return (
     <>
       <FreeDemoBanner nicheId={niche.id} copy={copy} />
-      <NicheDetailHeader niche={niche} copy={copy} />
+      <NicheDetailHeader
+        niche={niche}
+        copy={copy}
+        userTier={tier}
+        isSaved={isSaved}
+        savedCount={savedCount}
+        onBookmarkToggle={onBookmarkToggle}
+      />
       <NicheStatsPanel niche={niche} copy={copy} />
       <PerformanceChart history={history} copy={copy} tier={tierFromScore(niche.opportunityScore)} />
       <HealthCheckInline scanResultId={niche.id} userTier={aiTier} copy={copy} />

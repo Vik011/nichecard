@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams, useSearchParams } from 'next/navigation'
 import { CaretLeft } from '@phosphor-icons/react/dist/ssr'
 import { fetchNicheById, fetchSpikeHistory } from '@/lib/supabase/queries'
+import { fetchSavedNicheIds } from '@/lib/supabase/savedNiches'
 import { useUser } from '@/lib/context/UserContext'
 import { useLang } from '@/lib/i18n/useLang'
 import { COPY } from '@/components/landing/copy'
@@ -25,6 +26,8 @@ export default function NicheDetailPage() {
   const [history, setHistory] = useState<SpikePoint[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
+  const [savedCount, setSavedCount] = useState(0)
 
   useEffect(() => {
     if (!params.id) return
@@ -44,6 +47,29 @@ export default function NicheDetailPage() {
     return () => { cancelled = true }
   }, [params.id, copy.detailNotFound])
 
+  // Load the user's saved-niche set so the BookmarkButton in the header
+  // knows whether this niche is already saved + how many slots are left.
+  useEffect(() => {
+    if (userLoading) return
+    let cancelled = false
+    fetchSavedNicheIds().then((ids) => {
+      if (cancelled) return
+      setSavedIds(ids)
+      setSavedCount(ids.size)
+    })
+    return () => { cancelled = true }
+  }, [userLoading])
+
+  function handleBookmarkToggle(id: string, saved: boolean) {
+    setSavedIds((prev) => {
+      const next = new Set(prev)
+      if (saved) next.add(id)
+      else next.delete(id)
+      return next
+    })
+    setSavedCount((prev) => (saved ? prev + 1 : prev - 1))
+  }
+
   const fromParam = sp?.get('from') ?? null
   const fallbackBack = niche?.contentType === 'longform' ? '/discover/longform' : '/discover/shorts'
   const backHref = fromParam && fromParam.startsWith('/') ? fromParam : fallbackBack
@@ -62,7 +88,15 @@ export default function NicheDetailPage() {
         <CaretLeft weight="bold" size={14} aria-hidden />
         {copy.detailBack}
       </Link>
-      <NicheDetailContent niche={niche} history={history} tier={tier} copy={copy} />
+      <NicheDetailContent
+        niche={niche}
+        history={history}
+        tier={tier}
+        copy={copy}
+        isSaved={savedIds.has(niche.id)}
+        savedCount={savedCount}
+        onBookmarkToggle={handleBookmarkToggle}
+      />
     </main>
   )
 }
