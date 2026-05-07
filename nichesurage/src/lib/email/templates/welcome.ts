@@ -18,7 +18,10 @@ export interface WelcomeTemplateInput {
   firstName: string | null
 }
 
-const TRENDING_URL = 'https://surgeniche.com/trending'
+// CTA points to /discover (the live Hot/All grid). The /trending route was
+// part of Sprint B Phase 7B but is paused while the trend engine bootstraps,
+// so linking there from email would 404 for new users.
+const DISCOVER_URL = 'https://surgeniche.com/discover'
 
 /**
  * Returns ready-to-send HTML for the welcome email.
@@ -52,13 +55,13 @@ export function renderWelcomeEmail({ firstName }: WelcomeTemplateInput): string 
                   Most YouTube tools show you yesterday's winners. We track today's wave: niches exploding right now, spotted by detecting when the same topic gets replicated across multiple creators in real time.
                 </p>
                 <p style="margin:0 0 28px 0;font-size:16px;line-height:1.6;color:#1a1a1a;">
-                  Your first stop: the <strong>Trending</strong> page. That's where replication waves show up before they hit anyone else's "trending" list.
+                  Your first stop: open the app and see what we're surfacing right now. New niches land hourly.
                 </p>
                 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 32px 0;">
                   <tr>
                     <td style="border-radius:8px;background-color:#1a1a1a;">
-                      <a href="${TRENDING_URL}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
-                        Open Trending
+                      <a href="${DISCOVER_URL}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">
+                        Open SurgeNiche
                       </a>
                     </td>
                   </tr>
