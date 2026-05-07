@@ -55,6 +55,21 @@ export async function POST(req: Request) {
       subscription_data: {
         metadata: { supabase_user_id: user.id, tier, interval },
       },
+      // EU consumer-protection requirement (§ 356 (5) BGB / Art. 16(m) of EU
+      // Directive 2011/83/EU): the 14-day right of withdrawal for digital
+      // services is waived only with the customer's express prior consent.
+      // We surface that waiver as a required Terms acceptance on the
+      // hosted Checkout page so the consent is documented at the moment of
+      // sale. Without this, an EU customer could request a full refund any
+      // time within 14 days even though the AI features they triggered have
+      // already cost us third-party API fees.
+      consent_collection: { terms_of_service: 'required' },
+      custom_text: {
+        terms_of_service_acceptance: {
+          message:
+            "I have read and agree to SurgeNiche's [Terms of Service](https://surgeniche.com/terms) and [Privacy Policy](https://surgeniche.com/privacy). I expressly request that performance begin immediately and acknowledge that I lose my 14-day EU right of withdrawal once SurgeNiche starts running for me.",
+        },
+      },
     })
 
     await captureServer({

@@ -82,7 +82,15 @@ export const COPY = {
       },
       {
         q: 'Can I cancel anytime?',
-        a: 'Yes. Cancel from the Stripe billing portal — access continues until the end of your current period, then auto-downgrades to Free.',
+        a: 'Yes. Cancel from the Manage Subscription link in your account, or contact support. Access continues until the end of your current paid period, then your account moves to Free with no further charges. We do not prorate or refund the unused portion of a billing period.',
+      },
+      {
+        q: 'Can I get a refund?',
+        a: "All sales are final. SurgeNiche relies on third-party AI and infrastructure providers (Anthropic, OpenAI, Supabase, Vercel) whose costs are billed to us in real time as you use the Service. Because those costs cannot be recovered, we cannot refund the time you've already had access. The Stripe checkout asks you to confirm this consent before payment, in line with EU §356 BGB. If you were charged in error (duplicate charge, post-cancellation charge, or extended outage), email support and we'll review the case.",
+      },
+      {
+        q: 'What happens to my saved niches if I downgrade?',
+        a: 'Your saved niches stay in your account. The Free tier limit is 0 saves, so the list becomes read-only until you re-subscribe (or save fewer than 10 on Basic). We never delete your data automatically.',
       },
       {
         q: 'Why Google sign-in only?',
@@ -443,7 +451,15 @@ export const COPY = {
       },
       {
         q: 'Kann ich jederzeit kündigen?',
-        a: 'Ja. Kündigung über das Stripe-Billing-Portal — der Zugang läuft bis zum Periodenende und wechselt dann automatisch auf Free.',
+        a: 'Ja. Kündigung über den Link „Abonnement verwalten" in deinem Account oder per E-Mail an den Support. Der Zugang läuft bis zum Ende der bezahlten Periode, danach wechselt der Account ohne weitere Belastung auf Free. Wir erstatten oder anteilig vergüten den ungenutzten Teil eines Abrechnungszeitraums nicht.',
+      },
+      {
+        q: 'Bekomme ich eine Rückerstattung?',
+        a: 'Alle Verkäufe sind endgültig. SurgeNiche nutzt externe KI- und Infrastruktur-Anbieter (Anthropic, OpenAI, Supabase, Vercel), deren Kosten in Echtzeit anfallen, sobald du den Dienst nutzt. Da diese Kosten nicht zurückgeholt werden können, können wir bereits genutzte Zeit nicht erstatten. Der Stripe-Checkout fragt vor der Zahlung nach deiner ausdrücklichen Zustimmung, im Einklang mit § 356 (5) BGB. Bei Fehlbuchungen (doppelte Belastung, Belastung nach Kündigung oder längerer Ausfall) melde dich beim Support, wir prüfen den Fall.',
+      },
+      {
+        q: 'Was passiert mit meinen gespeicherten Nischen bei einem Downgrade?',
+        a: 'Deine gespeicherten Nischen bleiben in deinem Account. Das Free-Tier-Limit ist 0 Speicherplätze, die Liste wird also schreibgeschützt, bis du erneut abonnierst (oder unter 10 auf Basic kommst). Wir löschen deine Daten nie automatisch.',
       },
       {
         q: 'Warum nur Google Sign-in?',
