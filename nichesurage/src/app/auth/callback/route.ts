@@ -183,7 +183,14 @@ async function maybeFirstLoginDemo(
 
   if (!demo) return null // cold start: no candidate niche, fall through to /discover
 
-  const target = new URL(`/discover/niche/${demo.scanResultId}`, appUrl)
+  // Sprint A.9: demo niche now opens as a modal over /discover (so it
+  // doesn't claim the whole screen and the user can dismiss it back to
+  // the live grid in one click). The modal reads `?niche=<id>` to
+  // determine which niche to load and `?freeDemo=true` to render the
+  // welcome banner. The standalone /discover/niche/<id> page route still
+  // exists for direct URL access (bookmarks, link shares).
+  const target = new URL(`/discover`, appUrl)
+  target.searchParams.set('niche', demo.scanResultId)
   target.searchParams.set('freeDemo', 'true')
 
   // Cookie tells the niche detail page that this `freeDemo=true` request

@@ -42,6 +42,14 @@ interface NicheCardProps {
    */
   revealed?: boolean
   onLockedClick?: () => void
+  /**
+   * Optional handler for unlocked-card clicks. When supplied, the card
+   * renders as a button instead of a Link and the parent decides what to
+   * do (e.g. open a modal via URL param). When omitted, the legacy <Link>
+   * navigation to /discover/niche/<id> is used so callers that haven't
+   * migrated still get the old behavior (LandingPage previews etc.).
+   */
+  onUnlockedClick?: (id: string) => void
   isSaved?: boolean
   savedCount?: number
   spikeHistory?: SpikePoint[]
@@ -167,6 +175,7 @@ export function NicheCard({
   rank,
   revealed = true,
   onLockedClick,
+  onUnlockedClick,
   isSaved,
   savedCount,
   spikeHistory,
@@ -335,6 +344,24 @@ export function NicheCard({
         type="button"
         onClick={onLockedClick}
         aria-label={`Locked niche — upgrade to unlock`}
+        className={wrapperClass}
+      >
+        {cardBody}
+      </button>
+    )
+  }
+  // When the parent supplies an unlocked-click handler we render a button
+  // and hand off the click (used by /discover to open the niche-detail
+  // modal via URL param). Without one we fall back to a real <Link> so
+  // callers that bookmark or rely on right-click "Open in new tab" still
+  // work (LandingPage app-preview cards, anywhere outside the discover
+  // grid).
+  if (onUnlockedClick) {
+    return (
+      <button
+        type="button"
+        onClick={() => onUnlockedClick(data.id)}
+        aria-label={`Open detail for ${data.channelName ?? 'this niche'}`}
         className={wrapperClass}
       >
         {cardBody}

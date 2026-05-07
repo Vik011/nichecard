@@ -1,12 +1,14 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { NicheCard } from '@/components/niche/NicheCard'
 import { NicheCardSkeleton } from '@/components/niche/NicheCardSkeleton'
 import { RevealCountdown } from '@/components/niche/RevealCountdown'
 import { UpsellModal } from '@/components/niche/UpsellModal'
-import { fetchSpikeHistory } from '@/lib/supabase/queries'
+import { NicheDetailModal } from '@/components/niche/NicheDetailModal'
+import { NicheDetailContent } from '@/components/niche/NicheDetailContent'
+import { fetchNicheById, fetchSpikeHistory } from '@/lib/supabase/queries'
 import { fetchSavedNicheIds } from '@/lib/supabase/savedNiches'
 import {
   fetchDiscoverFeed,
@@ -141,6 +143,59 @@ function DiscoverPageInner() {
 
   const showShowMore = userTier !== 'free' && visibleCount < results.length
 
+  // Niche-detail modal state — driven by ?niche=<id> on the URL so opening
+  // a card creates a back-button-able history entry, refreshes preserve
+  // the open card, and links can be shared. Closing simply drops the
+  // param from the URL; we keep the rest of the params (mode, type,
+  // freeDemo) so closing the modal lands the user in the same filter
+  // context they came from.
+  const nicheParam = searchParams.get('niche')
+  const [modalNiche, setModalNiche] = useState<NicheCardData | null>(null)
+  const [modalHistory, setModalHistory] = useState<SpikePoint[]>([])
+  const [modalLoading, setModalLoading] = useState(false)
+
+  useEffect(() => {
+    if (!nicheParam) {
+      setModalNiche(null)
+      setModalHistory([])
+      return
+    }
+    let cancelled = false
+    setModalLoading(true)
+    ;(async () => {
+      const n = await fetchNicheById(nicheParam)
+      if (cancelled) return
+      if (!n) {
+        setModalLoading(false)
+        return
+      }
+      setModalNiche(n)
+      const h = await fetchSpikeHistory(n.youtubeChannelId)
+      if (cancelled) return
+      setModalHistory(h)
+      setModalLoading(false)
+    })()
+    return () => { cancelled = true }
+  }, [nicheParam])
+
+  const openNicheModal = useCallback((id: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('niche', id)
+    router.push(`/discover?${params.toString()}`)
+  }, [router, searchParams])
+
+  const closeNicheModal = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('niche')
+    // freeDemo is one-shot UI signal that pairs with the niche param. If
+    // the user dismisses the demo modal we drop both so a stray refresh
+    // doesn't reopen the welcome flourish on a niche that's no longer
+    // today's demo.
+    params.delete('freeDemo')
+    const qs = params.toString()
+    router.replace(qs ? `/discover?${qs}` : '/discover')
+  }, [router, searchParams])
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto overflow-x-hidden">
       <div className="text-center mb-8">
@@ -214,6 +269,7 @@ function DiscoverPageInner() {
                 rank={i + 1}
                 revealed={revealedIds.has(niche.id)}
                 onLockedClick={() => setUpsellOpen(true)}
+                onUnlockedClick={openNicheModal}
                 isSaved={savedIds.has(niche.id)}
                 savedCount={savedCount}
                 spikeHistory={histories.get(niche.id)}
@@ -250,7 +306,47 @@ function DiscoverPageInner() {
       {upsellOpen && (
         <UpsellModal tier={userTier} copy={copy} onClose={() => setUpsellOpen(false)} />
       )}
+
+      <NicheDetailModal
+        open={!!nicheParam}
+        onClose={closeNicheModal}
+        ariaLabel={modalNiche?.channelName ?? 'Niche detail'}
+      >
+        {modalLoading || !modalNiche ? (
+          <NicheDetailModalSkeleton />
+        ) : (
+          <NicheDetailContent
+            niche={modalNiche}
+            history={modalHistory}
+            tier={userTier}
+            copy={copy}
+          />
+        )}
+      </NicheDetailModal>
     </main>
+  )
+}
+
+function NicheDetailModalSkeleton() {
+  return (
+    <div data-testid="niche-detail-modal-skeleton" className="space-y-4">
+      <div className="glass rounded-2xl p-6 space-y-3">
+        <div className="h-3 w-24 shimmer rounded" />
+        <div className="h-7 w-2/3 shimmer rounded" />
+        <div className="h-4 w-1/3 shimmer rounded" />
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="glass rounded-xl p-4 space-y-2">
+            <div className="h-3 w-2/3 shimmer rounded" />
+            <div className="h-6 w-1/2 shimmer rounded" />
+          </div>
+        ))}
+      </div>
+      <div className="glass rounded-2xl p-6">
+        <div className="h-28 shimmer rounded-xl" />
+      </div>
+    </div>
   )
 }
 
