@@ -5,6 +5,7 @@ import { checkAiQuota, recordAiRun } from '@/lib/tier/aiUsage'
 import { computeHealthScore } from '@/lib/health-check/score'
 import { generateVerdict } from '@/lib/health-check/verdict'
 import { utcDateKey } from '@/lib/tier/freeDemo'
+import { preWarmDemoNiche } from '@/lib/demo/preWarm'
 import type { UserTier } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -24,12 +25,26 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   // actual pinned scan_id matches.
   const isDemoNiche = await isTodaysDemoNiche(params.id)
   if (isDemoNiche) {
-    const { data: cached } = await supabase
-      .from('niche_health_checks')
-      .select('health_score, components, verdict_text, expires_at')
-      .eq('scan_result_id', params.id)
-      .gt('expires_at', new Date().toISOString())
-      .maybeSingle()
+    const nowIso = new Date().toISOString()
+    let cached = await readHealthCache(supabase, params.id, nowIso)
+    if (!cached) {
+      // 2026-05-07: smoke test surfaced an infinite "Polishing the
+      // verdict…" loop on the demo modal. The auth-callback fire-and-
+      // forget pre-warm can fail silently (Anthropic timeout, parse
+      // error, missed deploy timing) and the frontend retries forever
+      // because the API just keeps saying "warming_up". On-demand
+      // fallback: when the cache is genuinely empty for today's demo
+      // scan_id, run preWarmDemoNiche synchronously here so the user's
+      // first GET pays the ~20-30s round-trip and produces a populated
+      // cache. Idempotent at the helper level — if a parallel auth
+      // callback also runs it, the cache upserts converge.
+      try {
+        await preWarmDemoNiche(params.id)
+      } catch (err) {
+        console.error('[health-check] on-demand preWarm threw', err)
+      }
+      cached = await readHealthCache(supabase, params.id, nowIso)
+    }
     if (cached) {
       return NextResponse.json({
         score: cached.health_score,
@@ -39,11 +54,12 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
         demo: true,
       })
     }
-    // Pre-warm hasn't finished (race between user's first paint and the
-    // background AI calls). Tell the frontend to back off and retry — a
-    // few seconds later the cache should be populated.
+    // Even on-demand pre-warm couldn't populate the cache — Anthropic
+    // is unreachable or the helper is throwing. Surface a 503 the
+    // frontend can show with a retry CTA, and stop the silent retry
+    // loop.
     return NextResponse.json(
-      { error: 'warming_up', retryAfterSeconds: 30, demo: true },
+      { error: 'warm_failed', retryAfterSeconds: 60, demo: true },
       { status: 503 },
     )
   }
@@ -148,6 +164,20 @@ async function safeRecord(
   } catch (err) {
     console.error('[health-check] recordAiRun failed:', (err as Error).message)
   }
+}
+
+async function readHealthCache(
+  supabase: ReturnType<typeof createClient>,
+  scanResultId: string,
+  nowIso: string,
+) {
+  const { data } = await supabase
+    .from('niche_health_checks')
+    .select('health_score, components, verdict_text, expires_at')
+    .eq('scan_result_id', scanResultId)
+    .gt('expires_at', nowIso)
+    .maybeSingle()
+  return data
 }
 
 /**

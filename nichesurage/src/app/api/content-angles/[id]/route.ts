@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { checkAiQuota, recordAiRun } from '@/lib/tier/aiUsage'
 import { generateAngles, AnglesParseError } from '@/lib/content-angles/generate'
 import { utcDateKey } from '@/lib/tier/freeDemo'
+import { preWarmDemoNiche } from '@/lib/demo/preWarm'
 import type { ContentAngle, UserTier, ContentType } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -21,12 +22,21 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   // never trip this branch.
   const isDemoNiche = await isTodaysDemoNiche(params.id)
   if (isDemoNiche) {
-    const { data: cached } = await supabase
-      .from('content_angles_cache')
-      .select('angles, expires_at')
-      .eq('scan_result_id', params.id)
-      .gt('expires_at', new Date().toISOString())
-      .maybeSingle()
+    const nowIso = new Date().toISOString()
+    let cached = await readAnglesCache(supabase, params.id, nowIso)
+    if (!cached) {
+      // On-demand fallback for the demo path — see health-check route
+      // for the full rationale. The auth-callback fire-and-forget pre-
+      // warm can fail silently; we run it synchronously here so the
+      // user's first GET produces a populated cache instead of the
+      // frontend looping on 503 forever.
+      try {
+        await preWarmDemoNiche(params.id)
+      } catch (err) {
+        console.error('[content-angles] on-demand preWarm threw', err)
+      }
+      cached = await readAnglesCache(supabase, params.id, nowIso)
+    }
     if (cached) {
       return NextResponse.json({
         angles: cached.angles as ContentAngle[],
@@ -35,7 +45,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       })
     }
     return NextResponse.json(
-      { error: 'warming_up', retryAfterSeconds: 30, demo: true },
+      { error: 'warm_failed', retryAfterSeconds: 60, demo: true },
       { status: 503 },
     )
   }
@@ -135,6 +145,20 @@ async function safeRecord(
   } catch (err) {
     console.error('[content-angles] recordAiRun failed:', (err as Error).message)
   }
+}
+
+async function readAnglesCache(
+  supabase: ReturnType<typeof createClient>,
+  scanResultId: string,
+  nowIso: string,
+) {
+  const { data } = await supabase
+    .from('content_angles_cache')
+    .select('angles, expires_at')
+    .eq('scan_result_id', scanResultId)
+    .gt('expires_at', nowIso)
+    .maybeSingle()
+  return data
 }
 
 /**

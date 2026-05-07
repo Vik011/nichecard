@@ -48,7 +48,8 @@ export function AIContentAngles({ scanResultId, userTier, copy }: AIContentAngle
           // Sprint A.9 Phase B: demo-niche pre-warm hasn't populated the
           // cache yet. Stay in loading and retry after the suggested
           // back-off; do NOT surface the locked teaser for the demo
-          // niche during the warm-up race.
+          // niche during the warm-up race. `warm_failed` (terminal) falls
+          // through to the default error branch with a retry CTA.
           if (res.status === 503 && body?.error === 'warming_up') {
             const wait = Number(body.retryAfterSeconds ?? 5) * 1000
             retryTimer = setTimeout(() => { if (!cancelled) run() }, wait)
