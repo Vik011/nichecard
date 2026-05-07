@@ -124,18 +124,18 @@ describe('utcDateKey', () => {
 })
 
 describe('getDailyDemoNiche', () => {
-  it('inserts a fresh pick on the first call of the day and returns it', async () => {
+  it('inserts a fresh pick on the first call of the day and returns it with justInserted=true', async () => {
     const state = { pins: [] as PinRow[], candidates: SAMPLE_CANDIDATES }
     const client = makeMockClient(state)
 
     const result = await getDailyDemoNiche(asSupabase(client), { now: FIXED_DAY_UTC })
 
-    expect(result).toEqual({ scanResultId: 'niche-top', youtubeChannelId: 'UC_top' })
+    expect(result).toEqual({ scanResultId: 'niche-top', youtubeChannelId: 'UC_top', justInserted: true })
     expect(state.pins).toHaveLength(1)
     expect(state.pins[0].date).toBe('2026-05-07')
   })
 
-  it('returns the existing pinned row for subsequent same-day calls', async () => {
+  it('returns the existing pinned row with justInserted=false for subsequent same-day calls', async () => {
     const state = {
       pins: [
         {
@@ -153,11 +153,12 @@ describe('getDailyDemoNiche', () => {
     expect(result).toEqual({
       scanResultId: 'pinned-yesterday-overflow',
       youtubeChannelId: 'UC_pinned',
+      justInserted: false,
     })
     expect(state.pins).toHaveLength(1) // No second insert.
   })
 
-  it('every same-day call returns the same row even if the candidate pool churns', async () => {
+  it('every same-day call returns the same scan even if the candidate pool churns', async () => {
     const state = { pins: [] as PinRow[], candidates: SAMPLE_CANDIDATES }
     const client = makeMockClient(state)
 
@@ -173,10 +174,17 @@ describe('getDailyDemoNiche', () => {
       asSupabase(client),
       { now: new Date('2026-05-07T18:00:00.000Z') },
     )
-    expect(second).toEqual(first)
+    // The pinned scan must be identical across same-day calls. The
+    // justInserted flag legitimately differs (true on the call that did
+    // the INSERT, false on every read after) — that's what lets the
+    // auth callback decide when to fire the AI pre-warm.
+    expect(second?.scanResultId).toBe(first?.scanResultId)
+    expect(second?.youtubeChannelId).toBe(first?.youtubeChannelId)
+    expect(first?.justInserted).toBe(true)
+    expect(second?.justInserted).toBe(false)
   })
 
-  it('survives a parallel-writer race (PK collision) by re-reading the winner', async () => {
+  it('survives a parallel-writer race (PK collision) by re-reading the winner with justInserted=false', async () => {
     const winnerRow: PinRow = {
       date: '2026-05-07',
       scan_result_id: 'race-winner',
@@ -191,7 +199,11 @@ describe('getDailyDemoNiche', () => {
 
     const result = await getDailyDemoNiche(asSupabase(client), { now: FIXED_DAY_UTC })
 
-    expect(result).toEqual({ scanResultId: 'race-winner', youtubeChannelId: 'UC_winner' })
+    expect(result).toEqual({
+      scanResultId: 'race-winner',
+      youtubeChannelId: 'UC_winner',
+      justInserted: false,
+    })
   })
 
   it('returns null when the candidate pool is empty (cold start)', async () => {

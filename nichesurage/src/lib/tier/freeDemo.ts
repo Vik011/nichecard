@@ -24,6 +24,14 @@ export interface DailyDemoNiche {
   scanResultId: string
   /** youtube_channel_id of the picked niche. */
   youtubeChannelId: string
+  /**
+   * True when this call is the one that pinned today's niche. False when
+   * a previous caller had already pinned it and we're just reading the
+   * winning row. Used by the auth callback to decide whether to kick off
+   * the AI pre-warm — only the first sign-in of the day pays that cost,
+   * everyone after rides the cache.
+   */
+  justInserted: boolean
 }
 
 export interface GetDailyDemoNicheOptions {
@@ -59,7 +67,7 @@ export async function getDailyDemoNiche(
   // 1) Try to read today's pinned pick first. Hot path on every login
   //    after the first of the day.
   const existing = await readPinned(supabaseService, dateKey)
-  if (existing) return existing
+  if (existing) return { ...existing, justInserted: false }
 
   // 2) No pin yet today. Choose a candidate niche.
   const candidate = await pickCandidate(supabaseService, poolSize)
@@ -86,19 +94,20 @@ export async function getDailyDemoNiche(
     if (insertError.code === PG_UNIQUE_VIOLATION) {
       // Race lost: another writer claimed the day a microsecond earlier.
       // Re-read so we return the winner's pick.
-      return readPinned(supabaseService, dateKey)
+      const winner = await readPinned(supabaseService, dateKey)
+      return winner ? { ...winner, justInserted: false } : null
     }
     // Real DB error (RLS misconfig, table missing, etc.): swallow + null.
     return null
   }
 
-  return candidate
+  return { ...candidate, justInserted: true }
 }
 
 async function readPinned(
   supabase: Pick<SupabaseClient, 'from'>,
   dateKey: string,
-): Promise<DailyDemoNiche | null> {
+): Promise<{ scanResultId: string; youtubeChannelId: string } | null> {
   const { data, error } = await supabase
     .from('daily_demo_niche')
     .select('scan_result_id, youtube_channel_id')
@@ -115,7 +124,7 @@ async function readPinned(
 async function pickCandidate(
   supabase: Pick<SupabaseClient, 'from'>,
   poolSize: number,
-): Promise<DailyDemoNiche | null> {
+): Promise<{ scanResultId: string; youtubeChannelId: string } | null> {
   // Top candidates by opportunity_score within the spike pool with a
   // labelled cluster (so the demo niche has a meaningful headline). We
   // pick the top one rather than rotating across the pool because the
