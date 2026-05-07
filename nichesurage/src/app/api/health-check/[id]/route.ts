@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { checkAiQuota, recordAiRun } from '@/lib/tier/aiUsage'
 import { computeHealthScore } from '@/lib/health-check/score'
 import { generateVerdict } from '@/lib/health-check/verdict'
+import { utcDateKey } from '@/lib/tier/freeDemo'
 import type { UserTier } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -13,6 +14,39 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Sprint A.9 Phase B: free-demo-niche bypass. The first-login WOW flow
+  // pins one global niche per UTC day and pre-warms its Health Check
+  // cache (see lib/demo/preWarm.ts). When the API is asked about that
+  // pinned scan_id we serve the cache row regardless of tier and don't
+  // record AI usage. The check is server-side against daily_demo_niche
+  // so a hand-crafted ?id=<random> can't unlock paid content — only the
+  // actual pinned scan_id matches.
+  const isDemoNiche = await isTodaysDemoNiche(params.id)
+  if (isDemoNiche) {
+    const { data: cached } = await supabase
+      .from('niche_health_checks')
+      .select('health_score, components, verdict_text, expires_at')
+      .eq('scan_result_id', params.id)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle()
+    if (cached) {
+      return NextResponse.json({
+        score: cached.health_score,
+        components: cached.components,
+        verdict: cached.verdict_text,
+        cached: true,
+        demo: true,
+      })
+    }
+    // Pre-warm hasn't finished (race between user's first paint and the
+    // background AI calls). Tell the frontend to back off and retry — a
+    // few seconds later the cache should be populated.
+    return NextResponse.json(
+      { error: 'warming_up', retryAfterSeconds: 30, demo: true },
+      { status: 503 },
+    )
+  }
 
   const { data: profile } = await supabase
     .from('users')
@@ -113,5 +147,24 @@ async function safeRecord(
     await recordAiRun(supabase, userId)
   } catch (err) {
     console.error('[health-check] recordAiRun failed:', (err as Error).message)
+  }
+}
+
+/**
+ * True when the requested scan_id matches the one pinned in
+ * `daily_demo_niche` for today's UTC date. The pinned row is the only
+ * niche we let free users access AI features on.
+ */
+async function isTodaysDemoNiche(scanResultId: string): Promise<boolean> {
+  try {
+    const supabase = createServiceClient()
+    const { data } = await supabase
+      .from('daily_demo_niche')
+      .select('scan_result_id')
+      .eq('date', utcDateKey(new Date()))
+      .maybeSingle()
+    return !!data && data.scan_result_id === scanResultId
+  } catch {
+    return false
   }
 }

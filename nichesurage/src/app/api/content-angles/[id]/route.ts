@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { checkAiQuota, recordAiRun } from '@/lib/tier/aiUsage'
 import { generateAngles, AnglesParseError } from '@/lib/content-angles/generate'
+import { utcDateKey } from '@/lib/tier/freeDemo'
 import type { ContentAngle, UserTier, ContentType } from '@/lib/types'
 
 export const runtime = 'nodejs'
@@ -12,6 +13,32 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Sprint A.9 Phase B: free-demo-niche bypass. The pinned daily demo's
+  // angles are pre-warmed and served without tier/quota gates so the
+  // first-login WOW flow renders real premium content. Server-side
+  // matching against daily_demo_niche means a hand-crafted niche id can
+  // never trip this branch.
+  const isDemoNiche = await isTodaysDemoNiche(params.id)
+  if (isDemoNiche) {
+    const { data: cached } = await supabase
+      .from('content_angles_cache')
+      .select('angles, expires_at')
+      .eq('scan_result_id', params.id)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle()
+    if (cached) {
+      return NextResponse.json({
+        angles: cached.angles as ContentAngle[],
+        cached: true,
+        demo: true,
+      })
+    }
+    return NextResponse.json(
+      { error: 'warming_up', retryAfterSeconds: 30, demo: true },
+      { status: 503 },
+    )
+  }
 
   const { data: profile } = await supabase
     .from('users')
@@ -107,5 +134,24 @@ async function safeRecord(
     await recordAiRun(supabase, userId)
   } catch (err) {
     console.error('[content-angles] recordAiRun failed:', (err as Error).message)
+  }
+}
+
+/**
+ * True when the requested scan_id matches the one pinned in
+ * `daily_demo_niche` for today's UTC date. The pinned row is the only
+ * niche we let free users access AI features on.
+ */
+async function isTodaysDemoNiche(scanResultId: string): Promise<boolean> {
+  try {
+    const supabase = createServiceClient()
+    const { data } = await supabase
+      .from('daily_demo_niche')
+      .select('scan_result_id')
+      .eq('date', utcDateKey(new Date()))
+      .maybeSingle()
+    return !!data && data.scan_result_id === scanResultId
+  } catch {
+    return false
   }
 }

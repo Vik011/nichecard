@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { sendWelcomeEmail } from '@/lib/email/resend'
 import { getDailyDemoNiche } from '@/lib/tier/freeDemo'
+import { preWarmDemoNiche } from '@/lib/demo/preWarm'
 
 export const runtime = 'nodejs'
 
@@ -182,6 +183,19 @@ async function maybeFirstLoginDemo(
   }
 
   if (!demo) return null // cold start: no candidate niche, fall through to /discover
+
+  // Sprint A.9 Phase B: only the first sign-in of the day pays the AI
+  // pre-warm cost — Anthropic for the verdict + Anthropic for content
+  // angles. Every subsequent demo viewer reads from the populated cache.
+  // We fire-and-forget so the user's redirect doesn't sit on the AI
+  // round-trip (~2-3s). Worst case: race between user's first paint and
+  // the warm finishing → API route serves "warming up" 503 → frontend
+  // retries → second-paint succeeds.
+  if (demo.justInserted) {
+    preWarmDemoNiche(demo.scanResultId).catch((err) => {
+      console.error('[auth/callback] preWarm threw', err)
+    })
+  }
 
   // Sprint A.9: demo niche now opens as a modal over /discover (so it
   // doesn't claim the whole screen and the user can dismiss it back to
