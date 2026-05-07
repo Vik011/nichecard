@@ -52,7 +52,7 @@ export function AiQuotaExhausted({ resetAt, copy }: AiQuotaExhaustedProps) {
         <div className="flex-1 min-w-0">
           <p className="text-slate-300 text-sm leading-relaxed mb-4">{body}</p>
           <Link
-            href="/pricing"
+            href="/#pricing"
             className="inline-block text-[13px] font-semibold px-4 py-2 rounded-lg bg-gradient-to-br from-brand-indigo to-brand-indigo-bright text-white hover:brightness-110 transition-all shadow-[0_8px_24px_-8px_rgba(124,131,240,0.45)]"
           >
             {copy.aiQuotaUpgradeCta}

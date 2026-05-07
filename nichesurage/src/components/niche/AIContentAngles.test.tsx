@@ -18,11 +18,11 @@ afterEach(() => {
 })
 
 describe('AIContentAngles', () => {
-  it('renders locked teaser for free tier with Upgrade button to /pricing', () => {
+  it('renders locked teaser for free tier with Upgrade button to /#pricing', () => {
     render(<AIContentAngles scanResultId="scan-1" userTier="free" copy={COPY.en} />)
     expect(screen.getByText(/Premium feature/i)).toBeTruthy()
     const upgradeLink = screen.getByRole('link', { name: /upgrade/i })
-    expect(upgradeLink.getAttribute('href')).toBe('/pricing')
+    expect(upgradeLink.getAttribute('href')).toBe('/#pricing')
   })
 
   it('does NOT call fetch for free tier (locked teaser path)', () => {
