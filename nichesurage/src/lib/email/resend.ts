@@ -13,7 +13,13 @@ import { renderWelcomeEmail, WELCOME_SUBJECT } from './templates/welcome'
 const apiKey = process.env.RESEND_API_KEY
 const client = apiKey ? new Resend(apiKey) : null
 
-const FROM = 'SurgeNiche <noreply@send.surgeniche.com>'
+// FROM uses the apex domain because Resend's free plan caps verified domains
+// at 1, and we already have `surgeniche.com` verified. The standard pattern
+// would be a `send.` subdomain (better isolation from any future custom inbox
+// setup) but on Pro plan only. Switch back to `send.surgeniche.com` once we
+// upgrade. (Diagnosed 2026-05-07 via Vercel logs:
+// `welcome email send failed; This API key is not authorized to send`.)
+const FROM = 'SurgeNiche <noreply@surgeniche.com>'
 const REPLY_TO = 'vikmartin.online@gmail.com'
 
 export interface WelcomeEmailInput {
