@@ -22,9 +22,14 @@ describe('renderWelcomeEmail', () => {
     expect(html).toContain('&lt;script&gt;')
   })
 
-  it('links the CTA button to https://surgeniche.com/trending', () => {
+  it('links the CTA button to https://surgeniche.com/discover', () => {
     const html = renderWelcomeEmail({ firstName: 'Viktor' })
-    expect(html).toContain('href="https://surgeniche.com/trending"')
+    expect(html).toContain('href="https://surgeniche.com/discover"')
+  })
+
+  it('does not link to the paused /trending route', () => {
+    const html = renderWelcomeEmail({ firstName: 'Viktor' })
+    expect(html).not.toContain('href="https://surgeniche.com/trending"')
   })
 
   it('contains no em-dash or en-dash characters (per copy guidelines)', () => {
