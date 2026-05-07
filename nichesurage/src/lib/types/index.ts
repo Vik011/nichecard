@@ -10,14 +10,9 @@ export type {
   DbNicheHealthCheck,
 } from './database'
 import type { ViralityRating, ContentLanguage, ContentType } from './database'
-export type { TrendData, TrendLifecycle, TrendClusterCard } from './trend'
-export {
-  TREND_BADGE_SCORE_THRESHOLD,
-  TREND_BADGE_CLUSTER_THRESHOLD,
-  CLUSTER_FEED_DEFAULT_LIMIT,
-  CLUSTER_FEED_FRESHNESS_DAYS,
-  CLUSTER_FEED_SAMPLE_THUMBS,
-} from './trend'
+// Sprint B trend types (TrendData, TrendLifecycle, TrendClusterCard,
+// TREND_BADGE_*, CLUSTER_FEED_*) removed 2026-05-07 with the trend-
+// engine deprecation. The corresponding `trend.ts` file is gone too.
 
 export type ChannelAge = '1month' | '3months' | '6months' | '1year' | 'any'
 export type SortBy = 'score' | 'newest'

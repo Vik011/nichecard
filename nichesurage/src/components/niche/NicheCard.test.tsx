@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { NicheCard } from './NicheCard'
 import { NicheCardSkeleton } from './NicheCardSkeleton'
-import type { ShortsNicheCardData, LongformNicheCardData, NicheCardData, TrendData } from '@/lib/types'
+import type { ShortsNicheCardData, LongformNicheCardData, NicheCardData } from '@/lib/types'
 
 jest.mock('@/lib/supabase/savedNiches', () => ({
   saveNiche: jest.fn(),
@@ -182,33 +182,8 @@ describe('trending badge', () => {
   })
 })
 
-describe('TrendBadge integration (Sprint B Phase 7A)', () => {
-  const hotTrend: TrendData = {
-    trendScore: 82,
-    lifecycleStatus: 'exploding',
-    clusterSize: 7,
-    clusterLabel: 'AI productivity',
-  }
-  const coldTrend: TrendData = {
-    trendScore: 30,
-    lifecycleStatus: 'emerging',
-    clusterSize: 1,
-  }
-
-  it('does not render TrendBadge when no trendData prop is passed', () => {
-    render(<NicheCard data={shortsBasic} userTier="basic" rank={1} />)
-    expect(screen.queryByText(/TRENDING/)).not.toBeInTheDocument()
-  })
-
-  it('renders TrendBadge when trendData crosses score threshold', () => {
-    render(<NicheCard data={shortsBasic} userTier="basic" rank={1} trendData={hotTrend} />)
-    expect(screen.getByText(/TRENDING/)).toBeInTheDocument()
-    expect(screen.getByText('Exploding')).toBeInTheDocument()
-    expect(screen.getByText(/7 channels/)).toBeInTheDocument()
-  })
-
-  it('keeps TrendBadge hidden when trendData is below both thresholds', () => {
-    render(<NicheCard data={shortsBasic} userTier="basic" rank={1} trendData={coldTrend} />)
-    expect(screen.queryByText(/TRENDING/)).not.toBeInTheDocument()
-  })
-})
+// TrendBadge integration suite removed in 2026-05-07 trend-engine
+// deprecation. Sprint B trend_score / archetype overlay was never
+// bootstrapped in production and the badge component was deleted along
+// with the rest of the trend UI. Card render now stops at the badge row
+// without any trend overlay.

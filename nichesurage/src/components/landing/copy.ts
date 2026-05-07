@@ -18,12 +18,11 @@ export const COPY = {
     discoverShortsHeadline: "Today's top viral Shorts opportunities",
     discoverLongformEyebrow: 'Longform Niche Discovery',
     discoverLongformHeadline: "Today's high-potential Longform opportunities",
-    // Unified Discover surface (replaces format-split tabs)
+    // Unified Discover surface (replaces format-split tabs).
+    // Hot/All toggle keys removed 2026-05-07 with the trend-engine
+    // deprecation — the page now ships with one mode.
     discoverEyebrow: 'Niche Discovery',
     discoverHeadline: "Today's most promising niches",
-    discoverModeHotNow: 'Hot Now',
-    discoverModeAllChannels: 'All Channels',
-    discoverModeAria: 'Discover feed mode',
     myChannelsNav: 'My Channels',
     discoverNav: 'Discover',
     discoverSubline: 'Refreshed daily · Ranked by opportunity score',
@@ -107,22 +106,10 @@ export const COPY = {
     discoverTrendingTopics: 'Trending topics',
     discoverTrendingEmpty: "We're still naming the first niches — fresh AI-labeled topics will appear here within 24h.",
     discoverScanningDeepWeb: 'Scanning the deep web…',
-    // Sprint B Phase 7A — Hot now / Quality / All segmented control
-    discoverModeHotLabel: 'Hot now',
-    discoverModeQualityLabel: 'Quality',
-    discoverModeAllLabel: 'All',
-    discoverBootstrapBanner: 'Trend engine is calibrating — full coverage activates within 48-72h. Switch to Quality mode for evergreen picks meanwhile.',
+    // Sprint B trend-engine copy keys removed 2026-05-07 — Hot/Quality/All
+    // toggle, bootstrap banner, /discover/trending cluster-feed page were
+    // all deleted with the trend-engine deprecation.
     discoverSpikingNow: 'Spiking Now',
-    // Sprint B Phase 7B — /discover/trending cluster-feed page
-    discoverTrendingEyebrow: 'Trend clusters',
-    discoverTrendingHeadline: 'Where the conversation is converging',
-    discoverTrendingSubline: 'Replication patterns across channels — clusters of ≥5 videos sharing a narrative.',
-    discoverTrendingCrossNicheTitle: '🚨 Cross-niche waves',
-    discoverTrendingCrossNicheSubline: 'Same archetype trending across multiple categories — strongest signal we surface.',
-    discoverTrendingNoClusters: 'No clusters formed yet — engine needs ≥48h of scans for replication detection to populate.',
-    discoverTrendingViewClustersLink: 'View clusters →',
-    discoverTrendingAllCategories: 'All categories',
-    discoverTrendingHotSortCaption: 'Sorted by trend score',
 
     filterFormat: 'Format',
     filterSubscriberRange: 'Subscriber range',
@@ -390,9 +377,6 @@ export const COPY = {
     discoverShortsHeadline: 'Die heißesten Shorts-Nischen heute',
     discoverEyebrow: 'Nischenfinder',
     discoverHeadline: 'Die vielversprechendsten Nischen heute',
-    discoverModeHotNow: 'Heiß jetzt',
-    discoverModeAllChannels: 'Alle Kanäle',
-    discoverModeAria: 'Discover-Modus',
     myChannelsNav: 'Meine Kanäle',
     discoverNav: 'Entdecken',
     discoverLongformEyebrow: 'Longform-Nischenfinder',
@@ -478,22 +462,8 @@ export const COPY = {
     discoverTrendingTopics: 'Trending-Themen',
     discoverTrendingEmpty: 'Wir benennen die ersten Nischen — frische KI-Labels erscheinen hier innerhalb von 24 Stunden.',
     discoverScanningDeepWeb: 'Durchsuche das tiefe Netz…',
-    // Sprint B Phase 7A — Hot now / Qualität / Alle Segmented Control
-    discoverModeHotLabel: 'Aktuell heiß',
-    discoverModeQualityLabel: 'Qualität',
-    discoverModeAllLabel: 'Alle',
-    discoverBootstrapBanner: 'Trend-Engine kalibriert — volle Abdeckung innerhalb 48-72h. Wechsel zu Qualitätsmodus für Evergreen-Picks.',
+    // Sprint B trend-engine copy keys removed 2026-05-07.
     discoverSpikingNow: 'Im Aufstieg',
-    // Sprint B Phase 7B — /discover/trending Cluster-Feed-Seite
-    discoverTrendingEyebrow: 'Trend-Cluster',
-    discoverTrendingHeadline: 'Wo sich die Diskussion verdichtet',
-    discoverTrendingSubline: 'Replikationsmuster über Kanäle — Cluster aus ≥5 Videos mit gemeinsamem Narrativ.',
-    discoverTrendingCrossNicheTitle: '🚨 Cross-niche-Wellen',
-    discoverTrendingCrossNicheSubline: 'Gleicher Archetyp trendet über mehrere Kategorien — unser stärkstes Signal.',
-    discoverTrendingNoClusters: 'Noch keine Cluster — Engine braucht ≥48h Scans, bevor Replikationserkennung Daten liefert.',
-    discoverTrendingViewClustersLink: 'Cluster ansehen →',
-    discoverTrendingAllCategories: 'Alle Kategorien',
-    discoverTrendingHotSortCaption: 'Nach Trend-Score sortiert',
 
     filterFormat: 'Format',
     filterSubscriberRange: 'Abonnenten',

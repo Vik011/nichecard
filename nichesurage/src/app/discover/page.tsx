@@ -10,10 +10,7 @@ import { NicheDetailModal } from '@/components/niche/NicheDetailModal'
 import { NicheDetailContent } from '@/components/niche/NicheDetailContent'
 import { fetchNicheById, fetchSpikeHistory } from '@/lib/supabase/queries'
 import { fetchSavedNicheIds } from '@/lib/supabase/savedNiches'
-import {
-  fetchDiscoverFeed,
-  type DiscoverFeedMode,
-} from '@/lib/discover/fetchDiscoverFeed'
+import { fetchDiscoverFeed } from '@/lib/discover/fetchDiscoverFeed'
 import { useUser } from '@/lib/context/UserContext'
 import { useLang } from '@/lib/i18n/useLang'
 import { COPY } from '@/components/landing/copy'
@@ -27,12 +24,6 @@ import type { NicheCardData, SpikePoint } from '@/lib/types'
 // "Show more" reveals another STEP. Backed by a 60-row server fetch in
 // fetchDiscoverFeed (DEFAULT_LIMIT). Show-more capped at fetched count.
 const VISIBLE_STEP = 12
-
-function resolveMode(params: URLSearchParams): DiscoverFeedMode {
-  const m = params.get('mode')
-  if (m === 'all' || m === 'hot') return m
-  return 'hot'
-}
 
 export default function DiscoverPage() {
   return (
@@ -68,14 +59,17 @@ function DiscoverPageInner() {
   const [visibleCount, setVisibleCount] = useState(VISIBLE_STEP)
   const [upsellOpen, setUpsellOpen] = useState(false)
 
-  const mode: DiscoverFeedMode = resolveMode(searchParams)
-
-  async function handleFetch(nextMode: DiscoverFeedMode) {
+  // 2026-05-07 trend-engine deprecation: removed the Hot/All toggle.
+  // Sprint B's video-level trending was never bootstrapped in production;
+  // the toggle made the page feel "in progress" without delivering value.
+  // Discover now ships with one mode — channels added recently, sorted
+  // by outlier_ratio — which `fetchDiscoverFeed('hot')` already produces.
+  async function handleFetch() {
     setVisibleCount(VISIBLE_STEP)
     setLoading(true)
     setError(null)
     const { data, error: fetchError } = await fetchDiscoverFeed({
-      mode: nextMode,
+      mode: 'hot',
       limit: 60,
     })
     setResults(data)
@@ -91,12 +85,6 @@ function DiscoverPageInner() {
     } else {
       setHistories(new Map())
     }
-  }
-
-  function handleModeChange(next: DiscoverFeedMode) {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('mode', next)
-    router.replace(`/discover?${params.toString()}`)
   }
 
   function handleBookmarkToggle(id: string, saved: boolean) {
@@ -115,10 +103,10 @@ function DiscoverPageInner() {
         setSavedIds(ids)
         setSavedCount(ids.size)
       })
-      handleFetch(mode)
+      handleFetch()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLoading, mode])
+  }, [userLoading])
 
   // Reveal set for free tier is recomputed when results change.
   const revealedIds = useMemo(() => {
@@ -216,28 +204,6 @@ function DiscoverPageInner() {
         </div>
       )}
 
-      {/* Two-mode toggle. The whole filter UI was removed in favour of this
-          single switch — mode IS the filter. Hot Now surfaces freshly
-          discovered channels (last 14d), All sorts everything by outlier_ratio. */}
-      <div className="flex justify-center mb-6">
-        <div
-          role="tablist"
-          aria-label={copy.discoverModeAria}
-          className="inline-flex rounded-full bg-slate-900/70 border border-slate-800 p-1"
-        >
-          <ModeTab
-            label={copy.discoverModeHotNow}
-            active={mode === 'hot'}
-            onClick={() => handleModeChange('hot')}
-          />
-          <ModeTab
-            label={copy.discoverModeAllChannels}
-            active={mode === 'all'}
-            onClick={() => handleModeChange('all')}
-          />
-        </div>
-      </div>
-
       {error && (
         <p className="text-center text-red-400 text-sm mb-4">{error}</p>
       )}
@@ -258,7 +224,7 @@ function DiscoverPageInner() {
       {!userLoading && !loading && results.length > 0 && (
         <>
           <StaggerList
-            key={`grid-${mode}-${visibleCount}-${results.length}-${userTier}`}
+            key={`grid-${visibleCount}-${results.length}-${userTier}`}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
           >
             {visibleResults.map((niche, i) => (
@@ -350,26 +316,3 @@ function NicheDetailModalSkeleton() {
   )
 }
 
-interface ModeTabProps {
-  label: string
-  active: boolean
-  onClick: () => void
-}
-
-function ModeTab({ label, active, onClick }: ModeTabProps) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={
-        active
-          ? 'rounded-full px-4 py-1.5 text-sm font-semibold bg-indigo-600 text-white'
-          : 'rounded-full px-4 py-1.5 text-sm font-medium text-slate-400 hover:text-slate-200'
-      }
-    >
-      {label}
-    </button>
-  )
-}
