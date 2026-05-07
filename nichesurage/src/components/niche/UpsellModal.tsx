@@ -40,9 +40,10 @@ export function UpsellModal({ tier, copy, onClose }: UpsellModalProps) {
   const title = isBasic ? copy.upsellTitleBasic : copy.upsellTitleFree
   const body = isBasic ? copy.upsellBodyBasic : copy.upsellBodyFree
   const ctaLabel = isBasic ? copy.upsellCtaBasic : copy.upsellCtaFree
-  // Both CTAs route to /pricing where the user picks plan + billing; that
-  // page is the single source of truth for tier prices.
-  const ctaHref = '/pricing'
+  // Both CTAs route to the landing pricing section. There is no dedicated
+  // /pricing page (was a 404 footgun before 2026-05-07); the canonical
+  // pricing surface is the `#pricing` section on `/`.
+  const ctaHref = '/#pricing'
 
   return (
     <div

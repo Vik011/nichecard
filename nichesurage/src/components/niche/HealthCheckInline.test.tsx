@@ -19,7 +19,7 @@ describe('HealthCheckInline', () => {
   it('renders locked teaser for free tier', () => {
     render(<HealthCheckInline scanResultId="scan-1" userTier="free" copy={COPY.en} />)
     expect(screen.getByText(/Premium feature/i)).toBeTruthy()
-    expect(screen.getByRole('link', { name: /upgrade/i }).getAttribute('href')).toBe('/pricing')
+    expect(screen.getByRole('link', { name: /upgrade/i }).getAttribute('href')).toBe('/#pricing')
   })
 
   it('does NOT call fetch for free tier (locked teaser path)', () => {
