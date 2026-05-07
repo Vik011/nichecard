@@ -74,6 +74,9 @@ export function HealthCheckInline({ scanResultId, userTier, copy }: HealthCheckI
           // Sprint A.9 Phase B: demo-niche pre-warm hasn't finished. Stay
           // in loading and retry after the suggested back-off so the user
           // never sees the locked teaser flash for the demo niche.
+          // `warm_failed` is the terminal variant — on-demand pre-warm
+          // already ran and still couldn't produce a cache row (Anthropic
+          // outage). Surface it as a real error instead of looping.
           if (res.status === 503 && body?.error === 'warming_up') {
             const wait = Number(body.retryAfterSeconds ?? 5) * 1000
             retryTimer = setTimeout(() => { if (!cancelled) run() }, wait)
