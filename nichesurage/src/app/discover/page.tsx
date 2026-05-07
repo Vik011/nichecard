@@ -18,6 +18,7 @@ import { COPY } from '@/components/landing/copy'
 import { StaggerList } from '@/components/ui/StaggerList'
 import { SonarEmptyState } from '@/components/ui/SonarEmptyState'
 import { getRevealedIds } from '@/lib/tier/reveal'
+import { computeVisibleResults } from '@/lib/tier/visibleResults'
 import type { NicheCardData, SpikePoint } from '@/lib/types'
 
 // Pagination step. Initial render shows the first STEP cards; each
@@ -124,6 +125,22 @@ function DiscoverPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results, userTier, userId])
 
+  // Fix B (memo `2026-05-05-launch-debug.md` Issue #3): for free tier, the
+  // visible grid must always include the rotating reveal at position 5,
+  // even when its underlying rank is 4-14. Logic lives in a pure helper
+  // so it can be unit-tested independent of the React render path.
+  const visibleResults = useMemo(() => {
+    return computeVisibleResults({
+      tier: userTier,
+      userId: userId ?? '',
+      results,
+      visibleCount,
+      now: new Date(),
+    })
+  }, [results, userTier, userId, visibleCount])
+
+  const showShowMore = userTier !== 'free' && visibleCount < results.length
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto overflow-x-hidden">
       <div className="text-center mb-8">
@@ -186,10 +203,10 @@ function DiscoverPageInner() {
       {!userLoading && !loading && results.length > 0 && (
         <>
           <StaggerList
-            key={`grid-${mode}-${visibleCount}-${results.length}`}
+            key={`grid-${mode}-${visibleCount}-${results.length}-${userTier}`}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
           >
-            {results.slice(0, visibleCount).map((niche, i) => (
+            {visibleResults.map((niche, i) => (
               <NicheCard
                 key={niche.id}
                 data={niche}
@@ -205,7 +222,7 @@ function DiscoverPageInner() {
               />
             ))}
           </StaggerList>
-          {visibleCount < results.length && (
+          {showShowMore && (
             <div className="flex justify-center mt-6">
               <button
                 type="button"
@@ -213,6 +230,17 @@ function DiscoverPageInner() {
                 className="bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 text-slate-200 hover:text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
               >
                 {copy.discoverShowMore(results.length - visibleCount)}
+              </button>
+            </div>
+          )}
+          {userTier === 'free' && results.length > visibleResults.length && (
+            <div className="flex flex-col items-center mt-6 gap-2">
+              <button
+                type="button"
+                onClick={() => setUpsellOpen(true)}
+                className="bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 text-slate-200 hover:text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
+              >
+                {copy.discoverShowMoreFreeUpsell(results.length - visibleResults.length)}
               </button>
             </div>
           )}
