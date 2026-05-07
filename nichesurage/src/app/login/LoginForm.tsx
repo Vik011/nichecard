@@ -86,24 +86,36 @@ export function LoginForm() {
           body: JSON.stringify({ tier: plan, interval: billing }),
         })
         if (cancelled) return
+        // Always read the body — even on error responses we surface the
+        // server-side reason so the user (and we, in screenshots) can see
+        // exactly which validation tripped instead of a generic
+        // "couldn't start checkout".
+        const rawBody = await res.text().catch(() => '')
+        let parsed: { url?: string; error?: string } = {}
+        try {
+          parsed = rawBody ? (JSON.parse(rawBody) as { url?: string; error?: string }) : {}
+        } catch {
+          parsed = {}
+        }
         if (!res.ok) {
           setStatus('error')
+          const reason = parsed.error ?? rawBody ?? `HTTP ${res.status}`
           setErrorMessage(
-            "We couldn't start checkout. Please try again or contact support@surgeniche.com.",
+            `Checkout failed (${res.status}): ${reason}. If this keeps happening, email support@surgeniche.com.`,
           )
           return
         }
-        const data = (await res.json()) as { url?: string }
-        if (data.url) {
-          window.location.href = data.url
+        if (parsed.url) {
+          window.location.href = parsed.url
         } else {
           setStatus('error')
           setErrorMessage('Checkout returned no redirect URL. Please try again.')
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
           setStatus('error')
-          setErrorMessage('Network error while starting checkout. Try again.')
+          const msg = err instanceof Error ? err.message : 'unknown'
+          setErrorMessage(`Network error while starting checkout (${msg}). Try again.`)
         }
       }
     })
