@@ -8,6 +8,7 @@ import { fetchNicheById, fetchSpikeHistory } from '@/lib/supabase/queries'
 import { useUser } from '@/lib/context/UserContext'
 import { useLang } from '@/lib/i18n/useLang'
 import { COPY } from '@/components/landing/copy'
+import { FreeDemoBanner } from '@/components/niche/FreeDemoBanner'
 import { NicheDetailHeader } from '@/components/niche/NicheDetailHeader'
 import { NicheStatsPanel } from '@/components/niche/NicheStatsPanel'
 import { PerformanceChart } from '@/components/niche/PerformanceChart'
@@ -69,6 +70,7 @@ export default function NicheDetailPage() {
         <CaretLeft weight="bold" size={14} aria-hidden />
         {copy.detailBack}
       </Link>
+      <FreeDemoBanner nicheId={niche.id} copy={copy} />
       <NicheDetailHeader niche={niche} copy={copy} />
       <NicheStatsPanel niche={niche} copy={copy} />
       <PerformanceChart history={history} copy={copy} tier={tierFromScore(niche.opportunityScore)} />
