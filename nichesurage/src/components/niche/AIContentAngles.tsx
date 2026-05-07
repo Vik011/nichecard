@@ -33,6 +33,7 @@ export function AIContentAngles({ scanResultId, userTier, copy }: AIContentAngle
   useEffect(() => {
     if (!allowed) return
     let cancelled = false
+    let retryTimer: ReturnType<typeof setTimeout> | null = null
     async function run() {
       setState({ kind: 'loading' })
       try {
@@ -42,6 +43,15 @@ export function AIContentAngles({ scanResultId, userTier, copy }: AIContentAngle
           if (cancelled) return
           if (res.status === 429 && body?.error === 'daily_limit' && body?.resetAt) {
             setState({ kind: 'quota_exhausted', resetAt: new Date(body.resetAt) })
+            return
+          }
+          // Sprint A.9 Phase B: demo-niche pre-warm hasn't populated the
+          // cache yet. Stay in loading and retry after the suggested
+          // back-off; do NOT surface the locked teaser for the demo
+          // niche during the warm-up race.
+          if (res.status === 503 && body?.error === 'warming_up') {
+            const wait = Number(body.retryAfterSeconds ?? 5) * 1000
+            retryTimer = setTimeout(() => { if (!cancelled) run() }, wait)
             return
           }
           setState({ kind: 'error', message: body?.error ?? `Request failed (${res.status})` })
@@ -54,7 +64,10 @@ export function AIContentAngles({ scanResultId, userTier, copy }: AIContentAngle
       }
     }
     run()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      if (retryTimer) clearTimeout(retryTimer)
+    }
   }, [scanResultId, allowed])
 
   if (!allowed) {
