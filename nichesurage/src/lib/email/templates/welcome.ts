@@ -42,9 +42,31 @@ export function renderWelcomeEmail({ firstName }: WelcomeTemplateInput): string 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:40px 16px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:12px;padding:40px 36px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+          <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);overflow:hidden;">
             <tr>
-              <td>
+              <td style="background-color:#0d1220;padding:24px 36px;border-bottom:1px solid #1a2236;">
+                <table role="presentation" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="padding-right:10px;vertical-align:middle;">
+                      <svg width="28" height="28" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="32" cy="32" r="24" fill="none" stroke="#ffffff" stroke-width="3"/>
+                        <circle cx="32" cy="32" r="14" fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.5"/>
+                        <circle cx="32" cy="32" r="5" fill="#34d399"/>
+                        <line x1="32" y1="2" x2="32" y2="10" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="32" y1="54" x2="32" y2="62" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="2" y1="32" x2="10" y2="32" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="54" y1="32" x2="62" y2="32" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+                      </svg>
+                    </td>
+                    <td style="vertical-align:middle;">
+                      <span style="font-size:18px;font-weight:700;color:#ffffff;letter-spacing:-0.01em;">SurgeNiche</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:36px;">
                 <p style="margin:0 0 24px 0;font-size:18px;line-height:1.5;color:#1a1a1a;">
                   Hi ${greetingName},
                 </p>

@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useUser } from '@/lib/context/UserContext'
 import { useLang } from '@/lib/i18n/useLang'
 import { COPY } from '@/components/landing/copy'
+import { Logo } from '@/components/brand/Logo'
 
 export function TopNav() {
   const pathname = usePathname()
@@ -63,8 +64,9 @@ export function TopNav() {
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
         <Link
           href="/"
-          className="text-slate-100 font-bold tracking-tight text-base hover:text-indigo-300 transition-colors"
+          className="flex items-center gap-2 text-white font-bold tracking-tight text-base hover:opacity-80 transition-opacity"
         >
+          <Logo size={26} className="text-white" />
           SurgeNiche
         </Link>
 

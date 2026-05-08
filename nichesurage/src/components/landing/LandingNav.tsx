@@ -6,6 +6,7 @@ import { LanguageToggle } from './LanguageToggle'
 import { AvatarMenu } from './AvatarMenu'
 import type { CopyKeys, Lang } from './copy'
 import { useUser } from '@/lib/context/UserContext'
+import { Logo } from '@/components/brand/Logo'
 
 interface LandingNavProps {
   copy: CopyKeys
@@ -36,8 +37,9 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
         {/* Logo */}
         <Link
           href="/"
-          className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-brand-indigo-bright bg-clip-text text-transparent"
+          className="flex items-center gap-2.5 text-xl font-extrabold tracking-tight text-white hover:opacity-80 transition-opacity"
         >
+          <Logo size={30} className="text-white" />
           SurgeNiche
         </Link>
 
