@@ -33,13 +33,17 @@ const MAX_AGE_MONTHS_LONGFORM = 24
 // video is a dud" cases at discovery time, instead of letting them rot in
 // the watchlist burning scan-cycle YouTube quota.
 //
-// Numbers are ~50% of the equivalent premiumSpike thresholds so we let
-// near-miss candidates into the watchlist (they may sharpen up by the time
-// the next scan runs) without admitting obvious junk.
+// 2026-05-08: longform gates relaxed further (5K→3K views, 5→2 VPS) after
+// the PR #49 quality floor (>=1K subs in scan_results_latest) revealed
+// only ~50 niches in the Premium pool. Lower pre-screen lets ~30% more
+// near-miss candidates into the watchlist; the downstream premiumSpike
+// gate (LONGFORM_VIEWS_MIN=10k, VPS_MIN=10) still rejects obvious junk.
+// Shorts gates kept at 15K/200 — shorts seeds were just (re-)introduced
+// in 0036 and we want one experiment at a time on the shorts side.
 const DISCOVER_MIN_VIEWS_SHORTS = 15_000     // premium SHORTS_VIEWS_MIN is 30k
-const DISCOVER_MIN_VIEWS_LONGFORM = 5_000    // premium LONGFORM_VIEWS_MIN is 10k
+const DISCOVER_MIN_VIEWS_LONGFORM = 3_000    // premium LONGFORM_VIEWS_MIN is 10k
 const DISCOVER_MIN_VPS_SHORTS = 200          // premium SHORTS_VPS_MIN is 1000
-const DISCOVER_MIN_VPS_LONGFORM = 5          // premium LONGFORM_VPS_MIN is 10
+const DISCOVER_MIN_VPS_LONGFORM = 2          // premium LONGFORM_VPS_MIN is 10
 
 interface SeedExpansion {
   seed: SeedKeyword
