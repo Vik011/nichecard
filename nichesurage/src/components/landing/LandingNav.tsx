@@ -78,10 +78,10 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
                 className={[
                   'text-[13px] font-semibold px-4 py-2 rounded-lg',
                   'text-slate-200 hover:text-white',
-                  'border border-slate-700 hover:border-glow-indigo/60',
+                  'border border-slate-700 hover:border-slate-500',
                   'bg-charcoal-900/40 hover:bg-charcoal-800/60 backdrop-blur-sm',
                   'transition-colors duration-200',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
                 ].join(' ')}
               >
                 {copy.navOpenApp}
@@ -98,12 +98,12 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
               <Link
                 href="/login"
                 className={[
-                  'text-[13px] font-semibold px-4 py-2 rounded-lg text-white',
-                  'bg-gradient-to-r from-indigo-600 to-brand-indigo-bright',
-                  'shadow-[0_4px_18px_-6px_rgba(124,131,240,0.45)]',
-                  'transition-[transform,box-shadow,filter] duration-200 ease-out',
-                  'hover:-translate-y-[1px] hover:brightness-[1.08] hover:shadow-[0_6px_24px_-6px_rgba(124,131,240,0.6)]',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
+                  'text-[13px] font-semibold px-4 py-2 rounded-lg text-charcoal-900',
+                  'bg-white hover:bg-slate-100',
+                  'shadow-[0_4px_14px_-4px_rgba(0,0,0,0.25)]',
+                  'transition-[transform,box-shadow] duration-200 ease-out',
+                  'hover:-translate-y-[1px] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)]',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
                 ].join(' ')}
               >
                 {copy.navCta}
@@ -154,7 +154,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
                     tier === 'premium'
                       ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30'
                       : tier === 'basic'
-                      ? 'bg-glow-indigo/15 text-indigo-200 ring-1 ring-glow-indigo/40'
+                      ? 'bg-slate-800 text-slate-300 ring-1 ring-slate-700'
                       : 'bg-slate-800 text-slate-400 ring-1 ring-slate-700',
                   ].join(' ')}
                 >
@@ -172,7 +172,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
               </div>
               <Link
                 href="/discover"
-                className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-brand-indigo-bright text-white"
+                className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-white text-charcoal-900 hover:bg-slate-100"
                 onClick={() => setMenuOpen(false)}
               >
                 {copy.navOpenApp}
@@ -189,7 +189,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
               </Link>
               <Link
                 href="/login"
-                className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-brand-indigo-bright text-white"
+                className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-white text-charcoal-900 hover:bg-slate-100"
                 onClick={() => setMenuOpen(false)}
               >
                 {copy.navCta}

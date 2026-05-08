@@ -101,8 +101,8 @@ function scoreTier(score: number): ScoreTier {
     label: 'EXCELLENT',
   }
   if (score >= 50) return {
-    textClass: 'text-indigo-300',
-    glowShadow: 'drop-shadow-[0_0_18px_rgba(167,139,250,0.55)]',
+    textClass: 'text-slate-400',
+    glowShadow: 'drop-shadow-[0_0_12px_rgba(148,163,184,0.30)]',
     label: 'STRONG',
   }
   return {
@@ -123,13 +123,13 @@ function ShortsMetrics({ data, locked }: { data: ShortsNicheCardData; locked: bo
   return (
     <>
       {!locked && data.avgViewDurationPct !== undefined && (
-        <span className={`${CHIP_BASE} text-indigo-300`}>
+        <span className={`${CHIP_BASE} text-slate-400`}>
           <Clock size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
           {data.avgViewDurationPct}% duration
         </span>
       )}
       {!locked && data.hookScore !== undefined && (
-        <span className={`${CHIP_BASE} text-indigo-300`}>
+        <span className={`${CHIP_BASE} text-slate-400`}>
           <Target size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
           hook {data.hookScore}
         </span>
@@ -188,7 +188,7 @@ export function NicheCard({
   // through to the detail page. Same outer styling so the visual swap is
   // invisible.
   //
-  // Hover: subtle 2px lift + indigo-tinted soft glow (was scale[1.02] +
+  // Hover: subtle 2px lift + emerald-tinted soft glow (was scale[1.02] +
   // brightness[110] which read as harsh and animated layout). transition
   // is now scoped to transform + box-shadow only — no `transition-all`
   // since it would also animate text colour shifts and incur layout work.
@@ -197,8 +197,8 @@ export function NicheCard({
     isHero ? 'glass-glow' : '',
     'rounded-xl p-4 block w-full text-left',
     'transition-[transform,box-shadow] duration-200 ease-out',
-    'hover:-translate-y-[2px] hover:shadow-[0_10px_28px_-14px_rgba(99,102,241,0.55)]',
-    'focus:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60',
+    'hover:-translate-y-[2px] hover:shadow-[0_10px_28px_-14px_rgba(16,185,129,0.35)]',
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30',
   ].filter(Boolean).join(' ')
 
   const cardBody = (
@@ -249,7 +249,7 @@ export function NicheCard({
             )}
           </div>
           {data.nicheLabel && (
-            <div className="text-indigo-300 text-xs mt-0.5 truncate">{data.nicheLabel}</div>
+            <div className="text-slate-400 text-xs mt-0.5 truncate">{data.nicheLabel}</div>
           )}
         </div>
         <div className="shrink-0 text-right">
@@ -260,7 +260,7 @@ export function NicheCard({
             {tier.label}
           </div>
           {data.outlierRatio !== undefined && (
-            <div className="mt-1 text-glow-cyan text-xs font-semibold">
+            <div className="mt-1 text-emerald-300 text-xs font-semibold">
               {data.outlierRatio.toFixed(1)}× outlier
             </div>
           )}

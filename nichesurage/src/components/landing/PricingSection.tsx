@@ -89,7 +89,7 @@ export function PricingSection({ copy }: PricingSectionProps) {
               onClick={() => setBilling('yearly')}
               className={
                 billing === 'yearly'
-                  ? 'px-5 py-2 rounded-full text-sm font-semibold bg-gradient-to-br from-brand-indigo to-brand-indigo-bright text-white transition-all flex items-center gap-2'
+                  ? 'px-5 py-2 rounded-full text-sm font-semibold bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30 transition-all flex items-center gap-2'
                   : 'px-5 py-2 rounded-full text-sm font-semibold text-slate-400 hover:text-slate-200 transition-all flex items-center gap-2'
               }
             >
@@ -122,12 +122,12 @@ export function PricingSection({ copy }: PricingSectionProps) {
                 }
               >
                 {tier.highlight && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold tracking-[0.22em] text-glow-indigo uppercase bg-charcoal-900 px-3">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold tracking-[0.22em] text-emerald-300 uppercase bg-charcoal-900 px-3">
                     Most Popular
                   </span>
                 )}
                 {tier.isPremium && (
-                  <span className="absolute -top-3 right-6 text-[10px] font-semibold tracking-[0.22em] text-glow-indigo uppercase bg-charcoal-900 px-3">
+                  <span className="absolute -top-3 right-6 text-[10px] font-semibold tracking-[0.22em] text-emerald-300 uppercase bg-charcoal-900 px-3">
                     {copy.pricingBestValueBadge}
                   </span>
                 )}
@@ -159,7 +159,7 @@ export function PricingSection({ copy }: PricingSectionProps) {
                   onClick={() => captureClient('pricing_cta_clicked', { plan: tier.plan, billing })}
                   className={
                     tier.highlight
-                      ? 'block w-full text-center py-3 px-4 rounded-xl font-semibold bg-gradient-to-br from-brand-indigo to-brand-indigo-bright text-white hover:brightness-110 hover:shadow-glow-cyan transition-all shadow-[0_8px_24px_-8px_rgba(124,131,240,0.45)]'
+                      ? 'block w-full text-center py-3 px-4 rounded-xl font-semibold bg-white text-charcoal-900 hover:bg-slate-100 transition-all shadow-[0_8px_24px_-8px_rgba(0,0,0,0.2)]'
                       : 'block w-full text-center py-3 px-4 rounded-xl font-semibold gborder bg-charcoal-800 text-slate-200 hover:bg-charcoal-700 transition-colors'
                   }
                 >

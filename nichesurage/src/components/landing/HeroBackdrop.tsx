@@ -92,11 +92,11 @@ export function HeroBackdrop({ copy, pings, channelsLast24h }: HeroBackdropProps
             >
               <div className="flex items-start gap-3">
                 <div className="relative shrink-0 mt-1.5">
-                  <span aria-hidden className="absolute inset-0 -m-1 rounded-full bg-glow-cyan/30 animate-ping" />
-                  <span aria-hidden className="relative block w-2 h-2 rounded-full bg-glow-cyan shadow-[0_0_10px_rgba(34,211,238,0.9)]" />
+                  <span aria-hidden className="absolute inset-0 -m-1 rounded-full bg-emerald-400/30 animate-ping" />
+                  <span aria-hidden className="relative block w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.9)]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-glow-cyan text-[9px] font-semibold uppercase tracking-[0.22em] mb-1">
+                  <div className="text-emerald-300 text-[9px] font-semibold uppercase tracking-[0.22em] mb-1">
                     {copy.radarPingPrefix}
                   </div>
                   <div className="text-slate-100 text-lg font-semibold tracking-tight tabular-nums leading-none mb-1.5">
@@ -136,8 +136,8 @@ const PING_POSITIONS: Array<{
   glow: string
 }> = [
   { top: '24%', left: '68%', size: 'w-2.5 h-2.5', color: 'bg-rose-400',     delay: '0s',   duration: '3.2s', glow: '0 0 18px rgba(251,113,133,0.9)' },
-  { top: '64%', left: '30%', size: 'w-2 h-2',     color: 'bg-glow-cyan',    delay: '1.4s', duration: '3.6s', glow: '0 0 14px rgba(34,211,238,0.85)' },
-  { top: '46%', left: '78%', size: 'w-1.5 h-1.5', color: 'bg-glow-indigo',  delay: '2.7s', duration: '3.0s', glow: '0 0 12px rgba(124,131,240,0.85)' },
+  { top: '64%', left: '30%', size: 'w-2 h-2',     color: 'bg-emerald-400',  delay: '1.4s', duration: '3.6s', glow: '0 0 14px rgba(16,185,129,0.85)' },
+  { top: '46%', left: '78%', size: 'w-1.5 h-1.5', color: 'bg-emerald-400',  delay: '2.7s', duration: '3.0s', glow: '0 0 12px rgba(16,185,129,0.85)' },
 ]
 
 function RadarVisual() {
@@ -149,15 +149,15 @@ function RadarVisual() {
     <div className="relative w-[42rem] h-[42rem] sm:w-[52rem] sm:h-[52rem] md:w-[64rem] md:h-[64rem] lg:w-[72rem] lg:h-[72rem]">
       {/* Concentric rings — slightly brighter than the previous pass so the
           radar reads at 55% opacity without mix-blend tricks. */}
-      <div className="absolute inset-0       rounded-full border border-glow-indigo/35" />
-      <div className="absolute inset-12      rounded-full border border-glow-indigo/30" />
-      <div className="absolute inset-24      rounded-full border border-glow-indigo/24" />
-      <div className="absolute inset-[144px] rounded-full border border-glow-indigo/18" />
-      <div className="absolute inset-[192px] rounded-full border border-glow-indigo/14" />
+      <div className="absolute inset-0       rounded-full border border-slate-700/35" />
+      <div className="absolute inset-12      rounded-full border border-slate-700/30" />
+      <div className="absolute inset-24      rounded-full border border-slate-700/24" />
+      <div className="absolute inset-[144px] rounded-full border border-slate-700/18" />
+      <div className="absolute inset-[192px] rounded-full border border-slate-700/14" />
 
       {/* Crosshairs */}
-      <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-glow-indigo/18 to-transparent" />
-      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-glow-indigo/18 to-transparent" />
+      <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-600/18 to-transparent" />
+      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-slate-600/18 to-transparent" />
 
       {/* Sweep arm — narrower trail (40°) and slower duration (8s via inline
           override) so the radar feels deliberate, not anxious. */}
@@ -166,7 +166,7 @@ function RadarVisual() {
         className="absolute inset-0 rounded-full animate-sonar-sweep motion-reduce:animate-none"
         style={{
           background:
-            'conic-gradient(from 0deg, rgba(124,131,240,0) 0deg, rgba(124,131,240,0.55) 40deg, rgba(124,131,240,0) 90deg, rgba(124,131,240,0) 360deg)',
+            'conic-gradient(from 0deg, rgba(148,163,184,0) 0deg, rgba(148,163,184,0.45) 40deg, rgba(148,163,184,0) 90deg, rgba(148,163,184,0) 360deg)',
           maskImage: 'radial-gradient(circle, black 50%, transparent 100%)',
           WebkitMaskImage: 'radial-gradient(circle, black 50%, transparent 100%)',
           animationDuration: '8s',
@@ -177,7 +177,7 @@ function RadarVisual() {
           every 6.5s. The radar "found something." */}
       <span
         aria-hidden
-        className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full border border-glow-cyan detection-pulse motion-reduce:hidden"
+        className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full border border-emerald-400 detection-pulse motion-reduce:hidden"
       />
 
       {/* Three strategic detection dots */}
@@ -199,7 +199,7 @@ function RadarVisual() {
       {/* Center pip */}
       <span
         aria-hidden
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-glow-indigo shadow-[0_0_28px_rgba(124,131,240,0.95)]"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_28px_rgba(16,185,129,0.95)]"
       />
     </div>
   )

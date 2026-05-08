@@ -45,11 +45,11 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
             return (
               <MotionCard
                 key={feature.title}
-                className="relative rounded-2xl p-8 glass glass-glow ring-1 ring-glow-indigo/30 shadow-[0_24px_60px_-16px_rgba(124,131,240,0.25)]"
+                className="relative rounded-2xl p-8 glass glass-glow ring-1 ring-emerald-500/25 shadow-[0_24px_60px_-16px_rgba(16,185,129,0.15)]"
               >
                 <span
                   data-testid={`feature-premium-badge-${feature.icon}`}
-                  className="absolute top-5 right-5 text-[10px] font-semibold tracking-[0.22em] text-glow-indigo uppercase"
+                  className="absolute top-5 right-5 text-[10px] font-semibold tracking-[0.22em] text-emerald-300 uppercase"
                 >
                   {copy.featuresPremiumBadge}
                 </span>
@@ -59,7 +59,7 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
                     size={40}
                     aria-hidden="true"
                     data-testid={`feature-icon-${feature.icon}`}
-                    className="text-glow-indigo mb-6"
+                    className="text-emerald-300 mb-6"
                   />
                 )}
                 <h3 className="font-display text-2xl font-normal text-slate-100 mb-3 tracking-[-0.01em]">
@@ -107,7 +107,7 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
                 {isPremium && (
                   <span
                     data-testid={`feature-premium-badge-${feature.icon}`}
-                    className="absolute top-4 right-4 text-[10px] font-semibold tracking-[0.18em] text-glow-indigo uppercase"
+                    className="absolute top-4 right-4 text-[10px] font-semibold tracking-[0.18em] text-emerald-300 uppercase"
                   >
                     {copy.featuresPremiumBadge}
                   </span>
@@ -118,7 +118,7 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
                     size={30}
                     aria-hidden="true"
                     data-testid={`feature-icon-${feature.icon}`}
-                    className="text-glow-indigo mb-5"
+                    className="text-emerald-300 mb-5"
                   />
                 )}
                 <h3 className="text-slate-100 font-semibold mb-2 text-[15px]">{feature.title}</h3>

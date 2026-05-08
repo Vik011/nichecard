@@ -50,13 +50,13 @@ export function FinalCTASection({ copy, isLoggedIn = false }: FinalCTASectionPro
         {/* Concentric rings — quiet rhyme with the hero radar. */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="relative w-[28rem] h-[28rem] sm:w-[36rem] sm:h-[36rem] md:w-[44rem] md:h-[44rem] opacity-60">
-            <div className="absolute inset-0 rounded-full border border-glow-indigo/25" />
-            <div className="absolute inset-12 rounded-full border border-glow-indigo/18" />
-            <div className="absolute inset-24 rounded-full border border-glow-indigo/12" />
+            <div className="absolute inset-0 rounded-full border border-slate-700/20" />
+            <div className="absolute inset-12 rounded-full border border-slate-700/14" />
+            <div className="absolute inset-24 rounded-full border border-slate-700/8" />
             {/* Center pip — "target-locked" full-stop. */}
             <span
               aria-hidden
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-glow-indigo/70 shadow-[0_0_18px_rgba(124,131,240,0.7)]"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-400/70 shadow-[0_0_18px_rgba(16,185,129,0.6)]"
             />
           </div>
         </div>
@@ -68,7 +68,7 @@ export function FinalCTASection({ copy, isLoggedIn = false }: FinalCTASectionPro
         </h2>
         <a
           href={isLoggedIn ? '/discover' : '/login'}
-          className="inline-block px-8 py-3.5 rounded-xl bg-gradient-to-br from-brand-indigo to-brand-indigo-bright text-white font-semibold shadow-[0_10px_30px_-8px_rgba(124,131,240,0.5)] hover:brightness-110 hover:shadow-glow-cyan transition-all"
+          className="inline-block px-8 py-3.5 rounded-xl bg-white text-charcoal-900 font-semibold shadow-[0_10px_30px_-8px_rgba(0,0,0,0.25)] hover:bg-slate-100 hover:shadow-[0_14px_36px_-8px_rgba(0,0,0,0.3)] transition-all"
         >
           {isLoggedIn ? copy.navOpenApp : copy.ctaButton}
         </a>

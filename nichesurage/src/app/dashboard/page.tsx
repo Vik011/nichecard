@@ -47,13 +47,13 @@ export default async function DashboardPage() {
           <p className="text-slate-500 text-sm mt-0.5">{email}</p>
         </div>
         <div className="text-right">
-          <span className="inline-block bg-indigo-950 border border-indigo-800 text-indigo-300 text-xs font-semibold px-3 py-1 rounded-full">
+          <span className="inline-block bg-charcoal-800 border border-slate-700 text-slate-400 text-xs font-semibold px-3 py-1 rounded-full">
             {tierLabel[tier]}
           </span>
           {tier !== 'premium' && (
             <a
               href="/#pricing"
-              className="block text-xs text-indigo-400 hover:text-indigo-300 mt-1.5"
+              className="block text-xs text-slate-400 hover:text-slate-200 mt-1.5"
             >
               Upgrade →
             </a>

@@ -61,7 +61,7 @@ export function RevealCountdown({ tier, copy }: RevealCountdownProps) {
 
   return (
     <div className="inline-flex items-center gap-2 bg-charcoal-900/70 gborder rounded-full px-3 py-1.5 text-[12px] backdrop-blur-md">
-      <Hourglass weight="duotone" size={13} className="text-glow-indigo" aria-hidden />
+      <Hourglass weight="duotone" size={13} className="text-emerald-300" aria-hidden />
       <span className="text-slate-400 uppercase tracking-[0.18em] text-[10px] font-semibold">
         {copy.revealNextLabel}
       </span>
@@ -81,7 +81,7 @@ function StaticBadge({
 }) {
   const cls =
     variant === 'premium'
-      ? 'bg-glow-indigo/15 text-indigo-200 ring-1 ring-glow-indigo/40'
+      ? 'bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/30'
       : 'bg-charcoal-900/70 text-slate-300 gborder'
   return (
     <div

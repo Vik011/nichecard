@@ -62,7 +62,7 @@ export function UpsellModal({ tier, copy, onClose }: UpsellModalProps) {
 
       <div
         ref={dialogRef}
-        className="relative w-full max-w-md glass rounded-2xl p-7 ring-1 ring-glow-indigo/40 shadow-[0_30px_80px_-20px_rgba(124,131,240,0.6)]"
+        className="relative w-full max-w-md glass rounded-2xl p-7 ring-1 ring-emerald-500/30 shadow-[0_30px_80px_-20px_rgba(16,185,129,0.4)]"
       >
         <button
           type="button"
@@ -73,8 +73,8 @@ export function UpsellModal({ tier, copy, onClose }: UpsellModalProps) {
           <X weight="bold" size={16} aria-hidden />
         </button>
 
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-glow-indigo/15 ring-1 ring-glow-indigo/40 mb-4">
-          <LockSimple weight="fill" size={20} className="text-glow-indigo" aria-hidden />
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/30 mb-4">
+          <LockSimple weight="fill" size={20} className="text-emerald-300" aria-hidden />
         </div>
 
         <h2 className="text-xl font-semibold tracking-tight text-slate-100 mb-2">
@@ -85,7 +85,7 @@ export function UpsellModal({ tier, copy, onClose }: UpsellModalProps) {
         <div className="flex flex-col gap-2">
           <Link
             href={ctaHref}
-            className="block w-full text-center py-3 px-4 rounded-xl font-semibold text-[15px] bg-gradient-to-br from-brand-indigo to-brand-indigo-bright text-white hover:brightness-110 hover:shadow-glow-cyan transition-all shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
+            className="block w-full text-center py-3 px-4 rounded-xl font-semibold text-[15px] bg-white text-charcoal-900 hover:bg-slate-100 transition-all"
           >
             {ctaLabel}
           </Link>

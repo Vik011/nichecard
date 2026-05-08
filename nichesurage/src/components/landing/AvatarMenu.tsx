@@ -71,7 +71,7 @@ export function AvatarMenu({ copy, email, tier }: AvatarMenuProps) {
     tier === 'premium'
       ? 'ring-emerald-400/60 hover:ring-emerald-400/80'
       : tier === 'basic'
-      ? 'ring-glow-indigo/60 hover:ring-glow-indigo/80'
+      ? 'ring-emerald-500/40 hover:ring-emerald-500/60'
       : 'ring-slate-700 hover:ring-slate-500'
 
   const tierLabel =
@@ -91,7 +91,7 @@ export function AvatarMenu({ copy, email, tier }: AvatarMenuProps) {
         aria-label={copy.avatarMenuOpen}
         className={[
           'flex items-center gap-1 rounded-full p-0.5 transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
         ].join(' ')}
       >
         <span
@@ -138,7 +138,7 @@ export function AvatarMenu({ copy, email, tier }: AvatarMenuProps) {
                   tier === 'premium'
                     ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30'
                     : tier === 'basic'
-                    ? 'bg-glow-indigo/15 text-indigo-200 ring-1 ring-glow-indigo/30'
+                    ? 'bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/30'
                     : 'bg-slate-800 text-slate-400 ring-1 ring-slate-700',
                 ].join(' ')}
               >
@@ -158,7 +158,7 @@ export function AvatarMenu({ copy, email, tier }: AvatarMenuProps) {
               'text-[13px] text-slate-300 hover:text-white',
               'hover:bg-white/[0.04] transition-colors',
               'disabled:opacity-60',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30',
             ].join(' ')}
           >
             <SignOut weight="bold" size={14} aria-hidden />

@@ -39,7 +39,7 @@ export function FaqSection({ copy }: FaqSectionProps) {
                   className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left text-slate-100 hover:bg-charcoal-800/40 transition-colors"
                 >
                   <span className="text-[15px] font-medium leading-snug">{item.q}</span>
-                  <span aria-hidden className="text-glow-indigo shrink-0">
+                  <span aria-hidden className="text-emerald-300 shrink-0">
                     {isOpen ? <Minus weight="bold" size={16} /> : <Plus weight="bold" size={16} />}
                   </span>
                 </button>

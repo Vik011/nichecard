@@ -57,7 +57,7 @@ export function TrendingTopics({
 
   return (
     <div className="mb-5">
-      <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-indigo mb-2">
+      <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-emerald-300 mb-2">
         {eyebrow}
       </div>
       <div
@@ -81,8 +81,8 @@ export function TrendingTopics({
                   href={buildClusterHref(c.id)}
                   className={`group glass rounded-full px-3.5 py-1.5 text-xs whitespace-nowrap transition-all shrink-0 ${
                     isActive
-                      ? 'ring-1 ring-glow-indigo text-slate-100 bg-charcoal-700/60'
-                      : 'hover:ring-1 hover:ring-glow-indigo/40 text-slate-300'
+                      ? 'ring-1 ring-emerald-400 text-slate-100 bg-charcoal-700/60'
+                      : 'hover:ring-1 hover:ring-emerald-500/30 text-slate-300'
                   }`}
                 >
                   <span className="font-medium">{c.label}</span>

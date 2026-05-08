@@ -187,7 +187,7 @@ function DiscoverPageInner() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto overflow-x-hidden">
       <div className="text-center mb-8">
-        <div className="inline-block text-[10px] font-semibold tracking-[0.22em] text-glow-indigo uppercase mb-2">
+        <div className="inline-block text-[10px] font-semibold tracking-[0.22em] text-emerald-300 uppercase mb-2">
           {copy.discoverEyebrow}
         </div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-100 mb-2">
@@ -249,7 +249,7 @@ function DiscoverPageInner() {
               <button
                 type="button"
                 onClick={() => setVisibleCount((c) => Math.min(c + VISIBLE_STEP, results.length))}
-                className="bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 text-slate-200 hover:text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
+                className="bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-emerald-500/30 text-slate-200 hover:text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
               >
                 {copy.discoverShowMore(results.length - visibleCount)}
               </button>
@@ -260,7 +260,7 @@ function DiscoverPageInner() {
               <button
                 type="button"
                 onClick={() => setUpsellOpen(true)}
-                className="bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500/50 text-slate-200 hover:text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
+                className="bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-emerald-500/30 text-slate-200 hover:text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
               >
                 {copy.discoverShowMoreFreeUpsell(results.length - visibleResults.length)}
               </button>

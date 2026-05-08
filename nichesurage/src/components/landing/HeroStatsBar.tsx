@@ -49,7 +49,7 @@ export function HeroStatsBar({ copy, spikingNow }: HeroStatsBarProps) {
           </span>
           <div className="flex-1 h-1 rounded-full bg-slate-800 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-glow-indigo to-glow-cyan transition-[width] duration-1000 ease-linear"
+              className="h-full bg-emerald-400/80 transition-[width] duration-1000 ease-linear"
               style={{ width: `${progressPct}%` }}
             />
           </div>

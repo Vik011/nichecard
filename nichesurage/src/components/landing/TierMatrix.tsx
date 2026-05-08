@@ -25,7 +25,7 @@ export function TierMatrix({ copy }: TierMatrixProps) {
               <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-slate-500 border-b border-slate-800/60">
                 <th className="px-5 py-4 font-semibold">{cols.feature}</th>
                 <th className="px-5 py-4 font-semibold">{cols.free}</th>
-                <th className="px-5 py-4 font-semibold text-glow-indigo">{cols.basic}</th>
+                <th className="px-5 py-4 font-semibold text-emerald-300">{cols.basic}</th>
                 <th className="px-5 py-4 font-semibold">{cols.premium}</th>
               </tr>
             </thead>

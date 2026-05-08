@@ -16,7 +16,7 @@ type LoadState =
   | { kind: 'error'; message: string }
   | { kind: 'ready'; videos: ChannelVideo[] }
 
-const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-indigo'
+const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-emerald-300'
 
 export function ChannelVideoGrid({ channelId, copy }: ChannelVideoGridProps) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
@@ -100,7 +100,7 @@ function VideoTile({ video, copy }: { video: ChannelVideo; copy: CopyKeys }) {
           />
         )}
       </div>
-      <div className="text-slate-200 text-sm font-medium line-clamp-2 mt-2 group-hover:text-indigo-300 transition-colors">
+      <div className="text-slate-200 text-sm font-medium line-clamp-2 mt-2 group-hover:text-slate-100 transition-colors">
         {video.title}
       </div>
       <div className="text-slate-500 text-xs mt-1 tabular-nums">

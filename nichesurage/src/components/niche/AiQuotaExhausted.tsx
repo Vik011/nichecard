@@ -39,21 +39,21 @@ export function AiQuotaExhausted({ resetAt, copy }: AiQuotaExhaustedProps) {
   return (
     <section className="glass rounded-2xl p-6 mb-6 relative overflow-hidden">
       <div className="flex items-center gap-2 mb-2">
-        <Sparkle weight="fill" size={14} className="text-glow-indigo" aria-hidden />
-        <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-indigo">
+        <Sparkle weight="fill" size={14} className="text-emerald-300" aria-hidden />
+        <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-emerald-300">
           {copy.aiQuotaUsedTitle}
         </div>
       </div>
 
       <div className="flex items-start gap-4 mt-3">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-glow-indigo/15 ring-1 ring-glow-indigo/40 shrink-0">
-          <Hourglass weight="duotone" size={20} className="text-glow-indigo" aria-hidden />
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/30 shrink-0">
+          <Hourglass weight="duotone" size={20} className="text-emerald-300" aria-hidden />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-slate-300 text-sm leading-relaxed mb-4">{body}</p>
           <Link
             href="/#pricing"
-            className="inline-block text-[13px] font-semibold px-4 py-2 rounded-lg bg-gradient-to-br from-brand-indigo to-brand-indigo-bright text-white hover:brightness-110 transition-all shadow-[0_8px_24px_-8px_rgba(124,131,240,0.45)]"
+            className="inline-block text-[13px] font-semibold px-4 py-2 rounded-lg bg-white text-charcoal-900 hover:bg-slate-100 transition-all"
           >
             {copy.aiQuotaUpgradeCta}
           </Link>

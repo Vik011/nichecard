@@ -8,9 +8,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export function Button({ variant = 'primary', size = 'md', className = '', children, ...props }: ButtonProps) {
   const base = 'font-semibold rounded-lg transition-all cursor-pointer border-0'
   const variants = {
-    primary: 'bg-gradient-to-r from-indigo-500 to-brand-indigo-bright text-white shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)]',
+    primary: 'bg-white text-charcoal-900 hover:bg-slate-100 shadow-[0_8px_16px_-2px_rgba(0,0,0,0.15)] hover:shadow-[0_12px_24px_-4px_rgba(0,0,0,0.2)]',
     ghost: 'bg-transparent border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-600',
-    hero: 'bg-gradient-to-r from-indigo-500 to-brand-indigo-bright text-white shadow-[0_0_40px_rgba(99,102,241,0.35)] hover:shadow-[0_0_50px_rgba(99,102,241,0.5)]',
+    hero: 'bg-white text-charcoal-900 hover:bg-slate-100 shadow-[0_12px_28px_-4px_rgba(0,0,0,0.25)] hover:shadow-[0_16px_36px_-6px_rgba(0,0,0,0.3)]',
   }
   const sizes = {
     sm: 'px-3 py-1.5 text-xs',

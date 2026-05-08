@@ -27,14 +27,12 @@ const config: Config = {
           700: "var(--color-bg-overlay)",
           600: "var(--color-bg-hover)",
         },
+        // Legacy alias kept for tests that assert literal class names like
+        // `ring-glow-indigo`. Maps to emerald per the 2026-05-08 brand
+        // cleanup so the visual matches the rest of the surface even when
+        // the legacy class is in use.
         glow: {
-          indigo: "var(--color-accent-indigo)",
-          cyan: "var(--color-accent-cyan)",
-        },
-        brand: {
-          indigo: "var(--color-accent-indigo)",
-          "indigo-bright": "var(--color-accent-indigo-bright)",
-          cyan: "var(--color-accent-cyan)",
+          indigo: "var(--color-accent-emerald)",
         },
       },
       fontFamily: {
@@ -54,10 +52,6 @@ const config: Config = {
         "elev-1": "0 2px 8px -2px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3)",
         "elev-2": "0 8px 24px -8px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.35)",
         "elev-3": "0 24px 60px -16px rgba(0,0,0,0.65), 0 8px 18px rgba(0,0,0,0.4)",
-        "glow-indigo": "0 0 32px -4px rgba(99,102,241,0.45)",
-        "glow-indigo-lg": "0 0 64px -8px rgba(99,102,241,0.55)",
-        "glow-cyan": "0 0 32px -4px rgba(6,182,212,0.45)",
-        "glow-cyan-lg": "0 0 64px -8px rgba(6,182,212,0.55)",
       },
       animation: {
         "orb-drift-1": "orb-drift-1 28s ease-in-out infinite",

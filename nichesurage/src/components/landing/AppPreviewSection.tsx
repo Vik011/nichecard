@@ -54,13 +54,13 @@ export function AppPreviewSection({ niches, copy, isLoggedIn = false }: AppPrevi
             className="pointer-events-none absolute inset-x-0 -inset-y-8"
             style={{
               background:
-                'radial-gradient(ellipse 35% 100% at center, rgba(124,131,240,0.10), transparent 70%)',
+                'radial-gradient(ellipse 35% 100% at center, rgba(16,185,129,0.10), transparent 70%)',
             }}
           />
           <Link
             // Unified Discover surface — point straight at /discover.
             href={isLoggedIn ? '/discover' : '/login'}
-            className="group relative inline-flex items-center gap-2 text-[15px] font-semibold px-7 py-3 rounded-xl bg-gradient-to-br from-brand-indigo to-brand-indigo-bright hover:brightness-110 hover:shadow-glow-cyan transition-all text-white shadow-[0_8px_24px_-6px_rgba(124,131,240,0.45)]"
+            className="group relative inline-flex items-center gap-2 text-[15px] font-semibold px-7 py-3 rounded-xl bg-white text-charcoal-900 hover:bg-slate-100 transition-all"
           >
             <span>{isLoggedIn ? copy.navOpenApp : copy.previewCta}</span>
             <ArrowRight
