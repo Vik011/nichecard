@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Script from 'next/script'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { LogoStacked } from '@/components/brand/LogoStacked'
 
 const VALID_PLANS = new Set(['basic', 'premium'])
 const VALID_INTERVALS = new Set(['monthly', 'yearly'])
@@ -245,10 +246,13 @@ export function LoginForm() {
         />
       )}
       <div className="w-full max-w-md glass rounded-2xl p-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-100 mb-2">
-          Sign in to SurgeNiche
+        <div className="flex justify-center mb-7">
+          <LogoStacked iconSize={64} />
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-100 mb-2 text-center">
+          Sign in
         </h1>
-        <p className="text-slate-400 text-sm mb-6">
+        <p className="text-slate-400 text-sm mb-6 text-center">
           We use Google sign-in to keep accounts real. No passwords to remember.
         </p>
 

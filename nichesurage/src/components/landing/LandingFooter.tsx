@@ -1,6 +1,7 @@
 'use client'
 import type { CopyKeys, Lang } from './copy'
 import { LanguageToggle } from './LanguageToggle'
+import { LogoStacked } from '@/components/brand/LogoStacked'
 
 interface LandingFooterProps {
   copy: CopyKeys
@@ -13,8 +14,8 @@ export function LandingFooter({ copy, lang, onLangChange }: LandingFooterProps) 
     <footer className="relative border-t border-white/[0.05] py-12 px-6">
       <div className="max-w-5xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
-          <div className="flex flex-col gap-2">
-            <span className="text-slate-100 font-semibold text-lg">SurgeNiche</span>
+          <div className="flex flex-col gap-3">
+            <LogoStacked iconSize={44} className="!items-start" />
             <p className="text-slate-500 text-sm max-w-xs">{copy.footerTagline}</p>
           </div>
           <div className="flex flex-col gap-2">
