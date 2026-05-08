@@ -19,7 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
           <div className="flex items-baseline gap-3">
             <Link href="/admin" className="text-base font-semibold tracking-tight text-slate-100">
-              SurgeNiche <span className="text-glow-indigo">Admin</span>
+              SurgeNiche <span className="text-emerald-300">Admin</span>
             </Link>
             <Link
               href="/discover?type=shorts"

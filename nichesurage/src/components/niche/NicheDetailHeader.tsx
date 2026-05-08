@@ -16,8 +16,8 @@ function scoreTier(score: number): ScoreTier {
     label: 'EXCELLENT',
   }
   if (score >= 50) return {
-    textClass: 'text-indigo-300',
-    glowShadow: 'drop-shadow-[0_0_24px_rgba(167,139,250,0.55)]',
+    textClass: 'text-slate-300',
+    glowShadow: 'drop-shadow-[0_0_18px_rgba(148,163,184,0.30)]',
     label: 'STRONG',
   }
   if (score >= 30) return {
@@ -63,14 +63,14 @@ export function NicheDetailHeader({
     <section className="glass glass-glow rounded-2xl p-7 mb-6">
       <div className="flex flex-col md:flex-row justify-between items-start gap-6">
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-glow-indigo mb-2">
+          <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-emerald-300 mb-2">
             {eyebrow}
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-100 truncate">
             {niche.channelName ?? '—'}
           </h1>
           {niche.nicheLabel && (
-            <p className="text-indigo-300 text-sm mt-1.5 truncate">{niche.nicheLabel}</p>
+            <p className="text-slate-400 text-sm mt-1.5 truncate">{niche.nicheLabel}</p>
           )}
           <div className="flex items-center gap-3 mt-4">
             {niche.channelUrl && (

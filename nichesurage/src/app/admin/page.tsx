@@ -201,7 +201,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             name="q"
             defaultValue={lookupQuery}
             placeholder="Search by email (partial match)"
-            className="flex-1 rounded-lg border border-slate-800/60 bg-charcoal-900/60 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-indigo-500/60 focus:outline-none"
+            className="flex-1 rounded-lg border border-slate-800/60 bg-charcoal-900/60 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-emerald-500/40 focus:outline-none"
           />
           <button
             type="submit"
@@ -299,7 +299,7 @@ function SentryLinkCard() {
 function TierBadge({ tier }: { tier: 'free' | 'basic' | 'premium' }) {
   const cls =
     tier === 'premium'
-      ? 'border-indigo-700/60 bg-indigo-950/40 text-indigo-200'
+      ? 'border-emerald-600/40 bg-emerald-950/20 text-emerald-300'
       : tier === 'basic'
       ? 'border-emerald-700/60 bg-emerald-950/40 text-emerald-200'
       : 'border-slate-800/60 bg-charcoal-900/40 text-slate-400'

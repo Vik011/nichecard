@@ -78,7 +78,7 @@ export function TopNav() {
               aria-current={isActive ? 'page' : undefined}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-indigo-600 text-white shadow-[0_0_18px_-4px_rgba(99,102,241,0.55)]'
+                  ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30'
                   : 'text-slate-400 hover:text-slate-100'
               }`}
             >

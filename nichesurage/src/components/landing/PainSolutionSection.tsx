@@ -60,10 +60,10 @@ export function PainSolutionSection({ copy }: PainSolutionSectionProps) {
               live-status green pulse next to the title to telegraph
               "this is the active state, right now." */}
           <div
-            className="relative glass glass-glow rounded-xl p-8 ring-1 ring-glow-indigo/40 shadow-[0_24px_60px_-16px_rgba(124,131,240,0.35)]"
+            className="relative glass glass-glow rounded-xl p-8 ring-1 ring-glow-indigo/40 shadow-[0_24px_60px_-16px_rgba(16,185,129,0.2)]"
             data-tone="solution"
           >
-            <h3 className="text-[13px] font-semibold uppercase tracking-[0.18em] text-glow-indigo mb-6 flex items-center gap-2.5">
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.18em] text-emerald-300 mb-6 flex items-center gap-2.5">
               {copy.solutionTitle}
               <span aria-hidden className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />

@@ -257,7 +257,7 @@ export function LoginForm() {
         </p>
 
         {plan && billing && (
-          <div className="mb-5 text-xs text-glow-indigo bg-charcoal-800/60 gborder rounded-lg px-3 py-2">
+          <div className="mb-5 text-xs text-emerald-300 bg-charcoal-800/60 gborder rounded-lg px-3 py-2">
             After login you&apos;ll go straight to checkout for{' '}
             {plan === 'premium' ? 'Premium' : 'Basic'} ({billing}).
           </div>

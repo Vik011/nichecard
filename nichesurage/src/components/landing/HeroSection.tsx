@@ -97,8 +97,8 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
               'text-[15px] font-semibold px-6 py-3 rounded-xl',
               'border border-slate-700 bg-charcoal-900/40 backdrop-blur-sm text-slate-100',
               'transition-colors duration-200 ease-out',
-              'hover:border-glow-indigo/60 hover:bg-charcoal-800/60 hover:text-white',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
+              'hover:border-slate-500 hover:bg-charcoal-800/60 hover:text-white',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
             ].join(' ')}
           >
             <span>{isLoggedIn ? copy.navOpenApp : copy.heroCta}</span>
@@ -122,8 +122,8 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
               'text-[15px] font-semibold px-6 py-3 rounded-xl',
               'border border-slate-700/50 bg-charcoal-900/40 backdrop-blur-sm text-slate-200',
               'transition-colors duration-200 ease-out',
-              'hover:border-glow-indigo/60 hover:bg-charcoal-800/60 hover:text-white',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glow-indigo/60 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
+              'hover:border-slate-500 hover:bg-charcoal-800/60 hover:text-white',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
             ].join(' ')}
           >
             {copy.heroCta2}

@@ -24,7 +24,7 @@ export function TestimonialsSection({ copy }: TestimonialsSectionProps) {
                   aria-hidden="true"
                   className="w-10 h-10 rounded-[14px] bg-charcoal-700 flex items-center justify-center shrink-0 gborder"
                 >
-                  <span className="text-glow-indigo font-semibold text-sm">
+                  <span className="text-emerald-300 font-semibold text-sm">
                     {t.name.charAt(0).toUpperCase()}
                   </span>
                 </div>
