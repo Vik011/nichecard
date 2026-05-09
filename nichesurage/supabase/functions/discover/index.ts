@@ -45,6 +45,19 @@ const DISCOVER_MIN_VIEWS_LONGFORM = 3_000    // premium LONGFORM_VIEWS_MIN is 10
 const DISCOVER_MIN_VPS_SHORTS = 200          // premium SHORTS_VPS_MIN is 1000
 const DISCOVER_MIN_VPS_LONGFORM = 2          // premium LONGFORM_VPS_MIN is 10
 
+// Sprint A.10 (PR #56): video count cap blocks aggregator / re-uploader /
+// content-farm channels. Stolen from a Discord-shared niche-finder pipeline
+// that filtered videoCount <= 150 — works because legitimate creator
+// channels in our subscriber range (1K-500K longform, 100-100K shorts)
+// publish at human cadence and rarely cross 150-200 videos in their first
+// 12-24 months. Higher counts almost always mean: (a) compilation farm,
+// (b) re-uploader of viral content, or (c) old account repurposed without
+// rebrand. None of those produce premium-spike signals worth our scan
+// quota. Shorts cap is higher (500) because shorts creators legitimately
+// pump higher cadence (1-3/day during a creator's growth phase).
+const MAX_VIDEO_COUNT_LONGFORM = 200
+const MAX_VIDEO_COUNT_SHORTS = 500
+
 interface SeedExpansion {
   seed: SeedKeyword
   contentType: 'shorts' | 'longform'
@@ -171,6 +184,10 @@ Deno.serve(async (_req: Request) => {
             ? DISCOVER_MIN_VPS_SHORTS
             : DISCOVER_MIN_VPS_LONGFORM
 
+          const maxVideoCount = exp.contentType === 'shorts'
+            ? MAX_VIDEO_COUNT_SHORTS
+            : MAX_VIDEO_COUNT_LONGFORM
+
           for (const channel of stats) {
             if (existingIds.has(channel.channelId)) continue
             const ageMs = Date.now() - new Date(channel.channelCreatedAt).getTime()
@@ -180,6 +197,10 @@ Deno.serve(async (_req: Request) => {
             if (channel.subscriberCount < exp.minSubs) continue
             if (channel.subscriberCount > exp.maxSubs) continue
             if (ageMs > maxAgeMs) continue
+
+            // Sprint A.10 (PR #56): video count cap blocks aggregator/farm
+            // channels. See MAX_VIDEO_COUNT_* constant comments above.
+            if (channel.videoCount > maxVideoCount) continue
 
             // Pre-screen: best search-hit video for this channel must clear
             // both the absolute view floor AND the VPS floor. Both — because
@@ -199,6 +220,10 @@ Deno.serve(async (_req: Request) => {
               // but we don't trust seed.language at write-time — defensive.
               language: 'en',
               seed_keyword: seed.term,
+              // Sprint A.10 (PR #56): inherit category_enum value from the
+              // seed_keyword that discovered this channel. NULL only if
+              // the seed has no category set (legacy DE seeds).
+              category: seed.category ?? null,
             })
             if (error) {
               if (error.code !== '23505') {
