@@ -25,6 +25,7 @@ import { SpikingBadge } from './SpikingBadge'
 // trend_score / archetype overlay was never bootstrapped in production.
 import { ContentTypeBadge } from './ContentTypeBadge'
 import { isSpikingNow } from '@/lib/discover/spike'
+import { CATEGORY_BUCKETS, enumValueToBucket } from '@/lib/discover/categoryBuckets'
 
 interface NicheCardProps {
   data: NicheCardData
@@ -247,9 +248,21 @@ export function NicheCard({
               />
             )}
           </div>
-          {data.nicheLabel && (
-            <div className="text-slate-400 text-xs mt-0.5 truncate">{data.nicheLabel}</div>
-          )}
+          {(() => {
+            // Sprint Y (PR #59): prefer category bucket label over nicheLabel.
+            // nicheLabel often contains the seed-keyword that originally found
+            // the channel (e.g., "Dark History of") rather than the channel's
+            // actual topic, which is misleading once the channel is recategorized.
+            // Falls back to nicheLabel when category isn't set (legacy rows).
+            const bucketId = enumValueToBucket(data.category)
+            const bucketLabel = bucketId
+              ? CATEGORY_BUCKETS.find((b) => b.id === bucketId)?.label
+              : null
+            const label = bucketLabel ?? data.nicheLabel
+            return label ? (
+              <div className="text-slate-400 text-xs mt-0.5 truncate">{label}</div>
+            ) : null
+          })()}
         </div>
         <div className="shrink-0 text-right">
           <div className={`text-4xl font-extrabold leading-none tabular-nums ${tier.textClass} ${tier.glowShadow}`}>

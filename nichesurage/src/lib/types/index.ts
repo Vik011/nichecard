@@ -74,6 +74,10 @@ interface BaseNicheCardData {
   clusterId?: string
   clusterLabel?: string
   seedKeyword?: string
+  // Sprint Y (PR #59): raw category_enum value from channels_watchlist.
+  // Use enumValueToBucket() from categoryBuckets.ts to translate to the
+  // 7 user-facing bucket labels (Tech & AI, Finance, etc.) for display.
+  category?: string
 }
 
 export interface TrendingCluster {
