@@ -10,7 +10,10 @@ import { NicheDetailModal } from '@/components/niche/NicheDetailModal'
 import { NicheDetailContent } from '@/components/niche/NicheDetailContent'
 import { fetchNicheById, fetchSpikeHistory } from '@/lib/supabase/queries'
 import { fetchSavedNicheIds } from '@/lib/supabase/savedNiches'
-import { fetchDiscoverFeed } from '@/lib/discover/fetchDiscoverFeed'
+import { fetchDiscoverFeed, type DiscoverSurface } from '@/lib/discover/fetchDiscoverFeed'
+import { CATEGORY_BUCKETS, bucketToEnumValues, type CategoryBucketId } from '@/lib/discover/categoryBuckets'
+import { CategoryFilterChips } from '@/components/niche/CategoryFilterChips'
+import { DiscoverSurfaceTabs } from '@/components/niche/DiscoverSurfaceTabs'
 import { useUser } from '@/lib/context/UserContext'
 import { useLang } from '@/lib/i18n/useLang'
 import { COPY } from '@/components/landing/copy'
@@ -59,17 +62,40 @@ function DiscoverPageInner() {
   const [visibleCount, setVisibleCount] = useState(VISIBLE_STEP)
   const [upsellOpen, setUpsellOpen] = useState(false)
 
-  // 2026-05-07 trend-engine deprecation: removed the Hot/All toggle.
-  // Sprint B's video-level trending was never bootstrapped in production;
-  // the toggle made the page feel "in progress" without delivering value.
-  // Discover now ships with one mode — channels added recently, sorted
-  // by outlier_ratio — which `fetchDiscoverFeed('hot')` already produces.
+  // Sprint Y (PR #58): surface tab + category bucket. Driven by URL state
+  // so back-button + share works. surface=all is the implicit default.
+  const surfaceParam = (searchParams.get('surface') ?? 'all') as DiscoverSurface
+  const validSurface: DiscoverSurface = ['all', 'spiking-now', 'just-added'].includes(surfaceParam)
+    ? surfaceParam
+    : 'all'
+  const categoryParam = searchParams.get('cat')
+  const validCategory: CategoryBucketId | null = CATEGORY_BUCKETS.some((b) => b.id === categoryParam)
+    ? (categoryParam as CategoryBucketId)
+    : null
+
+  const updateSurface = useCallback((surface: DiscoverSurface) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (surface === 'all') params.delete('surface')
+    else params.set('surface', surface)
+    const qs = params.toString()
+    router.replace(qs ? `/discover?${qs}` : '/discover')
+  }, [router, searchParams])
+
+  const updateCategory = useCallback((cat: CategoryBucketId | null) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (cat === null) params.delete('cat')
+    else params.set('cat', cat)
+    const qs = params.toString()
+    router.replace(qs ? `/discover?${qs}` : '/discover')
+  }, [router, searchParams])
+
   async function handleFetch() {
     setVisibleCount(VISIBLE_STEP)
     setLoading(true)
     setError(null)
     const { data, error: fetchError } = await fetchDiscoverFeed({
-      mode: 'hot',
+      surface: validSurface,
+      categories: bucketToEnumValues(validCategory),
       tier: userTier,
     })
     setResults(data)
@@ -106,7 +132,7 @@ function DiscoverPageInner() {
       handleFetch()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLoading, userTier])
+  }, [userLoading, userTier, validSurface, validCategory])
 
   // Reveal set for free tier is recomputed when results change.
   const revealedIds = useMemo(() => {
@@ -202,6 +228,13 @@ function DiscoverPageInner() {
         <div className="flex justify-center mb-5">
           <RevealCountdown tier={userTier} copy={copy} />
         </div>
+      )}
+
+      {!userLoading && (
+        <>
+          <DiscoverSurfaceTabs selected={validSurface} onChange={updateSurface} />
+          <CategoryFilterChips selected={validCategory} onChange={updateCategory} />
+        </>
       )}
 
       {error && (
