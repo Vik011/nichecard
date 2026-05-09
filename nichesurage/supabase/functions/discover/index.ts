@@ -8,8 +8,10 @@ import {
   searchVideosByKeyword,
   getChannelStats,
   getVideoStatsBatch,
+  getRecentVideos,
   getYoutubeKeys,
 } from '../_shared/youtube.ts'
+import { buildNicheLabel } from '../_shared/labeling.ts'
 import { matchesContentFarmPattern } from '../_shared/premiumSpike.ts'
 import type { SeedKeyword } from '../_shared/types.ts'
 
@@ -106,6 +108,8 @@ Deno.serve(async (_req: Request) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     if (!supabaseUrl) throw new Error('SUPABASE_URL not set')
     if (!serviceRoleKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY not set')
+    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')
+    if (!anthropicKey) throw new Error('ANTHROPIC_API_KEY not set')
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
@@ -218,10 +222,28 @@ Deno.serve(async (_req: Request) => {
             if (bestHitViews < minViews) continue
             if (bestHitVps < minVps) continue
 
+            // Compute niche label at insert time instead of leaving '' for the
+            // deferred clustering pipeline. Pulls up to 20 recent titles.
+            // Fallback is seed.term — better than '' if Anthropic call fails.
+            let recentTitles: string[] = []
+            try {
+              const videos = await getRecentVideos(youtubeKeys, channel.uploadsPlaylistId, 20)
+              recentTitles = videos.map(v => v.title).filter(Boolean)
+            } catch (err) {
+              console.warn(`recent-titles fetch failed for ${channel.channelId}:`, err)
+            }
+
+            const nicheLabel = await buildNicheLabel({
+              apiKey: anthropicKey,
+              channelName: channel.channelName,
+              recentTitles,
+              fallback: seed.term,
+            })
+
             const { error } = await supabase.from('channels_watchlist').insert({
               youtube_channel_id: channel.channelId,
               channel_name: channel.channelName,
-              niche_label: '',                       // filled by clustering pipeline later
+              niche_label: nicheLabel,
               content_type: exp.contentType,
               // Sprint A.8: hardcoded 'en'. Seed query already filters to EN
               // but we don't trust seed.language at write-time — defensive.
