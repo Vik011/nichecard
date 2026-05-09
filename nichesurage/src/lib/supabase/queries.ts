@@ -2,6 +2,7 @@ import { createClient } from './client'
 import type { SearchFilters, ChannelAge, SpikePoint, TrendingCluster } from '@/lib/types'
 import type { NicheCardData, ShortsNicheCardData, LongformNicheCardData } from '@/lib/types'
 import type { DbScanResult } from '@/lib/types/database'
+import { attachCategories } from '@/lib/discover/fetchDiscoverFeed'
 
 type ScanResultWithCluster = DbScanResult & {
   niche_clusters?: { id: string; label: string } | null
@@ -340,7 +341,9 @@ export async function fetchRelatedNiches(source: NicheCardData, limit = 3): Prom
       .order('outlier_ratio', { ascending: false, nullsFirst: false })
       .limit(limit)
     if (data && data.length > 0) {
-      return data.map(row => mapRow(row as ScanResultWithCluster))
+      const mapped = data.map(row => mapRow(row as ScanResultWithCluster))
+      await attachCategories(supabase, mapped)
+      return mapped
     }
   }
   const { data, error } = await supabase
@@ -354,7 +357,9 @@ export async function fetchRelatedNiches(source: NicheCardData, limit = 3): Prom
     .order('opportunity_score', { ascending: false })
     .limit(limit)
   if (error || !data) return []
-  return data.map(row => mapRow(row as ScanResultWithCluster))
+  const mapped = data.map(row => mapRow(row as ScanResultWithCluster))
+  await attachCategories(supabase, mapped)
+  return mapped
 }
 
 export async function fetchNicheById(id: string): Promise<NicheCardData | null> {
@@ -365,7 +370,9 @@ export async function fetchNicheById(id: string): Promise<NicheCardData | null> 
     .eq('id', id)
     .maybeSingle()
   if (error || !data) return null
-  return mapRow(data as ScanResultWithCluster)
+  const mapped = mapRow(data as ScanResultWithCluster)
+  await attachCategories(supabase, [mapped])
+  return mapped
 }
 
 export async function fetchSpikeHistory(youtubeChannelId: string): Promise<SpikePoint[]> {
