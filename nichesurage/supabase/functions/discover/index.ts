@@ -101,8 +101,25 @@ function expand(seed: SeedKeyword): SeedExpansion[] {
   }))
 }
 
-Deno.serve(async (_req: Request) => {
+Deno.serve(async (req: Request) => {
   try {
+    const url = new URL(req.url)
+    const mode = url.searchParams.get('mode')
+    const isFullSweep = mode === 'full-sweep'
+
+    // Operator-only: full-sweep requires explicit service role key in
+    // Authorization header. Cron invocations don't need this — they call
+    // without ?mode= and use the default rotation.
+    if (isFullSweep) {
+      const expected = `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+      if (req.headers.get('Authorization') !== expected) {
+        return new Response(JSON.stringify({ error: 'unauthorized' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+    }
+
     const youtubeKeys = getYoutubeKeys()
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -123,7 +140,7 @@ Deno.serve(async (_req: Request) => {
     // wins). Priority is a tie-breaker within the same usage bucket. The
     // previous order put priority first, which kept re-picking the same top
     // keywords forever and never rotated to the lower-priority ones.
-    const { data: seedRows, error: seedErr } = await supabase
+    const seedQuery = supabase
       .from('seed_keywords')
       .select('*')
       .eq('is_active', true)
@@ -131,7 +148,10 @@ Deno.serve(async (_req: Request) => {
       .eq('language', 'en')
       .order('last_used_at', { ascending: true, nullsFirst: true })
       .order('priority', { ascending: false })
-      .limit(SEEDS_PER_RUN)
+
+    const { data: seedRows, error: seedErr } = isFullSweep
+      ? await seedQuery
+      : await seedQuery.limit(SEEDS_PER_RUN)
     if (seedErr) throw seedErr
     if (!seedRows || seedRows.length === 0) {
       return new Response(JSON.stringify({ success: true, added: 0, note: 'no active seeds' }), {
@@ -147,8 +167,17 @@ Deno.serve(async (_req: Request) => {
     let totalAdded = 0
     const usedSeedIds: string[] = []
 
+    const FULL_SWEEP_BATCH_SIZE = 25
+    const FULL_SWEEP_BATCH_DELAY_MS = 5_000
+
     for (const seed of seedRows as SeedKeyword[]) {
       usedSeedIds.push(seed.id)
+      // Full-sweep politeness: sleep between batches so we don't hammer
+      // YouTube quota in a single burst.
+      if (isFullSweep && usedSeedIds.length > 1 && (usedSeedIds.length - 1) % FULL_SWEEP_BATCH_SIZE === 0) {
+        console.log(`full-sweep: completed ${usedSeedIds.length - 1} seeds, sleeping ${FULL_SWEEP_BATCH_DELAY_MS}ms`)
+        await new Promise(r => setTimeout(r, FULL_SWEEP_BATCH_DELAY_MS))
+      }
       for (const exp of expand(seed)) {
         try {
           const publishedAfter = new Date(
