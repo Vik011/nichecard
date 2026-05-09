@@ -185,8 +185,10 @@ async function fetchWatchlistWindow(
     return eb.localeCompare(ea)
   })
 
+  const mapped = scan.slice(0, limit).map((row) => mapRow(row))
+  await attachCategories(supabase, mapped)
   return {
-    data: scan.slice(0, limit).map((row) => mapRow(row)),
+    data: mapped,
     error: null,
   }
 }
@@ -238,5 +240,37 @@ async function fetchAllMode(
     mapped = mapped.filter((n) => isSpikingNow(n))
   }
 
+  await attachCategories(supabase, mapped)
   return { data: mapped, error: null }
+}
+
+/**
+ * Sprint Y (PR #59): merge category_enum from channels_watchlist into
+ * the niche objects in place. The category drives the user-facing
+ * sub-label on each card (Finance, Tech & AI, etc.) — without it, the
+ * card falls back to nicheLabel which is often the seed-keyword that
+ * found the channel ("Dark History of") regardless of the actual topic.
+ *
+ * Mutates the input array in place. Idempotent on re-call.
+ */
+async function attachCategories(
+  supabase: ReturnType<typeof createClient>,
+  niches: NicheCardData[],
+): Promise<void> {
+  if (niches.length === 0) return
+  const channelIds = niches.map((n) => n.youtubeChannelId).filter(Boolean) as string[]
+  if (channelIds.length === 0) return
+  const { data, error } = await supabase
+    .from('channels_watchlist')
+    .select('youtube_channel_id, category')
+    .in('youtube_channel_id', channelIds)
+  if (error) return // Best-effort: card just falls back to nicheLabel.
+  const catByChannel = new Map<string, string | null>()
+  for (const row of (data ?? []) as Array<{ youtube_channel_id: string; category: string | null }>) {
+    catByChannel.set(row.youtube_channel_id, row.category)
+  }
+  for (const niche of niches) {
+    const cat = catByChannel.get(niche.youtubeChannelId)
+    if (cat) niche.category = cat
+  }
 }
