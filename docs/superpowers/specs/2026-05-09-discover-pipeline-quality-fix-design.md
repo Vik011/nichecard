@@ -101,11 +101,13 @@ Each mapping line picks the *first* `enumValues[]` from `CATEGORY_BUCKETS` as th
 
 **Finance is a problem.** YouTube has no Finance category. We rely on Sonar (component A) for finance coverage. Health is partly covered by category 17 (Sports) plus Howto & Style; the "fitness" sub-segment will lean on Sonar.
 
+**Regions:** `US`, `DE`, `UK`. US + DE matches existing Sonar coverage; UK adds a third English-speaking trending culture (often diverges from US for Lifestyle/Entertainment) at marginal quota cost.
+
 **Quota cost (rough):**
 
-- `videos.list?chart=mostPopular`: 1 unit per call × ~9 categories × 2 regions = 18 units per run.
-- Channel hydration: ~50 channels × 1 unit / 50 batch ≈ 1 unit per category = ~18 units.
-- Total per run ≈ 40–60 units. Runs 1×/day. Well below the 10K/day limit.
+- `videos.list?chart=mostPopular`: 1 unit per call × ~9 categories × 3 regions = 27 units per run.
+- Channel hydration: ~50 channels × 1 unit / 50 batch ≈ 1 unit per category-region = ~27 units.
+- Total per run ≈ 60–80 units. Runs 1×/day. Well below the 10K/day limit.
 
 **Cron:** 1×/day, separate from `discover` cron, offset by 6h to avoid quota collisions.
 
@@ -222,10 +224,11 @@ Audit + seed list happens during implementation; this design just commits to the
 - Migrations 0041 / 0042: down-migrations drop only the rows they inserted (tagged with a marker comment).
 - Labeling helper: feature flag `ENABLE_AT_INSERT_LABELING=false` reverts to `niche_label: ''`.
 
-## Open questions for implementation
+## Resolved decisions
 
-- Which exact YouTube `regionCode`s for trending? At minimum `US` and `DE` (matches existing Sonar). Worth adding `UK` for English coverage? Defer to user.
-- Backfill script: Node or Deno? Recommend Node — runs locally with the Supabase JS client, easier to debug than a one-shot edge function.
+- **Trending regions:** US + DE + UK.
+- **Backfill script:** Node, run locally with Supabase JS client and service role key. Not deployed.
+- **Trending row traceability:** `seed_keyword='__trending_<categoryId>'` synthetic marker.
 
 ## Out of scope (deferred)
 
