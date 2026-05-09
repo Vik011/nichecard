@@ -35,6 +35,9 @@ export interface SeedKeyword {
   priority: number
   is_active: boolean
   last_used_at: string | null
+  // Sprint A.10 (PR #56): category_enum string from 0024 trend engine schema.
+  // Set by 0038 backfill + 0039 inserts. NULL only on legacy DE seeds.
+  category?: string | null
 }
 
 export interface VideoSearchHit {
