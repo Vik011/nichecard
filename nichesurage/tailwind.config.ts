@@ -27,13 +27,6 @@ const config: Config = {
           700: "var(--color-bg-overlay)",
           600: "var(--color-bg-hover)",
         },
-        // Legacy alias kept for tests that assert literal class names like
-        // `ring-glow-indigo`. Maps to emerald per the 2026-05-08 brand
-        // cleanup so the visual matches the rest of the surface even when
-        // the legacy class is in use.
-        glow: {
-          indigo: "var(--color-accent-emerald)",
-        },
       },
       fontFamily: {
         sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],

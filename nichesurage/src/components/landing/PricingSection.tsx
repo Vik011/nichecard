@@ -115,7 +115,7 @@ export function PricingSection({ copy }: PricingSectionProps) {
                 key={tier.plan}
                 className={
                   tier.highlight
-                    ? 'relative glass rounded-2xl p-8 ring-1 ring-glow-indigo/40'
+                    ? 'relative glass rounded-2xl p-8 ring-1 ring-emerald-500/30'
                     : tier.isPremium
                     ? 'relative glass glass-glow rounded-2xl p-8'
                     : 'relative gborder bg-charcoal-900 rounded-2xl p-8'

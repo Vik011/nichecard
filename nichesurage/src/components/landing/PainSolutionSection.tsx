@@ -55,12 +55,12 @@ export function PainSolutionSection({ copy }: PainSolutionSectionProps) {
             </ul>
           </div>
 
-          {/* Right: With SurgeNiche — full saturation, indigo ring,
+          {/* Right: With SurgeNiche — full saturation, emerald ring,
               drop-shadow that pops the card off the page, and a
               live-status green pulse next to the title to telegraph
               "this is the active state, right now." */}
           <div
-            className="relative glass glass-glow rounded-xl p-8 ring-1 ring-glow-indigo/40 shadow-[0_24px_60px_-16px_rgba(16,185,129,0.2)]"
+            className="relative glass glass-glow rounded-xl p-8 ring-1 ring-emerald-500/30 shadow-[0_24px_60px_-16px_rgba(16,185,129,0.2)]"
             data-tone="solution"
           >
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.18em] text-emerald-300 mb-6 flex items-center gap-2.5">
