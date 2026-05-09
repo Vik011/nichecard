@@ -14,15 +14,22 @@ import { matchesContentFarmPattern } from '../_shared/premiumSpike.ts'
 import type { SeedKeyword } from '../_shared/types.ts'
 
 const SEEDS_PER_RUN = parseInt(Deno.env.get('SEEDS_PER_RUN') ?? '4', 10)
-// Sprint A.8 follow-up: MIN_SUBS aligned with premiumSpike SUBS_MIN. Without
-// a floor, discover was filling 2/3 of the watchlist with sub-100-sub channels
-// (one-hit-wonders that will never qualify for premium and burn API quota
-// on every scan). Floor matches premium thresholds so every watchlist insert
-// has at least a chance to clear premium check eventually.
-const MIN_SUBS_SHORTS = 100
-const MIN_SUBS_LONGFORM = 1_000
-const MAX_SUBS_SHORTS = 100_000
-const MAX_SUBS_LONGFORM = 500_000
+// 2026-05-09 (PR #57): floors raised from 100/1000 to 5000/2000.
+// Diagnostic showed 58/109 scanned channels had subs < 1K (mostly shorts
+// promoted at the 100-sub floor). They're filtered from /discover anyway
+// (PR #49 view), but cost scan-cycle quota. Per user: shorts < 5K subs
+// produce too many false-positive spike signals; longform < 2K subs also
+// noisy. Tightening the promotion floor saves quota for higher-quality
+// candidates.
+//
+// MAX raised to 400K (was 500K longform / 100K shorts) to align with
+// Discord-shared niche-finder (Sprint A.10 reference). 100K-400K creators
+// are the sweet spot — established enough to mean spikes are real, small
+// enough that rapid growth is still possible.
+const MIN_SUBS_SHORTS = 5_000
+const MIN_SUBS_LONGFORM = 2_000
+const MAX_SUBS_SHORTS = 400_000
+const MAX_SUBS_LONGFORM = 400_000
 const MAX_AGE_MONTHS_SHORTS = 12
 const MAX_AGE_MONTHS_LONGFORM = 24
 
