@@ -108,8 +108,14 @@ Deno.serve(async (_req: Request) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     if (!supabaseUrl) throw new Error('SUPABASE_URL not set')
     if (!serviceRoleKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY not set')
-    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')
-    if (!anthropicKey) throw new Error('ANTHROPIC_API_KEY not set')
+    // ANTHROPIC_API_KEY is optional — if absent, skip the niche-labeling
+    // call and fall back to seed.term (same as the failure-mode fallback
+    // inside buildNicheLabel). Avoids wasting YouTube quota on
+    // getRecentVideos when there's no labeler to use it anyway.
+    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY') ?? null
+    if (!anthropicKey) {
+      console.warn('ANTHROPIC_API_KEY not set — niche labels will fall back to seed.term')
+    }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
@@ -223,22 +229,26 @@ Deno.serve(async (_req: Request) => {
             if (bestHitVps < minVps) continue
 
             // Compute niche label at insert time instead of leaving '' for the
-            // deferred clustering pipeline. Pulls up to 20 recent titles.
-            // Fallback is seed.term — better than '' if Anthropic call fails.
-            let recentTitles: string[] = []
-            try {
-              const videos = await getRecentVideos(youtubeKeys, channel.uploadsPlaylistId, 20)
-              recentTitles = videos.map(v => v.title).filter(Boolean)
-            } catch (err) {
-              console.warn(`recent-titles fetch failed for ${channel.channelId}:`, err)
+            // deferred clustering pipeline. Skipped (label = seed.term) when
+            // ANTHROPIC_API_KEY isn't configured — saves 2 YouTube quota units
+            // per candidate (playlistItems + videos). When key IS configured,
+            // buildNicheLabel never throws — it returns seed.term on any failure.
+            let nicheLabel = seed.term
+            if (anthropicKey) {
+              let recentTitles: string[] = []
+              try {
+                const videos = await getRecentVideos(youtubeKeys, channel.uploadsPlaylistId, 20)
+                recentTitles = videos.map(v => v.title).filter(Boolean)
+              } catch (err) {
+                console.warn(`recent-titles fetch failed for ${channel.channelId}:`, err)
+              }
+              nicheLabel = await buildNicheLabel({
+                apiKey: anthropicKey,
+                channelName: channel.channelName,
+                recentTitles,
+                fallback: seed.term,
+              })
             }
-
-            const nicheLabel = await buildNicheLabel({
-              apiKey: anthropicKey,
-              channelName: channel.channelName,
-              recentTitles,
-              fallback: seed.term,
-            })
 
             const { error } = await supabase.from('channels_watchlist').insert({
               youtube_channel_id: channel.channelId,
