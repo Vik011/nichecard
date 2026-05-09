@@ -8,8 +8,10 @@ import {
   searchVideosByKeyword,
   getChannelStats,
   getVideoStatsBatch,
+  getRecentVideos,
   getYoutubeKeys,
 } from '../_shared/youtube.ts'
+import { buildNicheLabel } from '../_shared/labeling.ts'
 import { matchesContentFarmPattern } from '../_shared/premiumSpike.ts'
 import type { SeedKeyword } from '../_shared/types.ts'
 
@@ -99,13 +101,38 @@ function expand(seed: SeedKeyword): SeedExpansion[] {
   }))
 }
 
-Deno.serve(async (_req: Request) => {
+Deno.serve(async (req: Request) => {
   try {
+    const url = new URL(req.url)
+    const mode = url.searchParams.get('mode')
+    const isFullSweep = mode === 'full-sweep'
+
+    // Operator-only: full-sweep requires explicit service role key in
+    // Authorization header. Cron invocations don't need this — they call
+    // without ?mode= and use the default rotation.
+    if (isFullSweep) {
+      const expected = `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+      if (req.headers.get('Authorization') !== expected) {
+        return new Response(JSON.stringify({ error: 'unauthorized' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+    }
+
     const youtubeKeys = getYoutubeKeys()
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     if (!supabaseUrl) throw new Error('SUPABASE_URL not set')
     if (!serviceRoleKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY not set')
+    // ANTHROPIC_API_KEY is optional — if absent, skip the niche-labeling
+    // call and fall back to seed.term (same as the failure-mode fallback
+    // inside buildNicheLabel). Avoids wasting YouTube quota on
+    // getRecentVideos when there's no labeler to use it anyway.
+    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY') ?? null
+    if (!anthropicKey) {
+      console.warn('ANTHROPIC_API_KEY not set — niche labels will fall back to seed.term')
+    }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
@@ -113,7 +140,7 @@ Deno.serve(async (_req: Request) => {
     // wins). Priority is a tie-breaker within the same usage bucket. The
     // previous order put priority first, which kept re-picking the same top
     // keywords forever and never rotated to the lower-priority ones.
-    const { data: seedRows, error: seedErr } = await supabase
+    const seedQuery = supabase
       .from('seed_keywords')
       .select('*')
       .eq('is_active', true)
@@ -121,7 +148,10 @@ Deno.serve(async (_req: Request) => {
       .eq('language', 'en')
       .order('last_used_at', { ascending: true, nullsFirst: true })
       .order('priority', { ascending: false })
-      .limit(SEEDS_PER_RUN)
+
+    const { data: seedRows, error: seedErr } = isFullSweep
+      ? await seedQuery
+      : await seedQuery.limit(SEEDS_PER_RUN)
     if (seedErr) throw seedErr
     if (!seedRows || seedRows.length === 0) {
       return new Response(JSON.stringify({ success: true, added: 0, note: 'no active seeds' }), {
@@ -137,8 +167,17 @@ Deno.serve(async (_req: Request) => {
     let totalAdded = 0
     const usedSeedIds: string[] = []
 
+    const FULL_SWEEP_BATCH_SIZE = 25
+    const FULL_SWEEP_BATCH_DELAY_MS = 5_000
+
     for (const seed of seedRows as SeedKeyword[]) {
       usedSeedIds.push(seed.id)
+      // Full-sweep politeness: sleep between batches so we don't hammer
+      // YouTube quota in a single burst.
+      if (isFullSweep && usedSeedIds.length > 1 && (usedSeedIds.length - 1) % FULL_SWEEP_BATCH_SIZE === 0) {
+        console.log(`full-sweep: completed ${usedSeedIds.length - 1} seeds, sleeping ${FULL_SWEEP_BATCH_DELAY_MS}ms`)
+        await new Promise(r => setTimeout(r, FULL_SWEEP_BATCH_DELAY_MS))
+      }
       for (const exp of expand(seed)) {
         try {
           const publishedAfter = new Date(
@@ -218,10 +257,32 @@ Deno.serve(async (_req: Request) => {
             if (bestHitViews < minViews) continue
             if (bestHitVps < minVps) continue
 
+            // Compute niche label at insert time instead of leaving '' for the
+            // deferred clustering pipeline. Skipped (label = seed.term) when
+            // ANTHROPIC_API_KEY isn't configured — saves 2 YouTube quota units
+            // per candidate (playlistItems + videos). When key IS configured,
+            // buildNicheLabel never throws — it returns seed.term on any failure.
+            let nicheLabel = seed.term
+            if (anthropicKey) {
+              let recentTitles: string[] = []
+              try {
+                const videos = await getRecentVideos(youtubeKeys, channel.uploadsPlaylistId, 20)
+                recentTitles = videos.map(v => v.title).filter(Boolean)
+              } catch (err) {
+                console.warn(`recent-titles fetch failed for ${channel.channelId}:`, err)
+              }
+              nicheLabel = await buildNicheLabel({
+                apiKey: anthropicKey,
+                channelName: channel.channelName,
+                recentTitles,
+                fallback: seed.term,
+              })
+            }
+
             const { error } = await supabase.from('channels_watchlist').insert({
               youtube_channel_id: channel.channelId,
               channel_name: channel.channelName,
-              niche_label: '',                       // filled by clustering pipeline later
+              niche_label: nicheLabel,
               content_type: exp.contentType,
               // Sprint A.8: hardcoded 'en'. Seed query already filters to EN
               // but we don't trust seed.language at write-time — defensive.

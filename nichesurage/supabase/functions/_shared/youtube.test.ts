@@ -1,7 +1,7 @@
 // supabase/functions/_shared/youtube.test.ts
 // Sprint B Phase 2: parseIsoDuration + getRecentVideosWithStats coverage.
 import { assertEquals } from 'https://deno.land/std@0.224.0/assert/mod.ts'
-import { parseIsoDuration, getRecentVideosWithStats } from './youtube.ts'
+import { parseIsoDuration, getRecentVideosWithStats, getMostPopularVideos } from './youtube.ts'
 
 // ─── parseIsoDuration ───────────────────────────────────────────────
 Deno.test('parseIsoDuration: PT3M → 180', () => assertEquals(parseIsoDuration('PT3M'), 180))
@@ -215,3 +215,58 @@ Deno.test('getRecentVideosWithStats: counts coerced to Number from string', with
     assertEquals(v.commentCount, 9)
   }
 ))
+
+// ─── getMostPopularVideos: mocked fetch ─────────────────────────────
+
+Deno.test('getMostPopularVideos: returns parsed videos with duration in seconds',
+  withMockedFetch(
+    [
+      {
+        matchUrl: '/videos',
+        body: {
+          items: [
+            {
+              id: 'vid1',
+              snippet: { title: 'Trending Tech', channelId: 'ch1', channelTitle: 'TechChan' },
+              statistics: { viewCount: '1000000' },
+              contentDetails: { duration: 'PT4M30S' },
+            },
+            {
+              id: 'vid2',
+              snippet: { title: 'Trending Short', channelId: 'ch2', channelTitle: 'ShortChan' },
+              statistics: { viewCount: '500000' },
+              contentDetails: { duration: 'PT45S' },
+            },
+          ],
+        },
+      },
+    ],
+    async () => {
+      const videos = await getMostPopularVideos(['fake-key'], {
+        videoCategoryId: '28',
+        regionCode: 'US',
+        maxResults: 50,
+      })
+      assertEquals(videos.length, 2)
+      assertEquals(videos[0].videoId, 'vid1')
+      assertEquals(videos[0].channelId, 'ch1')
+      assertEquals(videos[0].durationSeconds, 270)
+      assertEquals(videos[0].viewCount, 1_000_000)
+      assertEquals(videos[1].durationSeconds, 45)
+    },
+  ),
+)
+
+Deno.test('getMostPopularVideos: empty items array returns []',
+  withMockedFetch(
+    [{ matchUrl: '/videos', body: { items: [] } }],
+    async () => {
+      const videos = await getMostPopularVideos(['fake-key'], {
+        videoCategoryId: '99',
+        regionCode: 'US',
+        maxResults: 50,
+      })
+      assertEquals(videos.length, 0)
+    },
+  ),
+)
