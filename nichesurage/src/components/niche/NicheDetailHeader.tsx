@@ -2,6 +2,7 @@ import type { NicheCardData, UserTier } from '@/lib/types'
 import type { CopyKeys } from '@/components/landing/copy'
 import { YoutubeLogo } from '@phosphor-icons/react/dist/ssr'
 import { BookmarkButton } from '@/components/niche/BookmarkButton'
+import { CATEGORY_BUCKETS, enumValueToBucket } from '@/lib/discover/categoryBuckets'
 
 interface ScoreTier {
   textClass: string
@@ -69,9 +70,21 @@ export function NicheDetailHeader({
           <h1 className="text-3xl font-bold tracking-tight text-slate-100 truncate">
             {niche.channelName ?? '—'}
           </h1>
-          {niche.nicheLabel && (
-            <p className="text-slate-400 text-sm mt-1.5 truncate">{niche.nicheLabel}</p>
-          )}
+          {(() => {
+            // Same logic as NicheCard (PR #59): prefer category bucket
+            // label over nicheLabel since the latter often holds the
+            // seed-keyword that found the channel rather than its actual
+            // topic. Falls back to nicheLabel for legacy rows without
+            // category populated.
+            const bucketId = enumValueToBucket(niche.category)
+            const bucketLabel = bucketId
+              ? CATEGORY_BUCKETS.find((b) => b.id === bucketId)?.label
+              : null
+            const subLabel = bucketLabel ?? niche.nicheLabel
+            return subLabel ? (
+              <p className="text-slate-400 text-sm mt-1.5 truncate">{subLabel}</p>
+            ) : null
+          })()}
           <div className="flex items-center gap-3 mt-4">
             {niche.channelUrl && (
               <a

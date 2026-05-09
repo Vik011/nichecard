@@ -253,7 +253,7 @@ async function fetchAllMode(
  *
  * Mutates the input array in place. Idempotent on re-call.
  */
-async function attachCategories(
+export async function attachCategories(
   supabase: ReturnType<typeof createClient>,
   niches: NicheCardData[],
 ): Promise<void> {
