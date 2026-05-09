@@ -2,11 +2,25 @@ import { createClient } from '@/lib/supabase/client'
 import { mapRow } from '@/lib/supabase/queries'
 import type { DbScanResult } from '@/lib/types/database'
 import type { NicheCardData, UserTier } from '@/lib/types'
+import { isSpikingNow } from './spike'
 
 export type DiscoverFeedMode = 'hot' | 'all'
+/**
+ * Sprint Y (PR #58) — surface tabs aggregate three views over the same
+ * scan_results pool:
+ *   - 'all':         every visible niche, sorted by opportunity_score
+ *   - 'spiking-now': filtered by isSpikingNow() (content-type-aware spike rules)
+ *   - 'just-added':  channels added to watchlist within the last 7 days
+ */
+export type DiscoverSurface = 'all' | 'spiking-now' | 'just-added'
 
 export interface FetchDiscoverFeedOptions {
-  mode: DiscoverFeedMode
+  /**
+   * Legacy mode parameter retained for callers that haven't migrated to
+   * `surface` yet. 'hot' maps to 'just-added' semantics, 'all' maps to 'all'.
+   * Prefer `surface` for new code.
+   */
+  mode?: DiscoverFeedMode
   /** Soft cap on rows returned. Defaults change by tier (see DEFAULT_LIMIT
    *  / PREMIUM_LIMIT below). Caller can override for "Show more" expansions. */
   limit?: number
@@ -18,11 +32,26 @@ export interface FetchDiscoverFeedOptions {
    * paywall still gating how many of those they can actually see.
    */
   tier?: UserTier
+  /**
+   * Sprint Y: surface tab. Replaces `mode` for new callers.
+   *   - 'all' (default) — top-ranked by opportunity_score
+   *   - 'spiking-now' — only niches passing isSpikingNow() (content-type-aware)
+   *   - 'just-added' — promoted to watchlist in the last 7 days
+   */
+  surface?: DiscoverSurface
+  /**
+   * Sprint Y: filter by category_enum values (e.g. ['ai_tools', 'crypto']).
+   * Empty array or undefined = no category filter.
+   * Use bucketToEnumValues() from categoryBuckets.ts to translate the 7
+   * user-facing buckets into the 1-3 enum values each maps to.
+   */
+  categories?: string[]
 }
 
 const DEFAULT_LIMIT = 60
 const PREMIUM_LIMIT = 200
 const HOT_WINDOW_DAYS = 14
+const JUST_ADDED_WINDOW_DAYS = 7
 
 type ScanResultWithCluster = DbScanResult & {
   niche_clusters?: { id: string; label: string } | null
@@ -62,35 +91,51 @@ export async function fetchDiscoverFeed(
   const isPremium = tier === 'premium'
   const limit = opts.limit ?? (isPremium ? PREMIUM_LIMIT : DEFAULT_LIMIT)
   const supabase = createClient()
+  const categories = opts.categories ?? []
 
-  // Premium pool access (2026-05-07): paying users get the full
-  // scan_results_latest sorted by opportunity_score, no recency cap.
-  // Otherwise a high-outlier niche that entered the watchlist 30 days
-  // ago is invisible to them — exactly what surfaced in the smoke test
-  // when "Erased Republic" (40.5× outlier, SPIKING NOW) didn't appear
-  // anywhere in the user's top 25 because tier_entered_at was outside
-  // the 14-day Hot window.
-  if (isPremium) {
-    return fetchAllMode(supabase, limit)
+  // Resolve the surface. New `surface` param wins; otherwise fall back to
+  // legacy `mode`. 'hot' is treated as 'just-added' for backward-compat
+  // but with the original 14-day Hot window kept (not 7d) so callers
+  // explicitly using mode='hot' don't see a sudden window shrink.
+  const surface: DiscoverSurface | 'legacy-hot' = opts.surface
+    ?? (opts.mode === 'hot' ? 'legacy-hot' : 'all')
+
+  // 'just-added' / legacy 'hot' both go through the watchlist-join path.
+  // The window differs: 7 days for the new just-added tab, 14 days for
+  // the legacy mode='hot' caller (preserves PR #42 behavior).
+  if (surface === 'just-added') {
+    return fetchWatchlistWindow(supabase, limit, JUST_ADDED_WINDOW_DAYS, categories)
+  }
+  if (surface === 'legacy-hot') {
+    return fetchWatchlistWindow(supabase, limit, HOT_WINDOW_DAYS, categories)
   }
 
-  if (opts.mode === 'hot') {
-    return fetchHotMode(supabase, limit)
+  // 'all' surface (or Premium tier — bypasses any window cap).
+  // 'spiking-now' surface ALSO uses fetchAllMode but post-filters via
+  // isSpikingNow() because the spike rules are content-type-aware and
+  // can't be expressed as a single SQL WHERE in PostgREST. We over-fetch
+  // (3x limit) to compensate for the post-filter losing rows, then trim.
+  if (surface === 'spiking-now') {
+    return fetchAllMode(supabase, limit * 3, categories, /* spikingOnly */ true).then(
+      (res) => ({ data: res.data.slice(0, limit), error: res.error }),
+    )
   }
-  return fetchAllMode(supabase, limit)
+  return fetchAllMode(supabase, limit, categories)
 }
 
-async function fetchHotMode(
+async function fetchWatchlistWindow(
   supabase: ReturnType<typeof createClient>,
   limit: number,
+  windowDays: number,
+  categories: string[],
 ): Promise<{ data: NicheCardData[]; error: string | null }> {
   const cutoffIso = new Date(
-    Date.now() - HOT_WINDOW_DAYS * 86400 * 1000,
+    Date.now() - windowDays * 86400 * 1000,
   ).toISOString()
 
   // Step 1: recent channels by tier_entered_at, capped 2x limit so we
   // have headroom in case some channels have no scan_results yet.
-  const { data: watchRows, error: watchErr } = await supabase
+  let watchQuery = supabase
     .from('channels_watchlist')
     .select('youtube_channel_id, tier_entered_at')
     .gte('tier_entered_at', cutoffIso)
@@ -98,6 +143,10 @@ async function fetchHotMode(
     .is('evicted_at', null)
     .order('tier_entered_at', { ascending: false, nullsFirst: false })
     .limit(limit * 2)
+  if (categories.length > 0) {
+    watchQuery = watchQuery.in('category', categories)
+  }
+  const { data: watchRows, error: watchErr } = await watchQuery
 
   if (watchErr) return { data: [], error: 'Discover fetch failed' }
   const watch = (watchRows ?? []) as Array<{
@@ -145,20 +194,49 @@ async function fetchHotMode(
 async function fetchAllMode(
   supabase: ReturnType<typeof createClient>,
   limit: number,
+  categories: string[] = [],
+  spikingOnly = false,
 ): Promise<{ data: NicheCardData[]; error: string | null }> {
+  // Category filter: scan_results_latest doesn't carry the category column
+  // (it lives on channels_watchlist via 0024). Two-step query — get
+  // matching channel ids first, then filter scan_results by those ids.
+  // Cleaner than PostgREST's !inner embed which TS can't infer through.
+  let categoryChannelIds: string[] | null = null
+  if (categories.length > 0) {
+    const { data: cats, error: catErr } = await supabase
+      .from('channels_watchlist')
+      .select('youtube_channel_id')
+      .in('category', categories)
+      .eq('is_active', true)
+      .is('evicted_at', null)
+    if (catErr) return { data: [], error: 'Discover fetch failed' }
+    categoryChannelIds = (cats ?? []).map((r: { youtube_channel_id: string }) => r.youtube_channel_id)
+    if (categoryChannelIds.length === 0) return { data: [], error: null }
+  }
+
   // Sort by opportunity_score desc to match the visible big number on the
   // card. Users expect "Best first" to mean the score they see, not the
   // raw outlier_ratio (which is a smaller-text supporting metric).
-  const { data, error } = await supabase
+  let query = supabase
     .from('scan_results_latest')
     .select('*, niche_clusters(id, label)')
     .order('opportunity_score', { ascending: false, nullsFirst: false })
     .limit(limit)
+  if (categoryChannelIds !== null) {
+    query = query.in('youtube_channel_id', categoryChannelIds)
+  }
 
+  const { data, error } = await query
   if (error) return { data: [], error: 'Discover fetch failed' }
   const rows = (data ?? []) as ScanResultWithCluster[]
-  return {
-    data: rows.map((row) => mapRow(row)),
-    error: null,
+  let mapped = rows.map((row) => mapRow(row))
+
+  // Spiking-now post-filter: applied client-side because the rule is
+  // content-type-aware and PostgREST can't express the OR-with-different-
+  // columns succinctly. Caller over-fetches (3x) to compensate.
+  if (spikingOnly) {
+    mapped = mapped.filter((n) => isSpikingNow(n))
   }
+
+  return { data: mapped, error: null }
 }
