@@ -1,5 +1,5 @@
 import type { Icon as PhosphorIcon } from '@phosphor-icons/react'
-import { Robot, Clock, Flame, TrendUp, Lightbulb, BellSimple, Heartbeat } from '@phosphor-icons/react/dist/ssr'
+import { Robot, Clock, Flame, TrendUp, Lightbulb, BellSimple, Heartbeat, BookmarkSimple } from '@phosphor-icons/react/dist/ssr'
 import type { CopyKeys } from './copy'
 import { MotionCard } from '@/components/ui/MotionCard'
 
@@ -15,6 +15,7 @@ const ICON_MAP: Record<string, PhosphorIcon> = {
   lightbulb: Lightbulb,
   bell: BellSimple,
   heartbeat: Heartbeat,
+  bookmark: BookmarkSimple,
 }
 
 // Spotlight features = the AI capabilities that genuinely differentiate
@@ -83,26 +84,20 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
           })}
         </div>
 
-        {/* Regular features — supporting capabilities in the original
-            3-col grid treatment. With 5 cards, row 2 has only 2 cards;
-            we force the 4th card to col-start-2 on lg so the orphan
-            pair reads as a centered "tier 2 support" duo rather than
-            a left-aligned remainder with empty space hanging right. */}
+        {/* Regular features — supporting capabilities in 3×2 grid.
+            6 cards = clean two-row symmetry on lg. Bookmark card was
+            added in 2026-05-09 to balance the orphan row that used to
+            hang as a 5th orphaned card; the orphan-center workaround
+            from before is no longer needed. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {regularFeatures.map((feature, i) => {
+          {regularFeatures.map((feature) => {
             const Icon = ICON_MAP[feature.icon]
             const isPremium = feature.tier === 'premium'
             const status = 'status' in feature ? feature.status : undefined
-            // 4th card (index 3) starts at column 2 on lg; the 5th card
-            // naturally lands in column 3 next to it. Result: bottom row
-            // is centered (col-2 + col-3) with col-1 left empty. Only
-            // applies when there are exactly 5 regulars — if the count
-            // changes later, revisit this rule.
-            const orphanCenterClass = i === 3 ? 'lg:col-start-2' : ''
             return (
               <MotionCard
                 key={feature.title}
-                className={`relative rounded-xl p-6 bg-charcoal-900 ${isPremium ? 'glass glass-glow' : 'gborder'} ${orphanCenterClass}`}
+                className={`relative rounded-xl p-6 bg-charcoal-900 ${isPremium ? 'glass glass-glow' : 'gborder'}`}
               >
                 {isPremium && (
                   <span

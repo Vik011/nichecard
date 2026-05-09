@@ -281,6 +281,7 @@ export const COPY = {
       { icon: 'trend-up', tier: 'premium', status: 'soon', title: 'AI Clone & Twist', desc: 'Claude shows you exactly how to replicate a viral format with your unique spin.' },
       { icon: 'lightbulb', tier: 'premium', title: '5 AI Shorts Ideas', desc: 'Get five ready-to-shoot Shorts ideas, hooks and titles tailored to each spiking niche.' },
       { icon: 'bell', tier: 'premium', status: 'soon', title: 'Early Warning Alerts', desc: 'Email + in-app alert the moment a niche you track starts spiking — before everyone else.' },
+      { icon: 'bookmark', tier: 'premium', title: 'Save & Track Niches', desc: 'Bookmark spiking niches to your watchlist. Re-check their score whenever you open the app, no re-searching.' },
     ],
 
     pricingTitle: 'Pick the plan that fits your week.',
@@ -617,6 +618,7 @@ export const COPY = {
       { icon: 'trend-up', tier: 'premium', status: 'soon', title: 'KI Clone & Twist', desc: 'Claude zeigt dir, wie du ein virales Format mit deinem eigenen Twist replizierst.' },
       { icon: 'lightbulb', tier: 'premium', title: '5 KI Shorts-Ideen', desc: 'Fünf produktionsbereite Shorts-Ideen, Hooks und Titel pro Nische — sofort umsetzbar.' },
       { icon: 'bell', tier: 'premium', status: 'soon', title: 'Frühwarnungen', desc: 'E-Mail- + In-App-Alerts in dem Moment, in dem deine Nische zu steigen beginnt.' },
+      { icon: 'bookmark', tier: 'premium', title: 'Nischen speichern & verfolgen', desc: 'Speichere spikende Nischen in deiner Watchlist. Score-Update bei jedem App-Öffnen, kein erneutes Suchen.' },
     ],
 
     pricingTitle: 'Wähle den Plan, der zu deiner Woche passt.',
