@@ -263,6 +263,59 @@ export async function getRecentVideosWithStats(
   })
 }
 
+export interface TrendingVideo {
+  videoId: string
+  channelId: string
+  channelName: string
+  title: string
+  viewCount: number
+  durationSeconds: number
+}
+
+/**
+ * Wrap `videos.list?chart=mostPopular` for a single (categoryId, regionCode)
+ * pair. YouTube does NOT accept `videoDuration` on the chart endpoint, so
+ * the caller post-filters by `durationSeconds`.
+ *
+ * Cost: 1 unit per call. We get 50 videos in one shot, no pagination needed.
+ */
+export async function getMostPopularVideos(
+  apiKeys: string[],
+  params: {
+    videoCategoryId: string
+    regionCode: 'US' | 'DE' | 'UK'
+    maxResults?: number
+  },
+): Promise<TrendingVideo[]> {
+  const buildUrl = (key: string) => {
+    const url = new URL(`${BASE}/videos`)
+    url.searchParams.set('key', key)
+    url.searchParams.set('part', 'snippet,statistics,contentDetails')
+    url.searchParams.set('chart', 'mostPopular')
+    url.searchParams.set('videoCategoryId', params.videoCategoryId)
+    url.searchParams.set('regionCode', params.regionCode)
+    url.searchParams.set('maxResults', String(params.maxResults ?? 50))
+    return url
+  }
+
+  const res = await tryFetchWithFallback(apiKeys, buildUrl, 'videos.list?chart=mostPopular')
+  const data = await res.json()
+
+  return (data.items ?? []).map((item: {
+    id: string
+    snippet: { title: string; channelId: string; channelTitle: string }
+    statistics: { viewCount?: string }
+    contentDetails: { duration?: string }
+  }) => ({
+    videoId: item.id,
+    channelId: item.snippet.channelId,
+    channelName: item.snippet.channelTitle,
+    title: item.snippet.title,
+    viewCount: parseInt(item.statistics.viewCount ?? '0', 10),
+    durationSeconds: parseIsoDuration(item.contentDetails.duration),
+  }))
+}
+
 // Sonar: keyword-driven search returning videos + their channelIds.
 // Used by sonar-discover to find outlier candidates by seed term.
 export async function searchVideosByKeyword(
