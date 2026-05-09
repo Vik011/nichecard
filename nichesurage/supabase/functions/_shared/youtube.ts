@@ -283,7 +283,7 @@ export async function getMostPopularVideos(
   apiKeys: string[],
   params: {
     videoCategoryId: string
-    regionCode: 'US' | 'DE' | 'UK'
+    regionCode: 'US' | 'DE' | 'GB'
     maxResults?: number
   },
 ): Promise<TrendingVideo[]> {
