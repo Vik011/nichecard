@@ -14,6 +14,12 @@
 //      ANTHROPIC_API_KEY is set; otherwise leave label empty (no useful
 //      seed.term fallback for the trending path).
 //   5. Insert with seed_keyword='__trending_<categoryId>' for traceability
+//
+// QUOTA COST: |categories| × |regions| chart calls (1u each) + ~1u per 50
+// unique channels for hydration + 2u per labeled candidate (playlistItems +
+// videos for recent titles). Current config: 8 categories × 3 regions = 24
+// chart units baseline. Sanity-check daily total before expanding either
+// dimension — cap is ~10K/day.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import {
@@ -152,6 +158,10 @@ Deno.serve(async (_req: Request) => {
               })
             }
 
+            // language: hardcoded 'en' to match discover's EN-only assumption
+            // (discover/index.ts comment: "scanner is EN-only"). Trending pulls
+            // from US/DE/GB charts but content language is mostly English in all
+            // three; if multi-language support is added later, derive from regionCode.
             const { error } = await supabase.from('channels_watchlist').insert({
               youtube_channel_id: ch.channelId,
               channel_name: ch.channelName,
