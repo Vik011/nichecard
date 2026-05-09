@@ -24,8 +24,7 @@ import { SpikingBadge } from './SpikingBadge'
 // TrendBadge removed in 2026-05-07 trend-engine deprecation — Sprint B
 // trend_score / archetype overlay was never bootstrapped in production.
 import { ContentTypeBadge } from './ContentTypeBadge'
-
-const SPIKING_NOW_THRESHOLD = Number(process.env.NEXT_PUBLIC_SPIKING_NOW_THRESHOLD ?? '10')
+import { isSpikingNow } from '@/lib/discover/spike'
 
 interface NicheCardProps {
   data: NicheCardData
@@ -210,7 +209,7 @@ export function NicheCard({
             Niche #{rank}
           </div>
           <ContentTypeBadge type={data.contentType} />
-          {(data.outlierRatio ?? 0) >= SPIKING_NOW_THRESHOLD && <SpikingBadge />}
+          {isSpikingNow(data) && <SpikingBadge />}
         </div>
         <div className="flex items-center gap-0.5 -mt-1 -mr-1">
           <HealthCheckButton
