@@ -7,6 +7,9 @@
 //   SUPABASE_URL=...  SUPABASE_SERVICE_ROLE_KEY=...  YOUTUBE_API_KEY=...
 //   ANTHROPIC_API_KEY=...  npx tsx nichesurage/scripts/backfillNicheLabels.ts
 //
+//   Optional: YOUTUBE_API_KEY_2=... — secondary key, used as quota fallback
+//   (mirrors the rotation pattern from supabase/functions/_shared/youtube.ts).
+//
 //   Add --dry-run to print proposed updates without writing.
 //
 // Default batch: 500 rows. Limits configurable via BATCH_SIZE env var.
@@ -15,18 +18,52 @@ import { createClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
 const BATCH_SIZE = parseInt(process.env.BATCH_SIZE ?? '500', 10)
 const DRY_RUN = process.argv.includes('--dry-run')
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !YOUTUBE_API_KEY || !ANTHROPIC_API_KEY) {
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !process.env.YOUTUBE_API_KEY || !ANTHROPIC_API_KEY) {
   console.error('Missing env: need SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, YOUTUBE_API_KEY, ANTHROPIC_API_KEY')
   process.exit(1)
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 const YT = 'https://www.googleapis.com/youtube/v3'
+
+// Node-equivalent of supabase/functions/_shared/youtube.ts key-rotation helpers.
+// Cannot import directly because that module uses Deno.env; this script is Node.
+function getYoutubeKeys(): string[] {
+  const primary = process.env.YOUTUBE_API_KEY
+  const secondary = process.env.YOUTUBE_API_KEY_2
+  if (!primary) throw new Error('YOUTUBE_API_KEY not set')
+  return secondary ? [primary, secondary] : [primary]
+}
+
+function isQuotaError(status: number, body: string): boolean {
+  if (status !== 403) return false
+  const lower = body.toLowerCase()
+  return lower.includes('quota') || lower.includes('ratelimitexceeded')
+}
+
+async function ytFetch(
+  buildUrl: (key: string) => string,
+  endpoint: string,
+): Promise<Response> {
+  const keys = getYoutubeKeys()
+  let lastErr: Error | null = null
+  for (let i = 0; i < keys.length; i++) {
+    const res = await fetch(buildUrl(keys[i]))
+    if (res.ok) return res
+    const body = await res.clone().text()
+    if (isQuotaError(res.status, body) && i < keys.length - 1) {
+      console.warn(`${endpoint}: quota on key #${i + 1}, falling back to key #${i + 2}`)
+      lastErr = new Error(`${endpoint} quota on key ${i + 1}: ${body.slice(0, 120)}`)
+      continue
+    }
+    return res // non-quota failure: return as-is so caller can inspect res.ok
+  }
+  throw lastErr ?? new Error(`${endpoint}: all YouTube API keys exhausted`)
+}
 
 interface WatchlistRow {
   id: string
@@ -37,8 +74,10 @@ interface WatchlistRow {
 }
 
 async function fetchUploadsPlaylistId(channelId: string): Promise<string | null> {
-  const url = `${YT}/channels?key=${YOUTUBE_API_KEY}&id=${channelId}&part=contentDetails&maxResults=1`
-  const res = await fetch(url)
+  const res = await ytFetch(
+    (key) => `${YT}/channels?key=${key}&id=${channelId}&part=contentDetails&maxResults=1`,
+    'channels.list',
+  )
   if (!res.ok) {
     console.warn(`channels.list ${res.status} for ${channelId}`)
     return null
@@ -48,8 +87,10 @@ async function fetchUploadsPlaylistId(channelId: string): Promise<string | null>
 }
 
 async function fetchRecentTitles(uploadsPlaylistId: string): Promise<string[]> {
-  const playlistUrl = `${YT}/playlistItems?key=${YOUTUBE_API_KEY}&playlistId=${uploadsPlaylistId}&part=contentDetails&maxResults=20`
-  const playlistRes = await fetch(playlistUrl)
+  const playlistRes = await ytFetch(
+    (key) => `${YT}/playlistItems?key=${key}&playlistId=${uploadsPlaylistId}&part=contentDetails&maxResults=20`,
+    'playlistItems.list',
+  )
   if (!playlistRes.ok) return []
   const playlistData = await playlistRes.json()
   const videoIds: string[] = (playlistData.items ?? [])
@@ -57,8 +98,10 @@ async function fetchRecentTitles(uploadsPlaylistId: string): Promise<string[]> {
     .filter(Boolean)
   if (videoIds.length === 0) return []
 
-  const videosUrl = `${YT}/videos?key=${YOUTUBE_API_KEY}&id=${videoIds.join(',')}&part=snippet&maxResults=${videoIds.length}`
-  const videosRes = await fetch(videosUrl)
+  const videosRes = await ytFetch(
+    (key) => `${YT}/videos?key=${key}&id=${videoIds.join(',')}&part=snippet&maxResults=${videoIds.length}`,
+    'videos.list',
+  )
   if (!videosRes.ok) return []
   const videosData = await videosRes.json()
   return (videosData.items ?? [])
