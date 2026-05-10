@@ -5,9 +5,12 @@
 // SINGLE category_enum value per YouTube category — sub-categorization
 // within a bucket (ai_tools vs tech_reviews) is left to the labeling step.
 //
-// 8 entries cover the YouTube categories we care about. Music (10),
+// 7 entries cover the YouTube categories we care about. Music (10),
 // Comedy (23), Film (1), Pets (15), Travel (19), Cars (2) are intentionally
 // skipped — none map cleanly to a SurgeNiche bucket and would dilute results.
+// Education (27) was removed: YouTube returns 404 for chart=mostPopular in all
+// three regions (US/DE/GB), wasting quota. Education channels are still
+// covered via the seed-driven discover function.
 //
 // Finance has no native YouTube category; coverage relies on the seed-driven
 // discover function (Component A in the spec).
@@ -36,7 +39,6 @@ export interface TrendingCategoryEntry {
  */
 export const TRENDING_CATEGORY_MAP: Record<string, TrendingCategoryEntry> = {
   '28': { ytLabel: 'Science & Technology', bucketId: 'tech-ai',       categoryEnum: 'ai_tools' },
-  '27': { ytLabel: 'Education',            bucketId: 'education',     categoryEnum: 'education_howto' },
   '26': { ytLabel: 'Howto & Style',        bucketId: 'lifestyle',     categoryEnum: 'self_improvement' },
   '22': { ytLabel: 'People & Blogs',       bucketId: 'lifestyle',     categoryEnum: 'luxury_lifestyle' },
   '17': { ytLabel: 'Sports',               bucketId: 'health',        categoryEnum: 'fitness_health' },
