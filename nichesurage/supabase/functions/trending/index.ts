@@ -17,7 +17,7 @@
 //
 // QUOTA COST: |categories| × |regions| chart calls (1u each) + ~1u per 50
 // unique channels for hydration + 2u per labeled candidate (playlistItems +
-// videos for recent titles). Current config: 8 categories × 3 regions = 24
+// videos for recent titles). Current config: 7 categories × 3 regions = 21
 // chart units baseline. Sanity-check daily total before expanding either
 // dimension — cap is ~10K/day.
 
@@ -34,6 +34,7 @@ import {
   resolveCategoryEnum,
 } from '../_shared/trendingCategoryMap.ts'
 import { buildNicheLabel } from '../_shared/labeling.ts'
+import { DISCOVERED_CHANNEL_LANGUAGE } from '../_shared/constants.ts'
 
 // Match the gates already used by discover (verified against discover/index.ts
 // constants on 2026-05-09). Keep these in sync if discover gates change.
@@ -158,16 +159,12 @@ Deno.serve(async (_req: Request) => {
               })
             }
 
-            // language: hardcoded 'en' to match discover's EN-only assumption
-            // (discover/index.ts comment: "scanner is EN-only"). Trending pulls
-            // from US/DE/GB charts but content language is mostly English in all
-            // three; if multi-language support is added later, derive from regionCode.
             const { error } = await supabase.from('channels_watchlist').insert({
               youtube_channel_id: ch.channelId,
               channel_name: ch.channelName,
               niche_label: nicheLabel,
               content_type: pair.contentType,
-              language: 'en',
+              language: DISCOVERED_CHANNEL_LANGUAGE,
               seed_keyword: `__trending_${categoryId}`,
               category: categoryEnum,
             })

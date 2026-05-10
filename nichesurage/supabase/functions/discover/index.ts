@@ -13,6 +13,7 @@ import {
 } from '../_shared/youtube.ts'
 import { buildNicheLabel } from '../_shared/labeling.ts'
 import { matchesContentFarmPattern } from '../_shared/premiumSpike.ts'
+import { DISCOVERED_CHANNEL_LANGUAGE } from '../_shared/constants.ts'
 import type { SeedKeyword } from '../_shared/types.ts'
 
 const SEEDS_PER_RUN = parseInt(Deno.env.get('SEEDS_PER_RUN') ?? '4', 10)
@@ -167,8 +168,8 @@ Deno.serve(async (req: Request) => {
     let totalAdded = 0
     const usedSeedIds: string[] = []
 
-    const FULL_SWEEP_BATCH_SIZE = 25
-    const FULL_SWEEP_BATCH_DELAY_MS = 5_000
+    const FULL_SWEEP_BATCH_SIZE = parseInt(Deno.env.get('FULL_SWEEP_BATCH_SIZE') ?? '25', 10)
+    const FULL_SWEEP_BATCH_DELAY_MS = parseInt(Deno.env.get('FULL_SWEEP_BATCH_DELAY_MS') ?? '5000', 10)
 
     for (const seed of seedRows as SeedKeyword[]) {
       usedSeedIds.push(seed.id)
@@ -284,9 +285,7 @@ Deno.serve(async (req: Request) => {
               channel_name: channel.channelName,
               niche_label: nicheLabel,
               content_type: exp.contentType,
-              // Sprint A.8: hardcoded 'en'. Seed query already filters to EN
-              // but we don't trust seed.language at write-time — defensive.
-              language: 'en',
+              language: DISCOVERED_CHANNEL_LANGUAGE,
               seed_keyword: seed.term,
               // Sprint A.10 (PR #56): inherit category_enum value from the
               // seed_keyword that discovered this channel. NULL only if

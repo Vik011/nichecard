@@ -8,7 +8,7 @@ import {
 
 Deno.test('TRENDING_CATEGORY_MAP: covers expected YouTube category IDs', () => {
   const ids = Object.keys(TRENDING_CATEGORY_MAP).sort()
-  assertEquals(ids, ['17', '20', '22', '24', '25', '26', '27', '28'])
+  assertEquals(ids, ['17', '20', '22', '24', '25', '26', '28'])
 })
 
 Deno.test('TRENDING_CATEGORY_MAP: every entry has bucketId + categoryEnum', () => {
