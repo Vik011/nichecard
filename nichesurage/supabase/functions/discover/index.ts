@@ -168,8 +168,8 @@ Deno.serve(async (req: Request) => {
     let totalAdded = 0
     const usedSeedIds: string[] = []
 
-    const FULL_SWEEP_BATCH_SIZE = 25
-    const FULL_SWEEP_BATCH_DELAY_MS = 5_000
+    const FULL_SWEEP_BATCH_SIZE = parseInt(Deno.env.get('FULL_SWEEP_BATCH_SIZE') ?? '25', 10)
+    const FULL_SWEEP_BATCH_DELAY_MS = parseInt(Deno.env.get('FULL_SWEEP_BATCH_DELAY_MS') ?? '5000', 10)
 
     for (const seed of seedRows as SeedKeyword[]) {
       usedSeedIds.push(seed.id)
