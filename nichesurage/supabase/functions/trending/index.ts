@@ -17,7 +17,7 @@
 //
 // QUOTA COST: |categories| × |regions| chart calls (1u each) + ~1u per 50
 // unique channels for hydration + 2u per labeled candidate (playlistItems +
-// videos for recent titles). Current config: 8 categories × 3 regions = 24
+// videos for recent titles). Current config: 7 categories × 3 regions = 21
 // chart units baseline. Sanity-check daily total before expanding either
 // dimension — cap is ~10K/day.
 
