@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { List, X } from '@phosphor-icons/react/dist/ssr'
 import { LanguageToggle } from './LanguageToggle'
-import { AvatarMenu } from './AvatarMenu'
+import { UserAvatarMenu } from '@/components/user/UserAvatarMenu'
 import type { CopyKeys, Lang } from './copy'
 import { useUser } from '@/lib/context/UserContext'
 import { Logo } from '@/components/brand/Logo'
@@ -68,7 +68,19 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
                   + sign-out hidden inside the dropdown so the nav row
                   carries less visual weight. Pattern matches the in-app
                   TopNav for consistency. */}
-              <AvatarMenu copy={copy} email={email ?? null} tier={tier} />
+              <UserAvatarMenu
+                email={email ?? null}
+                tier={tier}
+                labels={{
+                  openMenu: copy.avatarMenuOpen,
+                  planLabel: copy.avatarMenuPlan,
+                  tierFree: copy.topNavTierFree,
+                  tierBasic: copy.topNavTierBasic,
+                  tierPremium: copy.topNavTierPremium,
+                  signOut: copy.topNavSignOut,
+                  signingOut: copy.topNavSigningOut,
+                }}
+              />
               {/* Open app demoted to ghost/outlined style — was duplicating
                   the visual prominence of the hero CTA. Header version
                   stays a clear affordance but reads as secondary so the

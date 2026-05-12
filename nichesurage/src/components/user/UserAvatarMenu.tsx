@@ -2,39 +2,44 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { CaretDown, SignOut } from '@phosphor-icons/react/dist/ssr'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import type { CopyKeys } from './copy'
+import { createClient } from '@/lib/supabase/client'
 import type { UserTier } from '@/lib/types/database'
 
-interface AvatarMenuProps {
-  copy: CopyKeys
-  email: string | null
-  tier: UserTier
+/**
+ * Shared user-identity affordance: avatar circle with the user's first
+ * initial, tier-aware ring colour, caret, and a dropdown that contains
+ * the full email, the tier label, and a sign-out action.
+ *
+ * Surfaces: LandingNav (desktop CTAs), TopNav (in-app header).
+ *
+ * Mobile drawers (LandingNav has one) render the inline tier+email pill
+ * directly — putting a dropdown inside a drawer becomes a menu inside a
+ * menu. This component is intended for desktop nav rows.
+ */
+
+interface UserAvatarMenuLabels {
+  openMenu: string
+  planLabel: string
+  tierFree: string
+  tierBasic: string
+  tierPremium: string
+  signOut: string
+  signingOut: string
 }
 
-/**
- * Replaces the previous tier+email pill in the LandingNav with a circular
- * avatar showing the user's first-letter initials. The avatar carries
- * tier signal via the ring colour:
- *
- *   FREE    → slate ring  (neutral)
- *   BASIC   → indigo ring (brand)
- *   PREMIUM → emerald ring (elevated)
- *
- * Click opens a glass dropdown anchored to the avatar with email,
- * tier label, and sign-out action. Pattern matches the in-app
- * TopNav user menu so the product reads with one user-identity
- * convention across surfaces.
- */
-export function AvatarMenu({ copy, email, tier }: AvatarMenuProps) {
+interface UserAvatarMenuProps {
+  email: string | null
+  tier: UserTier
+  labels: UserAvatarMenuLabels
+}
+
+export function UserAvatarMenu({ email, tier, labels }: UserAvatarMenuProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Close dropdown on outside click. Defensive: only attach the
-  // listener while open.
   useEffect(() => {
     if (!open) return
     function onClick(e: MouseEvent) {
@@ -46,7 +51,6 @@ export function AvatarMenu({ copy, email, tier }: AvatarMenuProps) {
     return () => window.removeEventListener('mousedown', onClick)
   }, [open])
 
-  // Close on Escape — keyboard a11y per skill rule §1 keyboard-nav.
   useEffect(() => {
     if (!open) return
     function onKey(e: KeyboardEvent) {
@@ -66,7 +70,6 @@ export function AvatarMenu({ copy, email, tier }: AvatarMenuProps) {
 
   const initial = (email?.[0] ?? '?').toUpperCase()
 
-  // Tier-specific ring colour — visual signal without taking nav width.
   const tierRing =
     tier === 'premium'
       ? 'ring-emerald-400/60 hover:ring-emerald-400/80'
@@ -76,10 +79,10 @@ export function AvatarMenu({ copy, email, tier }: AvatarMenuProps) {
 
   const tierLabel =
     tier === 'premium'
-      ? copy.topNavTierPremium
+      ? labels.tierPremium
       : tier === 'basic'
-      ? copy.topNavTierBasic
-      : copy.topNavTierFree
+      ? labels.tierBasic
+      : labels.tierFree
 
   return (
     <div ref={containerRef} className="relative">
@@ -88,13 +91,14 @@ export function AvatarMenu({ copy, email, tier }: AvatarMenuProps) {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={copy.avatarMenuOpen}
+        aria-label={labels.openMenu}
         className={[
           'flex items-center gap-1 rounded-full p-0.5 transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
         ].join(' ')}
       >
         <span
+          data-testid="user-avatar-initial"
           className={[
             'flex items-center justify-center w-9 h-9 rounded-full',
             'bg-charcoal-800 text-slate-200 text-[13px] font-semibold tracking-tight',
@@ -123,14 +127,13 @@ export function AvatarMenu({ copy, email, tier }: AvatarMenuProps) {
             'p-2 z-40',
           ].join(' ')}
         >
-          {/* Header — email + tier */}
           <div className="px-3 py-2.5 border-b border-white/[0.06] mb-1">
             <div className="text-slate-200 text-[13px] font-medium truncate">
               {email ?? '—'}
             </div>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="text-slate-500 text-[10px] uppercase tracking-[0.18em]">
-                {copy.avatarMenuPlan}
+                {labels.planLabel}
               </span>
               <span
                 className={[
@@ -147,7 +150,6 @@ export function AvatarMenu({ copy, email, tier }: AvatarMenuProps) {
             </div>
           </div>
 
-          {/* Sign out */}
           <button
             type="button"
             role="menuitem"
@@ -162,7 +164,7 @@ export function AvatarMenu({ copy, email, tier }: AvatarMenuProps) {
             ].join(' ')}
           >
             <SignOut weight="bold" size={14} aria-hidden />
-            {signingOut ? copy.topNavSigningOut : copy.topNavSignOut}
+            {signingOut ? labels.signingOut : labels.signOut}
           </button>
         </div>
       )}
