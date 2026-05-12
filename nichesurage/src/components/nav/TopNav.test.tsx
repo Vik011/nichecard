@@ -67,4 +67,11 @@ describe('TopNav active state (unified Discover surface)', () => {
     expect(screen.queryByRole('link', { name: /^shorts$/i })).toBeNull()
     expect(screen.queryByRole('link', { name: /^longform$/i })).toBeNull()
   })
+
+  it('renders the user avatar initial inside the trigger', () => {
+    mockPathname = '/discover'
+    render(<TopNav />)
+    // Email is 'test@example.com' per the useUser mock → initial is 'T'
+    expect(screen.getByTestId('user-avatar-initial')).toHaveTextContent('T')
+  })
 })
