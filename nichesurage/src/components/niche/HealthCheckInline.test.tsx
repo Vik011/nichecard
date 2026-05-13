@@ -87,4 +87,19 @@ describe('HealthCheckInline', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: /try again/i }))
   })
+
+  it('renders the verdict with a "Show more" toggle that expands on click', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockResponse,
+    }) as unknown as typeof fetch
+
+    render(<HealthCheckInline scanResultId="scan-1" userTier="premium" copy={COPY.en} />)
+    await waitFor(() => expect(screen.getByText(/Solid early-stage niche/)).toBeTruthy())
+
+    const toggle = screen.getByTestId('health-check-verdict-toggle')
+    expect(toggle.textContent).toMatch(/Show more/i)
+    fireEvent.click(toggle)
+    expect(toggle.textContent).toMatch(/Show less/i)
+  })
 })

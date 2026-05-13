@@ -138,6 +138,7 @@ export function HealthCheckInline({ scanResultId, userTier, copy }: HealthCheckI
 
 function ReadyBody({ data, copy }: { data: HealthCheckResponse; copy: CopyKeys }) {
   const tier = scoreTier(data.score, copy)
+  const [expanded, setExpanded] = useState(false)
   const components: Array<{ key: keyof HealthCheckResponse['components']; label: string; max: number }> = [
     { key: 'spike', label: copy.healthCompSpike, max: 25 },
     { key: 'opportunity', label: copy.healthCompOpportunity, max: 25 },
@@ -149,7 +150,19 @@ function ReadyBody({ data, copy }: { data: HealthCheckResponse; copy: CopyKeys }
   return (
     <div data-testid="health-check-ready" className="flex flex-col gap-6">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-        <p className="text-slate-200 text-[15px] leading-relaxed flex-1">{data.verdict}</p>
+        <div className="flex-1 flex flex-col gap-2 items-start">
+          <p className={`text-slate-200 text-[15px] leading-relaxed ${expanded ? '' : 'line-clamp-6'}`}>
+            {data.verdict}
+          </p>
+          <button
+            type="button"
+            onClick={() => setExpanded(e => !e)}
+            data-testid="health-check-verdict-toggle"
+            className="text-emerald-300 text-xs font-medium hover:text-emerald-200 transition-colors"
+          >
+            {expanded ? 'Show less' : 'Show more'}
+          </button>
+        </div>
         <div className="shrink-0 text-right">
           <div className="flex items-baseline gap-2 justify-end">
             <span className={`text-5xl font-semibold tracking-tight tabular-nums ${tier.textClass}`}>
