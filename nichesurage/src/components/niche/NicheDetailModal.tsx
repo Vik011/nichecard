@@ -119,7 +119,7 @@ export function NicheDetailModal({ open, onClose, ariaLabel, children }: NicheDe
         aria-modal="true"
         aria-label={ariaLabel ?? 'Niche detail'}
         tabIndex={-1}
-        className="relative w-full max-w-4xl max-h-[85vh] overflow-y-auto bg-charcoal-950 rounded-2xl shadow-2xl border border-white/[0.06] outline-none"
+        className="relative w-full max-w-6xl max-h-[85vh] overflow-y-auto bg-charcoal-950 rounded-2xl shadow-2xl border border-white/[0.06] outline-none"
       >
         <button
           type="button"

@@ -72,10 +72,19 @@ export function NicheDetailContent({
         onBookmarkToggle={onBookmarkToggle}
       />
       <NicheStatsPanel niche={niche} copy={copy} />
-      <PerformanceChart history={history} copy={copy} tier={tierFromScore(niche.opportunityScore)} />
-      <HealthCheckInline scanResultId={niche.id} userTier={aiTier} copy={copy} />
-      <AIContentAngles scanResultId={niche.id} userTier={aiTier} copy={copy} />
-      <ChannelVideoGrid channelId={niche.youtubeChannelId} copy={copy} />
+
+      {/* Two-column zone on lg+ (collapses to single column below lg). */}
+      <div className="lg:grid lg:grid-cols-2 lg:gap-6">
+        <div className="flex flex-col">
+          <PerformanceChart history={history} copy={copy} tier={tierFromScore(niche.opportunityScore)} />
+          <HealthCheckInline scanResultId={niche.id} userTier={aiTier} copy={copy} />
+        </div>
+        <div className="flex flex-col">
+          <AIContentAngles scanResultId={niche.id} userTier={aiTier} copy={copy} />
+          <ChannelVideoGrid channelId={niche.youtubeChannelId} copy={copy} />
+        </div>
+      </div>
+
       <RelatedNiches niche={niche} userTier={tier} copy={copy} />
     </>
   )
