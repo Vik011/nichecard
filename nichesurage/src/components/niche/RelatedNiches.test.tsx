@@ -64,4 +64,18 @@ describe('RelatedNiches inline replace', () => {
     const link = screen.getByText('Related Channel').closest('a')
     expect(link).not.toBeNull()
   })
+
+  it('renders related cards locked for free tier (no data leak)', async () => {
+    const onCardClick = jest.fn()
+    render(<RelatedNiches niche={baseNiche} userTier="free" copy={COPY.en} onCardClick={onCardClick} />)
+
+    // Wait for the related niche to load.
+    await waitFor(() => expect(fetchRelatedNiches).toHaveBeenCalled())
+
+    // Locked NicheCards render with aria-label "Locked niche - upgrade to unlock".
+    // No onCardClick is wired up for locked cards (NicheCard routes to onLockedClick).
+    await waitFor(() => {
+      expect(screen.getByLabelText(/locked niche/i)).toBeInTheDocument()
+    })
+  })
 })

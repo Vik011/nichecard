@@ -79,6 +79,7 @@ export function RelatedNiches({ niche, userTier, copy, onCardClick }: RelatedNic
             data={n}
             userTier={userTier}
             rank={i + 1}
+            revealed={userTier === 'premium'}
             spikeHistory={histories.get(n.id)}
             onUnlockedClick={onCardClick}
           />
