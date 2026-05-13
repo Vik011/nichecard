@@ -30,6 +30,15 @@
   --motion-slow: 380ms;
 }
 
+html, body {
+  /* Defensive guard against rogue elements causing horizontal page scroll
+     on mobile (most commonly seen on /discover where TopNav and score
+     displays can exceed narrow viewports). Per-page overflow-x-hidden
+     on <main> was not enough because elements like sticky nav or
+     fixed-positioned children are not children of <main>. */
+  overflow-x: hidden;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
@@ -196,6 +205,15 @@ body {
     95%  {              opacity: 0.6; }
     100% { top: 102%;  opacity: 0;   }
   }
+}
+
+/* ---------- Niche detail crossfade (Phase C inline replace) ---------- */
+@keyframes nicheFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in {
+  animation: nicheFadeIn 200ms ease-out;
 }
 
 /* ---------- Accessibility & mobile motion fallbacks ---------- */

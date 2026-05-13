@@ -41,6 +41,14 @@ export interface NicheDetailContentProps {
   isSaved?: boolean
   savedCount?: number
   onBookmarkToggle?: (id: string, saved: boolean) => void
+  /**
+   * Click handler for cards inside RelatedNiches. When provided, clicking
+   * a related card swaps the modal in-place via router.replace instead of
+   * close + reopen. Only the in-app modal supplies this; the standalone
+   * /discover/niche/[id] page leaves it undefined so RelatedNiches falls
+   * back to NicheCard's default Link navigation.
+   */
+  onRelatedClick?: (id: string) => void
 }
 
 export function NicheDetailContent({
@@ -51,6 +59,7 @@ export function NicheDetailContent({
   isSaved,
   savedCount,
   onBookmarkToggle,
+  onRelatedClick,
 }: NicheDetailContentProps) {
   const demoState = useFreeDemoState(niche.id)
   // While we don't yet know whether this is the legit demo, render the
@@ -61,7 +70,7 @@ export function NicheDetailContent({
   const aiTier: UserTier = demoState === 'legitimate' && tier === 'free' ? 'premium' : tier
 
   return (
-    <>
+    <div className="animate-fade-in">
       <FreeDemoBanner nicheId={niche.id} copy={copy} />
       <NicheDetailHeader
         niche={niche}
@@ -72,11 +81,20 @@ export function NicheDetailContent({
         onBookmarkToggle={onBookmarkToggle}
       />
       <NicheStatsPanel niche={niche} copy={copy} />
-      <PerformanceChart history={history} copy={copy} tier={tierFromScore(niche.opportunityScore)} />
-      <HealthCheckInline scanResultId={niche.id} userTier={aiTier} copy={copy} />
-      <AIContentAngles scanResultId={niche.id} userTier={aiTier} copy={copy} />
-      <ChannelVideoGrid channelId={niche.youtubeChannelId} copy={copy} />
-      <RelatedNiches niche={niche} userTier={tier} copy={copy} />
-    </>
+
+      {/* Two-column zone on lg+ (collapses to single column below lg). */}
+      <div className="lg:grid lg:grid-cols-2 lg:gap-6">
+        <div className="flex flex-col">
+          <PerformanceChart history={history} copy={copy} tier={tierFromScore(niche.opportunityScore)} />
+          <HealthCheckInline scanResultId={niche.id} userTier={aiTier} copy={copy} />
+        </div>
+        <div className="flex flex-col">
+          <AIContentAngles scanResultId={niche.id} userTier={aiTier} copy={copy} />
+          <ChannelVideoGrid channelId={niche.youtubeChannelId} copy={copy} />
+        </div>
+      </div>
+
+      <RelatedNiches niche={niche} userTier={tier} copy={copy} onCardClick={onRelatedClick} />
+    </div>
   )
 }

@@ -10,16 +10,26 @@ interface RelatedNichesProps {
   niche: NicheCardData
   userTier: UserTier
   copy: CopyKeys
+  /**
+   * When provided, clicking a related niche card triggers this handler
+   * instead of navigating via NicheCard's default Link/onUnlockedClick.
+   * The modal mount uses this to swap niches in-place via router.replace
+   * so the user doesn't see a close+reopen blink.
+   */
+  onCardClick?: (id: string) => void
 }
 
 const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-emerald-300'
 
-export function RelatedNiches({ niche, userTier, copy }: RelatedNichesProps) {
+export function RelatedNiches({ niche, userTier, copy, onCardClick }: RelatedNichesProps) {
   const [related, setRelated] = useState<NicheCardData[]>([])
   const [histories, setHistories] = useState<Map<string, SpikePoint[]>>(new Map())
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Gate the fetch behind tier -- non-premium tiers never trigger the
+    // network call, so no related-niche payloads reach the client.
+    if (userTier !== 'premium') return
     let cancelled = false
     async function run() {
       setLoading(true)
@@ -37,7 +47,12 @@ export function RelatedNiches({ niche, userTier, copy }: RelatedNichesProps) {
     }
     run()
     return () => { cancelled = true }
-  }, [niche])
+  }, [niche, userTier])
+
+  // Premium-only feature. Hide the rail entirely for free + basic tiers
+  // (avoids leaking niche labels, scores, and per-channel stats that
+  // NicheCard renders even when channel name is blurred via LockedField).
+  if (userTier !== 'premium') return null
 
   if (loading) {
     return (
@@ -73,6 +88,7 @@ export function RelatedNiches({ niche, userTier, copy }: RelatedNichesProps) {
             userTier={userTier}
             rank={i + 1}
             spikeHistory={histories.get(n.id)}
+            onUnlockedClick={onCardClick}
           />
         ))}
       </div>

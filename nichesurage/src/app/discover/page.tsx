@@ -198,6 +198,20 @@ function DiscoverPageInner() {
     router.push(`/discover?${params.toString()}`)
   }, [router, searchParams])
 
+  // Inline replace for Related Niches: swap the open modal's niche
+  // without close+reopen. Uses router.replace so we don't push a
+  // history entry per related-card click (a long browse session would
+  // otherwise build a deep back-stack). See spec section 2.
+  const replaceNicheModal = useCallback((id: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('niche', id)
+    // Drop freeDemo: only the original niche is "today's demo"; swapping
+    // to a related niche should not carry that one-shot UI signal.
+    params.delete('freeDemo')
+    const qs = params.toString()
+    router.replace(qs ? `/discover?${qs}` : '/discover')
+  }, [router, searchParams])
+
   const closeNicheModal = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString())
     params.delete('niche')
@@ -315,6 +329,7 @@ function DiscoverPageInner() {
           <NicheDetailModalSkeleton />
         ) : (
           <NicheDetailContent
+            key={modalNiche.id}
             niche={modalNiche}
             history={modalHistory}
             tier={userTier}
@@ -322,6 +337,7 @@ function DiscoverPageInner() {
             isSaved={savedIds.has(modalNiche.id)}
             savedCount={savedCount}
             onBookmarkToggle={handleBookmarkToggle}
+            onRelatedClick={replaceNicheModal}
           />
         )}
       </NicheDetailModal>

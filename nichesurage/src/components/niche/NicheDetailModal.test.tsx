@@ -120,4 +120,43 @@ describe('NicheDetailModal', () => {
     fireEvent.mouseDown(screen.getByTestId('inner'))
     expect(onClose).not.toHaveBeenCalled()
   })
+
+  // Sprint 2026-05-13 (modal redesign Phase B): mobile branch.
+  describe('mobile viewport (< 640px)', () => {
+    let originalInnerWidth: number
+
+    beforeAll(() => {
+      originalInnerWidth = window.innerWidth
+    })
+
+    beforeEach(() => {
+      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 375 })
+      window.dispatchEvent(new Event('resize'))
+    })
+
+    afterAll(() => {
+      Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: originalInnerWidth })
+      window.dispatchEvent(new Event('resize'))
+    })
+
+    it('renders a drag handle on mobile (bottom-sheet branch)', () => {
+      render(
+        <NicheDetailModal open onClose={jest.fn()}>
+          <p>body</p>
+        </NicheDetailModal>,
+      )
+      expect(screen.getByTestId('bottom-sheet-handle')).toBeInTheDocument()
+    })
+
+    it('still closes on ESC in the bottom-sheet branch', () => {
+      const onClose = jest.fn()
+      render(
+        <NicheDetailModal open onClose={onClose}>
+          <p>body</p>
+        </NicheDetailModal>,
+      )
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(onClose).toHaveBeenCalledTimes(1)
+    })
+  })
 })

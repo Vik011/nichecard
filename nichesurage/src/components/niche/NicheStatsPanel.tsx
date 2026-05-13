@@ -37,7 +37,7 @@ export function NicheStatsPanel({ niche, copy }: NicheStatsPanelProps) {
     : `${months} ${copy.statMonths}`
 
   return (
-    <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
       <StatCard
         label={copy.statSubscribers}
         value={formatK(niche.subscriberCount)}
