@@ -27,6 +27,9 @@ export function RelatedNiches({ niche, userTier, copy, onCardClick }: RelatedNic
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Gate the fetch behind tier -- non-premium tiers never trigger the
+    // network call, so no related-niche payloads reach the client.
+    if (userTier !== 'premium') return
     let cancelled = false
     async function run() {
       setLoading(true)
@@ -44,7 +47,12 @@ export function RelatedNiches({ niche, userTier, copy, onCardClick }: RelatedNic
     }
     run()
     return () => { cancelled = true }
-  }, [niche])
+  }, [niche, userTier])
+
+  // Premium-only feature. Hide the rail entirely for free + basic tiers
+  // (avoids leaking niche labels, scores, and per-channel stats that
+  // NicheCard renders even when channel name is blurred via LockedField).
+  if (userTier !== 'premium') return null
 
   if (loading) {
     return (
@@ -79,7 +87,6 @@ export function RelatedNiches({ niche, userTier, copy, onCardClick }: RelatedNic
             data={n}
             userTier={userTier}
             rank={i + 1}
-            revealed={userTier === 'premium'}
             spikeHistory={histories.get(n.id)}
             onUnlockedClick={onCardClick}
           />

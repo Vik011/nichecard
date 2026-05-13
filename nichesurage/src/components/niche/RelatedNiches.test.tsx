@@ -65,17 +65,22 @@ describe('RelatedNiches inline replace', () => {
     expect(link).not.toBeNull()
   })
 
-  it('renders related cards locked for free tier (no data leak)', async () => {
-    const onCardClick = jest.fn()
-    render(<RelatedNiches niche={baseNiche} userTier="free" copy={COPY.en} onCardClick={onCardClick} />)
+  it('hides the rail entirely for free tier (no data leak)', async () => {
+    const { container } = render(<RelatedNiches niche={baseNiche} userTier="free" copy={COPY.en} onCardClick={jest.fn()} />)
 
-    // Wait for the related niche to load.
-    await waitFor(() => expect(fetchRelatedNiches).toHaveBeenCalled())
+    // Wait a tick in case anything async tries to fetch (it should not).
+    await new Promise(r => setTimeout(r, 10))
 
-    // Locked NicheCards render with aria-label "Locked niche - upgrade to unlock".
-    // No onCardClick is wired up for locked cards (NicheCard routes to onLockedClick).
-    await waitFor(() => {
-      expect(screen.getByLabelText(/locked niche/i)).toBeInTheDocument()
-    })
+    // No section heading, no skeletons, no cards -- the component returns null.
+    expect(container.firstChild).toBeNull()
+    // And critically: fetchRelatedNiches must NOT have been called for free tier.
+    expect(fetchRelatedNiches).not.toHaveBeenCalled()
+  })
+
+  it('hides the rail entirely for basic tier (no data leak)', async () => {
+    const { container } = render(<RelatedNiches niche={baseNiche} userTier="basic" copy={COPY.en} onCardClick={jest.fn()} />)
+    await new Promise(r => setTimeout(r, 10))
+    expect(container.firstChild).toBeNull()
+    expect(fetchRelatedNiches).not.toHaveBeenCalled()
   })
 })
