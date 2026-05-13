@@ -85,4 +85,67 @@ describe('useDragToDismiss', () => {
     expect(onDismiss).not.toHaveBeenCalled()
     expect(result.current.translateY).toBe(0)
   })
+
+  it('gesture survives a re-render between touchstart and touchmove (no stale closure)', () => {
+    const ref = makeRef(600)
+    const onDismiss1 = jest.fn()
+    const onDismiss2 = jest.fn()
+    const { rerender } = renderHook(
+      ({ onDismiss }) => useDragToDismiss({ sheetRef: ref, onDismiss, enabled: true }),
+      { initialProps: { onDismiss: onDismiss1 } },
+    )
+
+    // Start the drag with the initial onDismiss.
+    act(() => {
+      ref.current!.dispatchEvent(touchEvent('touchstart', 100))
+    })
+
+    // Parent re-renders, swaps in a new onDismiss reference.
+    rerender({ onDismiss: onDismiss2 })
+
+    // Continue and release the drag past threshold (>180px on 600px sheet).
+    act(() => {
+      ref.current!.dispatchEvent(touchEvent('touchmove', 320))
+      ref.current!.dispatchEvent(touchEvent('touchend', 320))
+    })
+
+    // The original onDismiss should NOT be called (we replaced it).
+    expect(onDismiss1).not.toHaveBeenCalled()
+    // The latest onDismiss SHOULD be called once.
+    expect(onDismiss2).toHaveBeenCalledTimes(1)
+  })
+
+  it('aborts the gesture if a second finger joins mid-drag', () => {
+    const ref = makeRef(600)
+    const onDismiss = jest.fn()
+    const { result } = renderHook(() => useDragToDismiss({ sheetRef: ref, onDismiss, enabled: true }))
+
+    act(() => {
+      // Start single-finger drag
+      ref.current!.dispatchEvent(touchEvent('touchstart', 100))
+      ref.current!.dispatchEvent(touchEvent('touchmove', 200))
+    })
+    expect(result.current.dragging).toBe(true)
+
+    // Second finger joins.
+    act(() => {
+      const multiEvent = new TouchEvent('touchmove', {
+        touches: [{ clientY: 200 } as unknown as Touch, { clientY: 300 } as unknown as Touch],
+        changedTouches: [{ clientY: 300 } as unknown as Touch],
+        bubbles: true,
+        cancelable: true,
+      })
+      ref.current!.dispatchEvent(multiEvent)
+    })
+
+    // Gesture aborted: dragging back to false, translateY reset.
+    expect(result.current.dragging).toBe(false)
+    expect(result.current.translateY).toBe(0)
+
+    // Primary finger lifts -- should NOT trigger dismiss (state already reset).
+    act(() => {
+      ref.current!.dispatchEvent(touchEvent('touchend', 400))
+    })
+    expect(onDismiss).not.toHaveBeenCalled()
+  })
 })
