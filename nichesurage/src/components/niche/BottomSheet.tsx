@@ -106,7 +106,7 @@ export function BottomSheet({ open, onClose, ariaLabel, children }: BottomSheetP
         aria-label={ariaLabel ?? 'Niche detail'}
         tabIndex={-1}
         style={{ transform: `translateY(${translateY}px)` }}
-        className={`relative w-full max-h-[90vh] overflow-y-auto bg-charcoal-950 rounded-t-2xl shadow-2xl border-t border-x border-white/[0.06] outline-none ${transitionClass}`}
+        className={`relative w-full max-h-[90vh] overflow-y-auto overflow-x-hidden bg-charcoal-950 rounded-t-2xl shadow-2xl border-t border-x border-white/[0.06] outline-none ${transitionClass}`}
       >
         <div className="flex justify-center pt-2 pb-1" aria-hidden>
           <div data-testid="bottom-sheet-handle" className="h-1 w-9 rounded-full bg-white/20" />
