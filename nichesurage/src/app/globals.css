@@ -30,6 +30,15 @@
   --motion-slow: 380ms;
 }
 
+html, body {
+  /* Defensive guard against rogue elements causing horizontal page scroll
+     on mobile (most commonly seen on /discover where TopNav and score
+     displays can exceed narrow viewports). Per-page overflow-x-hidden
+     on <main> was not enough because elements like sticky nav or
+     fixed-positioned children are not children of <main>. */
+  overflow-x: hidden;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
