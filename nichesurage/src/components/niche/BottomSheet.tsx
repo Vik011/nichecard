@@ -3,22 +3,16 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from '@phosphor-icons/react/dist/ssr'
-import { useViewportMode } from '@/lib/hooks/useViewportMode'
-import { BottomSheet } from './BottomSheet'
+import { useDragToDismiss } from '@/lib/hooks/useDragToDismiss'
 
-// Niche-detail modal that opens over /discover when a user clicks a card.
-//
-// Desktop / tablet (>= 640px): centered dialog with backdrop.
-// Mobile (< 640px): BottomSheet primitive (slides up from bottom, swipe
-// to dismiss). The branch is decided at runtime via useViewportMode so
-// only one tree mounts. This avoids duplicate body-scroll-lock effects.
+// Mobile-only bottom sheet. The desktop counterpart is NicheDetailModal's
+// centered-dialog branch. Slides up from the bottom edge, occupies 90vh,
+// shows a drag handle and supports swipe-down-to-dismiss in addition to
+// the X button, ESC key, and backdrop tap.
 
-export interface NicheDetailModalProps {
-  /** Whether the modal is mounted. Parent controls open state via URL param. */
+export interface BottomSheetProps {
   open: boolean
-  /** Called when the user closes the modal (X button, ESC, backdrop click). */
   onClose: () => void
-  /** Optional aria-label fallback when the dialog has no visible heading. */
   ariaLabel?: string
   children: ReactNode
 }
@@ -26,26 +20,17 @@ export interface NicheDetailModalProps {
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
-export function NicheDetailModal({ open, onClose, ariaLabel, children }: NicheDetailModalProps) {
-  const viewportMode = useViewportMode()
-  if (viewportMode === 'mobile') {
-    return (
-      <BottomSheet open={open} onClose={onClose} ariaLabel={ariaLabel}>
-        {children}
-      </BottomSheet>
-    )
-  }
-  return (
-    <CenteredDialog open={open} onClose={onClose} ariaLabel={ariaLabel}>
-      {children}
-    </CenteredDialog>
-  )
-}
-
-function CenteredDialog({ open, onClose, ariaLabel, children }: NicheDetailModalProps) {
-  const dialogRef = useRef<HTMLDivElement | null>(null)
+export function BottomSheet({ open, onClose, ariaLabel, children }: BottomSheetProps) {
+  const sheetRef = useRef<HTMLDivElement | null>(null)
   const previousActiveRef = useRef<Element | null>(null)
 
+  const { translateY, dragging } = useDragToDismiss({
+    sheetRef,
+    onDismiss: onClose,
+    enabled: open,
+  })
+
+  // ESC + Tab trap (mirrors NicheDetailModal behavior).
   useEffect(() => {
     if (!open) return
     function onKeyDown(e: KeyboardEvent) {
@@ -55,7 +40,7 @@ function CenteredDialog({ open, onClose, ariaLabel, children }: NicheDetailModal
         return
       }
       if (e.key !== 'Tab') return
-      const root = dialogRef.current
+      const root = sheetRef.current
       if (!root) return
       const focusable = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
         (el) => !el.hasAttribute('aria-hidden') && el.offsetParent !== null,
@@ -76,13 +61,14 @@ function CenteredDialog({ open, onClose, ariaLabel, children }: NicheDetailModal
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [open, onClose])
 
+  // Body scroll lock + focus restore (mirrors NicheDetailModal behavior).
   useEffect(() => {
     if (!open) return
     previousActiveRef.current = document.activeElement
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const t = setTimeout(() => {
-      const root = dialogRef.current
+      const root = sheetRef.current
       if (!root) return
       const firstFocusable = root.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)
       ;(firstFocusable ?? root).focus()
@@ -102,29 +88,38 @@ function CenteredDialog({ open, onClose, ariaLabel, children }: NicheDetailModal
     if (e.target === e.currentTarget) onClose()
   }
 
+  // While the user is actively dragging we kill the slide-up transition
+  // so the sheet tracks the finger 1:1. On release the transition snaps
+  // back in so spring-back-to-zero is smooth.
+  const transitionClass = dragging ? '' : 'transition-transform duration-200 ease-out'
+
   return createPortal(
     <div
       onMouseDown={handleBackdropMouseDown}
-      className="fixed inset-0 z-50 flex items-start md:items-center justify-center px-3 py-6 md:py-10 bg-black/40 backdrop-blur-lg"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-lg"
       aria-hidden={false}
     >
       <div
-        ref={dialogRef}
+        ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel ?? 'Niche detail'}
         tabIndex={-1}
-        className="relative w-full max-w-6xl max-h-[85vh] overflow-y-auto bg-charcoal-950 rounded-2xl shadow-2xl border border-white/[0.06] outline-none"
+        style={{ transform: `translateY(${translateY}px)` }}
+        className={`relative w-full max-h-[90vh] overflow-y-auto bg-charcoal-950 rounded-t-2xl shadow-2xl border-t border-x border-white/[0.06] outline-none ${transitionClass}`}
       >
+        <div className="flex justify-center pt-2 pb-1" aria-hidden>
+          <div data-testid="bottom-sheet-handle" className="h-1 w-9 rounded-full bg-white/20" />
+        </div>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="sticky top-3 z-10 ml-auto mr-3 mt-3 flex h-9 w-9 items-center justify-center rounded-full bg-charcoal-900/80 text-slate-300 hover:bg-charcoal-800 hover:text-white border border-white/[0.06] backdrop-blur-md transition-colors"
+          className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-charcoal-900/80 text-slate-300 hover:bg-charcoal-800 hover:text-white border border-white/[0.06] backdrop-blur-md transition-colors"
         >
           <X weight="bold" size={16} aria-hidden />
         </button>
-        <div className="px-5 md:px-6 pt-2 pb-6">
+        <div className="px-5 pt-2 pb-6">
           {children}
         </div>
       </div>
