@@ -70,10 +70,7 @@ export function NicheDetailContent({
   const aiTier: UserTier = demoState === 'legitimate' && tier === 'free' ? 'premium' : tier
 
   return (
-    <div
-      key={niche.id}
-      className="animate-fade-in"
-    >
+    <div className="animate-fade-in">
       <FreeDemoBanner nicheId={niche.id} copy={copy} />
       <NicheDetailHeader
         niche={niche}

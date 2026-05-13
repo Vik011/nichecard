@@ -329,6 +329,7 @@ function DiscoverPageInner() {
           <NicheDetailModalSkeleton />
         ) : (
           <NicheDetailContent
+            key={modalNiche.id}
             niche={modalNiche}
             history={modalHistory}
             tier={userTier}
