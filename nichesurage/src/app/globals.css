@@ -198,6 +198,15 @@ body {
   }
 }
 
+/* ---------- Niche detail crossfade (Phase C inline replace) ---------- */
+@keyframes nicheFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in {
+  animation: nicheFadeIn 200ms ease-out;
+}
+
 /* ---------- Accessibility & mobile motion fallbacks ---------- */
 @media (prefers-reduced-motion: reduce) {
   *,

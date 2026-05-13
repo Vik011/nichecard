@@ -10,11 +10,18 @@ interface RelatedNichesProps {
   niche: NicheCardData
   userTier: UserTier
   copy: CopyKeys
+  /**
+   * When provided, clicking a related niche card triggers this handler
+   * instead of navigating via NicheCard's default Link/onUnlockedClick.
+   * The modal mount uses this to swap niches in-place via router.replace
+   * so the user doesn't see a close+reopen blink.
+   */
+  onCardClick?: (id: string) => void
 }
 
 const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-emerald-300'
 
-export function RelatedNiches({ niche, userTier, copy }: RelatedNichesProps) {
+export function RelatedNiches({ niche, userTier, copy, onCardClick }: RelatedNichesProps) {
   const [related, setRelated] = useState<NicheCardData[]>([])
   const [histories, setHistories] = useState<Map<string, SpikePoint[]>>(new Map())
   const [loading, setLoading] = useState(true)
@@ -73,6 +80,7 @@ export function RelatedNiches({ niche, userTier, copy }: RelatedNichesProps) {
             userTier={userTier}
             rank={i + 1}
             spikeHistory={histories.get(n.id)}
+            onUnlockedClick={onCardClick}
           />
         ))}
       </div>
