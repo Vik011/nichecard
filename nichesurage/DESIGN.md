@@ -32,14 +32,13 @@ colors:
   # === Premium-tier accent surface (filled in Task 5) ===
   premium-canvas: "#1b1938"
   premium-canvas-deep: "#0e0c1f"
-  premium-violet-soft: "#c9b4fa"
   premium-violet-glow: "#5e6ad2"
   premium-hairline: "rgba(255,255,255,0.10)"
   premium-gold: "#cbb275"
   premium-gold-bright: "#e2c989"
-  premium-gold-mute: "#8a7847"
+  premium-gold-muted: "#8a7847"
   premium-ink: "#ffffff"
-  premium-ink-mute: "#bcbac9"
+  premium-ink-muted: "#bcbac9"
 
 typography:
   # Display — editorial serif, used on hero + section H1 ONLY
@@ -327,7 +326,7 @@ A Premium accent surface is a **bounded section**, never a full-page canvas. It 
 
 ### Typography on Premium accent
 - Heading: `headline` Geist Sans 600, color `premium-ink` (`#ffffff`, full white for higher contrast against deep indigo, not the dashboard `ink: #ededed`).
-- Body: `body` Geist Sans 14/22, color `premium-ink-mute`.
+- Body: `body` Geist Sans 14/22, color `premium-ink-muted`.
 - Mono labels ("PREMIUM", "UPGRADE", "BREAKOUT"): `mono-label`, color `premium-gold`.
 - Price: same composite as marketing pricing card, but digits in `premium-gold-bright`.
 
@@ -339,7 +338,7 @@ This is the ONLY button in the system that uses gold fill. Reserved.
 - Hover: `premium-gold-bright`.
 - Focus ring: `premium-gold-bright` 2px offset.
 - Radius `rounded-md` (6px).
-- Letter spacing: `tracking-tight` -0.2px.
+- Letter spacing: `tracking-[-0.0125em]` (-0.2px at 16px).
 
 ### Premium badge spec
 On `NicheCard` for Premium-tier niches, a 1-line pill renders top-right of the card:
@@ -350,14 +349,14 @@ On `NicheCard` for Premium-tier niches, a 1-line pill renders top-right of the c
 
 - Star icon: 12px, `premium-gold`.
 - Text: `mono-label` 11px, `premium-gold-bright`, tracking `label` (0.14em).
-- Pill: `premium-canvas-deep` background, 1px `premium-gold-mute` border (subtle), `rounded-full` `px-2 py-0.5`.
+- Pill: `premium-canvas-deep` background, 1px `premium-gold-muted` border (subtle), `rounded-full` `px-2 py-0.5`.
 
 ### Locked-niche overlay
 When a Free/Basic viewer hovers a Premium niche, the card content blurs (`backdrop-blur-sm`) and an overlay renders:
 
 - Overlay: `premium-canvas/85` with `backdrop-blur-md`.
 - Lock icon: 24px, `premium-gold`, centered.
-- Caption below icon: "Premium niche, upgrade to view" in `caption` Geist Sans 500 `premium-ink-mute`.
+- Caption below icon: "Premium niche, upgrade to view" in `caption` Geist Sans 500 `premium-ink-muted`.
 - CTA below caption: gold "Upgrade to Premium" button (per spec above).
 
 ### Don'ts on Premium accent
