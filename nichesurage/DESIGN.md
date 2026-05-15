@@ -30,6 +30,16 @@ colors:
   marketing-card-hover: "#14151d"
   marketing-ink: "#ededed"
   # === Premium-tier accent surface (filled in Task 5) ===
+  premium-canvas: "#1b1938"
+  premium-canvas-deep: "#0e0c1f"
+  premium-violet-soft: "#c9b4fa"
+  premium-violet-glow: "#5e6ad2"
+  premium-hairline: "rgba(255,255,255,0.10)"
+  premium-gold: "#cbb275"
+  premium-gold-bright: "#e2c989"
+  premium-gold-mute: "#8a7847"
+  premium-ink: "#ffffff"
+  premium-ink-mute: "#bcbac9"
 
 typography:
   # Display — editorial serif, used on hero + section H1 ONLY
@@ -289,3 +299,69 @@ The Stripe-hosted checkout page is light-themed by default. To minimize the jump
 - Don't make every section feel like a hero. Hero is hero; the rest is editorial density (Linear cadence) with whitespace.
 - Don't drop the marketing surface inside the dashboard. The route boundary is the rule.
 
+---
+
+## §Premium-tier accent (Premium upsell only)
+
+**When to apply:** EXCLUSIVELY on:
+1. The Premium tier card in `/pricing`.
+2. The "Upgrade to Premium" CTA inside `<UpgradeModal>`.
+3. The Premium badge that appears on NicheCard when a niche is Premium-locked.
+4. The locked-content overlay on premium niches when the viewer is Free/Basic.
+
+**Do not apply** to Free or Basic tier visuals, to general upgrade prompts that don't specifically target Premium, or as decoration on the dashboard.
+
+### Block structure
+A Premium accent surface is a **bounded section**, never a full-page canvas. It appears as a band or panel inside an otherwise dashboard-surface or marketing-surface page.
+
+**Band variant** (used in `/pricing` and `<UpgradeModal>`):
+- Background: `premium-canvas` (`#1b1938`).
+- Top + bottom hairline: `premium-hairline`.
+- Inner radial glow centered: `premium-violet-glow` 30% alpha, blur 120px, positioned center-top.
+- Min-height: 320px desktop, 240px mobile.
+
+**Badge variant** (used on NicheCard for Premium niches):
+- Pill background: `premium-canvas-deep` (`#0e0c1f`).
+- Text: `mono-label` uppercase, color `premium-gold-bright`.
+- Optional: 1px inner glow `premium-violet-glow` 20% alpha.
+
+### Typography on Premium accent
+- Heading: `headline` Geist Sans 600, color `premium-ink` (`#ffffff`, full white for higher contrast against deep indigo, not the dashboard `ink: #ededed`).
+- Body: `body` Geist Sans 14/22, color `premium-ink-mute`.
+- Mono labels ("PREMIUM", "UPGRADE", "BREAKOUT"): `mono-label`, color `premium-gold`.
+- Price: same composite as marketing pricing card, but digits in `premium-gold-bright`.
+
+### Premium upgrade CTA button
+This is the ONLY button in the system that uses gold fill. Reserved.
+
+- Background: `premium-gold` (`#cbb275`).
+- Text: `premium-canvas-deep` (`#0e0c1f`), Geist Sans 600.
+- Hover: `premium-gold-bright`.
+- Focus ring: `premium-gold-bright` 2px offset.
+- Radius `rounded-md` (6px).
+- Letter spacing: `tracking-tight` -0.2px.
+
+### Premium badge spec
+On `NicheCard` for Premium-tier niches, a 1-line pill renders top-right of the card:
+
+```
+[★ PREMIUM]
+```
+
+- Star icon: 12px, `premium-gold`.
+- Text: `mono-label` 11px, `premium-gold-bright`, tracking `label` (0.14em).
+- Pill: `premium-canvas-deep` background, 1px `premium-gold-mute` border (subtle), `rounded-full` `px-2 py-0.5`.
+
+### Locked-niche overlay
+When a Free/Basic viewer hovers a Premium niche, the card content blurs (`backdrop-blur-sm`) and an overlay renders:
+
+- Overlay: `premium-canvas/85` with `backdrop-blur-md`.
+- Lock icon: 24px, `premium-gold`, centered.
+- Caption below icon: "Premium niche, upgrade to view" in `caption` Geist Sans 500 `premium-ink-mute`.
+- CTA below caption: gold "Upgrade to Premium" button (per spec above).
+
+### Don'ts on Premium accent
+- Don't use gold anywhere outside Premium accent contexts. Gold = Premium signal, period.
+- Don't use the Premium canvas as a full-page background. It is always bounded.
+- Don't combine gradient mesh (marketing surface) with Premium accent on the same page section. Pick one.
+- Don't downscale Premium accent to use as a "fancy" treatment for non-Premium content; it dilutes the signal.
