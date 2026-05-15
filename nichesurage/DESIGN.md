@@ -1,7 +1,7 @@
 ---
 version: alpha
 name: NicheSurage
-description: A dark, software-craft SaaS dashboard for YouTube niche analysis. Canvas is near-black (#0a0a0c) with a four-level dark surface scale (raised → elevated → overlay → hover) and hairline borders at 5–8% white. The single chromatic accent is emerald (#10b981 / #34d399 bright) — used on positive-signal indicators (trending scores, healthy verdicts, success CTAs) and never decoratively. Display headlines use Instrument Serif at large sizes against Geist Sans body for an "authored by a craftsman" reading feel; technical labels and tabular numerics use Geist Mono. Cards are flat panels with `elev-1/2/3` shadow steps and hairline borders. Three scoped surface variants overlay this base: (1) Dashboard surface — the default everywhere in `/discover`, `/admin`, modals; (2) Marketing & pricing surface — Stripe-inspired weight-300 display headlines with a single gradient-mesh hero band, used on landing + `/pricing` + upgrade modal; (3) Premium-tier accent — a deeper indigo-violet block reserved exclusively for Premium tier upsell prompts and the "Premium" badge.
+description: A dark, software-craft SaaS dashboard for YouTube niche analysis. Canvas is near-black (#0a0a0c) with a four-level dark surface scale (raised → elevated → overlay → hover) and hairline borders at 5–8% white. The single chromatic accent is emerald (#10b981 / #34d399 bright) — used on positive-signal indicators (trending scores, healthy verdicts, success CTAs) and never decoratively. Display headlines use Instrument Serif at large sizes against Geist Sans body for an "authored by a craftsman" reading feel; technical labels and tabular numerics use Geist Mono. Cards are flat panels with `elev-1/2/3` shadow steps and hairline borders. Three scoped surface variants overlay this base: (1) Dashboard surface — the default everywhere in `/discover`, `/admin`, modals; (2) Marketing & pricing surface — Stripe-inspired editorial display headlines with a single gradient-mesh hero band, used on landing + `/pricing` + upgrade modal; (3) Premium-tier accent — a deeper indigo-violet block reserved exclusively for Premium tier upsell prompts and the "Premium" badge.
 
 colors:
   # === Dashboard surface (default) ===
@@ -29,8 +29,6 @@ colors:
   marketing-card: "#0f1016"
   marketing-card-hover: "#14151d"
   marketing-ink: "#ededed"
-  marketing-ink-mute: "#a8acbb"
-  pricing-tabular-num: "#ededed"
   # === Premium-tier accent surface (filled in Task 5) ===
 
 typography:
@@ -248,7 +246,7 @@ Quick reference for AI agents implementing UI:
 
 ### Canvas + hero
 - Body canvas: `marketing-canvas` (same `#0a0a0c` as dashboard, no jump).
-- Hero only: full-width band, `padding-block: 96px lg:160px`, with a **single gradient mesh** absolutely positioned behind the content, opacity 0.35, blur 100px.
+- Hero only: full-width band, Tailwind `py-24 lg:py-40` (96px / 160px), with a **single gradient mesh** absolutely positioned behind the content, opacity 0.35, blur 80px.
 
 Gradient mesh CSS (place in `globals.css` under a `.marketing-hero-mesh` utility class):
 
