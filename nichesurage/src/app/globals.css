@@ -28,6 +28,27 @@
   --motion-fast: 150ms;
   --motion-base: 220ms;
   --motion-slow: 380ms;
+
+  /* === Marketing & pricing surface (per DESIGN.md §Marketing surface) === */
+  --marketing-canvas: #0a0a0c;
+  --marketing-canvas-cool: #080912;
+  --marketing-hero-gradient-1: #533afd;
+  --marketing-hero-gradient-2: #1a8cd8;
+  --marketing-hero-gradient-3: #10b981;
+  --marketing-card: #0f1016;
+  --marketing-card-hover: #14151d;
+  --marketing-ink: #ededed;
+
+  /* === Premium-tier accent surface (per DESIGN.md §Premium-tier accent) === */
+  --premium-canvas: #1b1938;
+  --premium-canvas-deep: #0e0c1f;
+  --premium-violet-glow: #5e6ad2;
+  --premium-hairline: rgba(255, 255, 255, 0.10);
+  --premium-gold: #cbb275;
+  --premium-gold-bright: #e2c989;
+  --premium-gold-muted: #8a7847;
+  --premium-ink: #ffffff;
+  --premium-ink-muted: #bcbac9;
 }
 
 html, body {
@@ -235,4 +256,14 @@ body {
     animation: none !important;
     opacity: 0.4;
   }
+}
+
+.marketing-hero-mesh {
+  background-image:
+    radial-gradient(ellipse 800px 400px at 20% 30%, var(--marketing-hero-gradient-1) 0%, transparent 60%),
+    radial-gradient(ellipse 600px 400px at 80% 20%, var(--marketing-hero-gradient-2) 0%, transparent 60%),
+    radial-gradient(ellipse 700px 300px at 50% 80%, var(--marketing-hero-gradient-3) 0%, transparent 60%);
+  filter: blur(80px);
+  opacity: 0.35;
+  pointer-events: none;
 }
