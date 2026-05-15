@@ -146,6 +146,8 @@ Three surfaces compose the system. Use exactly one per page:
 
 ## 4. Component Stylings
 
+> **Token API status:** The class names below (`bg-surface-raised`, `text-on-accent`, `border-hairline-edge`, etc.) are the **target** Tailwind token API. They become live when Task 6 of this plan wires the tokens into `tailwind.config.ts` + `globals.css`. Until that ships, live components reach the same colors via the existing groups (`glass`, `charcoal-*`, `slate-*`, `text-emerald-*`). After Task 6, the new tokens are the canonical way and existing components migrate opportunistically (no big-bang refactor).
+
 ### Buttons
 - **Primary (emerald):** `bg-accent-emerald text-on-accent`, hover to `bg-accent-emerald-bright`, focus ring `accent-emerald-bright` at 2px offset. Radius `rounded-md` (6px). Height 36/40/44 (sm/md/lg). Weight 500.
 - **Secondary (ghost-on-dark):** `bg-transparent border border-hairline-edge text-ink`, hover to `bg-surface-hover`.
@@ -175,7 +177,7 @@ Three surfaces compose the system. Use exactly one per page:
 ## 5. Layout Principles
 
 - **Spacing scale:** Tailwind default (4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96). Section vertical rhythm uses `py-12 lg:py-20` on marketing surface, `py-6 lg:py-8` on dashboard.
-- **Grid:** Dashboard uses 12-column at `max-w-7xl` with `px-4 lg:px-8`. Marketing uses 12-column at `max-w-6xl` with `px-6 lg:px-12` for a tighter editorial feel.
+- **Grid:** Dashboard pages center on `max-w-6xl` with `px-4` (`/discover`, NicheDetail modal). Admin pages use the wider `max-w-7xl` with `px-6` (more dense tabular data). Marketing uses 12-column at `max-w-6xl` with `px-6 lg:px-12` for a tighter editorial feel.
 - **Whitespace:** Dense (Linear-density) on dashboard cards; content edges within `p-5`. Generous on marketing; section padding `py-20` minimum, hero `py-32`.
 
 ## 6. Depth & Elevation
@@ -203,7 +205,7 @@ Surface levels (raised → elevated → overlay) carry depth visually; shadows a
 - Don't mix display serif and sans serif in the same H1; pick one per surface.
 - Don't introduce additional accent colors. Status colors (amber, red) are functional, not decorative.
 - Don't flat-fill saturated colors. Status pills use foreground color + 10% background tint.
-- Don't use radius > 12px on cards or > 8px on inputs. Round-everything is a toy aesthetic.
+- Don't use radius > 12px on **dashboard cards** (NicheCard, generic panels), or > 8px on inputs. Modals, sheet panels, and bottom-sheets use `rounded-2xl` (16px) — that is the explicit carve-out for floating surfaces. Round-everything (every surface above 16px) is a toy aesthetic.
 - Don't put marketing-surface gradients on dashboard pages.
 - Don't use premium-tier indigo for Free or Basic messaging; it dilutes the Premium signal.
 
@@ -211,7 +213,7 @@ Surface levels (raised → elevated → overlay) carry depth visually; shadows a
 
 - Breakpoints: Tailwind defaults (`sm 640`, `md 768`, `lg 1024`, `xl 1280`, `2xl 1536`).
 - Touch targets at least 44×44 on `<= md`. Pills with action become full-height buttons on mobile.
-- NicheCard grid: 1 col `< md`, 2 col `md`, 3 col `lg`, 4 col `xl`.
+- NicheCard grid: 1 col `< md`, 2 col `md`, 3 col `lg` (current). A 4-column `xl` tier is reserved as a future expansion when card density supports it — do not add until card width audit confirms readability at 4-up.
 - Modal: centered dialog `>= md`, bottom-sheet drag-to-dismiss `< md` (per `BottomSheet.tsx`).
 - Type collapses: `display-xxl` 72px to 48px `< md`, `display-xl` 56px to 40px `< md`, `headline` 28px to 24px `< md`.
 
@@ -226,5 +228,5 @@ Quick reference for AI agents implementing UI:
 > "Use `display-xxl` Instrument Serif 72px weight-400 negative tracking -1.8px (apply as `tracking-[-0.025em]` in Tailwind). Place over the canvas with the single gradient-mesh band background (see §Marketing surface). Hero CTA is emerald primary button."
 
 **For a Premium upgrade prompt (see §Premium-tier accent block below):**
-> "Wrap the prompt in a Premium accent block: deep indigo `#1b1938` panel, `gold-mute` `#cbb275` hairline, Premium badge in mono-label uppercase. CTA is gold-fill button reading 'Upgrade to Premium'."
+> "Wrap the prompt in a Premium accent block (see §Premium-tier accent below for full token names). Deep indigo `premium-canvas` panel with a subtle gold hairline border. Premium badge in mono-label uppercase, gold-on-deep-indigo. CTA is gold-fill button (`premium-gold` background, `premium-canvas-deep` text) reading 'Upgrade to Premium'."
 
