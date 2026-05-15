@@ -24,4 +24,74 @@ colors:
   # === Premium-tier accent surface (filled in Task 5) ===
 
 typography:
-  # Filled in Task 2
+  # Display — editorial serif, used on hero + section H1 ONLY
+  display-xxl:
+    fontFamily: "var(--font-instrument-serif), Georgia, serif"
+    fontSize: 72px
+    fontWeight: 400
+    lineHeight: 1.05
+    letterSpacing: -1.8px
+  display-xl:
+    fontFamily: "var(--font-instrument-serif), Georgia, serif"
+    fontSize: 56px
+    fontWeight: 400
+    lineHeight: 1.08
+    letterSpacing: -1.2px
+  display-lg:
+    fontFamily: "var(--font-instrument-serif), Georgia, serif"
+    fontSize: 40px
+    fontWeight: 400
+    lineHeight: 1.15
+    letterSpacing: -0.8px
+  # Headline — Geist Sans, dense UI / dashboard / modal H1
+  headline:
+    fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+    fontSize: 28px
+    fontWeight: 600
+    lineHeight: 1.20
+    letterSpacing: -0.4px
+  card-title:
+    fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+    fontSize: 20px
+    fontWeight: 600
+    lineHeight: 1.25
+    letterSpacing: -0.3px
+  subhead:
+    fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+    fontSize: 16px
+    fontWeight: 500
+    lineHeight: 1.40
+    letterSpacing: -0.1px
+  body:
+    fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+    fontSize: 14px
+    fontWeight: 400
+    lineHeight: 1.55
+    letterSpacing: 0
+  body-sm:
+    fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+    fontSize: 13px
+    fontWeight: 400
+    lineHeight: 1.50
+    letterSpacing: 0
+  caption:
+    fontFamily: "var(--font-geist-sans), system-ui, sans-serif"
+    fontSize: 12px
+    fontWeight: 500
+    lineHeight: 1.40
+    letterSpacing: 0.08px
+  # Monospace — tabular numerics, code, technical labels
+  mono-num:
+    fontFamily: "var(--font-geist-mono), ui-monospace, monospace"
+    fontSize: 14px
+    fontWeight: 500
+    lineHeight: 1.30
+    letterSpacing: 0
+    fontFeature: "tnum"
+  mono-label:
+    fontFamily: "var(--font-geist-mono), ui-monospace, monospace"
+    fontSize: 11px
+    fontWeight: 500
+    lineHeight: 1.30
+    letterSpacing: 0.22em
+    textTransform: uppercase
