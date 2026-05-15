@@ -13,6 +13,7 @@ This file documents gotchas, conventions, and lessons learned. Read before makin
 - **Subagent-driven dev** je default za implementacijske taskove (opcija 1 u writing-plans skill).
 - **Iskrena ekspert preporuka:** ako korisnik predloži loš pristup, reci jasno + zašto + šta jeste bolje. Pre velikih arhitektonskih odluka postavi 2-4 ključna pitanja.
 - **Verifikacija pre claim-a "deployed":** uvek end-to-end (UI screenshot ili HTTP probe), ne samo exit code od `db push` ili `vercel deploy`.
+- **Design system:** sve UI promene konsultuju [/DESIGN.md](./DESIGN.md). Tri scoped surface sekcije: 1) Dashboard surface (default — `/discover`, `/admin`, modali), 2) Marketing & pricing surface (`/`, `/pricing`, upgrade modal), 3) Premium-tier accent (Premium badge, locked-content prompts, "Upgrade to Premium" CTA). Token-i su mirrored u `tailwind.config.ts` (color groups: `marketing.*`, `premium.*`) i `src/app/globals.css` (CSS vars `--marketing-*`, `--premium-*`). Vizuelna referenca: `docs/design/preview.html`.
 
 ---
 
