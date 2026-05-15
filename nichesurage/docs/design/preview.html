@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NicheSurage DESIGN.md preview</title>
+<style>
+  :root {
+    --canvas: #0a0a0c;
+    --surface-raised: #0f1016;
+    --surface-elevated: #14151d;
+    --surface-overlay: #1b1d27;
+    --surface-hover: #262936;
+    --hairline-soft: rgba(255,255,255,0.05);
+    --hairline-edge: rgba(255,255,255,0.08);
+    --ink: #ededed;
+    --ink-muted: #a8acbb;
+    --ink-subtle: #6b7081;
+    --accent-emerald: #10b981;
+    --accent-emerald-bright: #34d399;
+    --on-accent: #04140d;
+    --premium-canvas: #1b1938;
+    --premium-canvas-deep: #0e0c1f;
+    --premium-gold: #cbb275;
+    --premium-gold-bright: #e2c989;
+    --premium-gold-muted: #8a7847;
+    --premium-violet-glow: #5e6ad2;
+    --premium-ink: #ffffff;
+    --premium-ink-muted: #bcbac9;
+    --marketing-grad-1: #533afd;
+    --marketing-grad-2: #1a8cd8;
+    --marketing-grad-3: #10b981;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--canvas); color: var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; margin: 0; padding: 48px; }
+  h1 { font-family: Georgia, serif; font-size: 72px; font-weight: 400; letter-spacing: -1.8px; line-height: 1.05; margin: 0 0 8px; }
+  h2 { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 28px; font-weight: 600; letter-spacing: -0.4px; margin: 64px 0 16px; }
+  h3 { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 20px; font-weight: 600; letter-spacing: -0.3px; margin: 32px 0 12px; }
+  .swatch-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .swatch { background: var(--surface-raised); border: 1px solid var(--hairline-edge); border-radius: 12px; padding: 16px; }
+  .swatch .chip { height: 64px; border-radius: 6px; margin-bottom: 12px; border: 1px solid var(--hairline-soft); }
+  .swatch .name { font-size: 12px; color: var(--ink-muted); font-family: ui-monospace, monospace; letter-spacing: 0.08em; text-transform: uppercase; }
+  .swatch .hex { font-size: 14px; font-family: ui-monospace, monospace; margin-top: 4px; }
+  .type-row { display: grid; grid-template-columns: 160px 1fr; gap: 24px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--hairline-soft); }
+  .type-row .label { font-family: ui-monospace, monospace; font-size: 11px; color: var(--ink-subtle); letter-spacing: 0.22em; text-transform: uppercase; }
+  .btn { display: inline-block; padding: 10px 16px; border-radius: 6px; font-weight: 500; font-size: 14px; border: none; cursor: pointer; margin-right: 12px; }
+  .btn-primary { background: var(--accent-emerald); color: var(--on-accent); }
+  .btn-secondary { background: transparent; color: var(--ink); border: 1px solid var(--hairline-edge); }
+  .btn-tertiary { background: transparent; color: var(--ink-muted); }
+  .btn-premium { background: var(--premium-gold); color: var(--premium-canvas-deep); font-weight: 600; }
+  .card { background: var(--surface-raised); border: 1px solid var(--hairline-edge); border-radius: 12px; padding: 24px; max-width: 360px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; background: var(--surface-elevated); color: var(--ink-muted); border-radius: 9999px; padding: 4px 10px; font-size: 12px; font-weight: 500; }
+  .pill-mono { background: var(--surface-elevated); color: var(--accent-emerald-bright); font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; padding: 4px 10px; border-radius: 9999px; display: inline-flex; align-items: center; gap: 4px; }
+  .premium-band { background: var(--premium-canvas); border-top: 1px solid var(--premium-gold); border-bottom: 1px solid var(--premium-gold); padding: 64px; border-radius: 16px; position: relative; overflow: hidden; }
+  .premium-band::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 0%, var(--premium-violet-glow) 0%, transparent 70%); opacity: 0.3; }
+  .premium-band > * { position: relative; }
+  .premium-band h3 { color: var(--premium-ink); margin-top: 0; }
+  .premium-band p { color: var(--premium-ink-muted); }
+  .premium-badge { display: inline-flex; align-items: center; gap: 4px; background: var(--premium-canvas-deep); color: var(--premium-gold-bright); padding: 4px 10px; border-radius: 9999px; font-family: ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; border: 1px solid var(--premium-gold-muted); }
+  .marketing-hero { position: relative; padding: 96px 48px; border-radius: 16px; overflow: hidden; background: var(--canvas); margin: 32px 0; }
+  .marketing-hero::before { content: ''; position: absolute; inset: 0;
+    background-image:
+      radial-gradient(ellipse 800px 400px at 20% 30%, var(--marketing-grad-1) 0%, transparent 60%),
+      radial-gradient(ellipse 600px 400px at 80% 20%, var(--marketing-grad-2) 0%, transparent 60%),
+      radial-gradient(ellipse 700px 300px at 50% 80%, var(--marketing-grad-3) 0%, transparent 60%);
+    filter: blur(80px); opacity: 0.35; pointer-events: none;
+  }
+  .marketing-hero > * { position: relative; }
+</style>
+</head>
+<body>
+
+<h1>NicheSurage</h1>
+<p style="color: var(--ink-muted); max-width: 600px;">Visual preview of every token defined in <code>/DESIGN.md</code>. Open in browser; not part of the Next.js bundle.</p>
+
+<h2>Dashboard surface — colors</h2>
+<div class="swatch-grid">
+  <div class="swatch"><div class="chip" style="background: var(--canvas)"></div><div class="name">canvas</div><div class="hex">#0a0a0c</div></div>
+  <div class="swatch"><div class="chip" style="background: var(--surface-raised)"></div><div class="name">surface-raised</div><div class="hex">#0f1016</div></div>
+  <div class="swatch"><div class="chip" style="background: var(--surface-elevated)"></div><div class="name">surface-elevated</div><div class="hex">#14151d</div></div>
+  <div class="swatch"><div class="chip" style="background: var(--surface-overlay)"></div><div class="name">surface-overlay</div><div class="hex">#1b1d27</div></div>
+  <div class="swatch"><div class="chip" style="background: var(--accent-emerald)"></div><div class="name">accent-emerald</div><div class="hex">#10b981</div></div>
+  <div class="swatch"><div class="chip" style="background: var(--accent-emerald-bright)"></div><div class="name">emerald-bright</div><div class="hex">#34d399</div></div>
+  <div class="swatch"><div class="chip" style="background: var(--ink); border: 1px solid var(--hairline-edge)"></div><div class="name">ink</div><div class="hex">#ededed</div></div>
+  <div class="swatch"><div class="chip" style="background: var(--ink-muted)"></div><div class="name">ink-muted</div><div class="hex">#a8acbb</div></div>
+</div>
+
+<h2>Premium-tier accent — colors</h2>
+<div class="swatch-grid">
+  <div class="swatch"><div class="chip" style="background: var(--premium-canvas)"></div><div class="name">premium-canvas</div><div class="hex">#1b1938</div></div>
+  <div class="swatch"><div class="chip" style="background: var(--premium-canvas-deep)"></div><div class="name">premium-canvas-deep</div><div class="hex">#0e0c1f</div></div>
+  <div class="swatch"><div class="chip" style="background: var(--premium-gold)"></div><div class="name">premium-gold</div><div class="hex">#cbb275</div></div>
+  <div class="swatch"><div class="chip" style="background: var(--premium-gold-bright)"></div><div class="name">premium-gold-bright</div><div class="hex">#e2c989</div></div>
+  <div class="swatch"><div class="chip" style="background: var(--premium-gold-muted)"></div><div class="name">premium-gold-muted</div><div class="hex">#8a7847</div></div>
+  <div class="swatch"><div class="chip" style="background: var(--premium-violet-glow)"></div><div class="name">premium-violet-glow</div><div class="hex">#5e6ad2</div></div>
+</div>
+
+<h2>Type ladder</h2>
+<div class="type-row"><div class="label">display-xxl</div><div style="font-family: Georgia, serif; font-size: 72px; font-weight: 400; letter-spacing: -1.8px; line-height: 1.05;">Discover your niche</div></div>
+<div class="type-row"><div class="label">display-xl</div><div style="font-family: Georgia, serif; font-size: 56px; font-weight: 400; letter-spacing: -1.2px;">Discover your niche</div></div>
+<div class="type-row"><div class="label">headline</div><div style="font-size: 28px; font-weight: 600; letter-spacing: -0.4px;">Section headline</div></div>
+<div class="type-row"><div class="label">card-title</div><div style="font-size: 20px; font-weight: 600; letter-spacing: -0.3px;">Card title</div></div>
+<div class="type-row"><div class="label">body</div><div style="font-size: 14px; line-height: 1.55;">Body text — Geist Sans 14/22. Reading-density tuned for dashboard cards.</div></div>
+<div class="type-row"><div class="label">mono-num</div><div style="font-family: ui-monospace, monospace; font-size: 14px; font-variant-numeric: tabular-nums;">1,234,567 · 12.3% · €19.00</div></div>
+<div class="type-row"><div class="label">mono-label</div><div style="font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;">Trending now</div></div>
+
+<h2>Buttons</h2>
+<button class="btn btn-primary">Primary CTA</button>
+<button class="btn btn-secondary">Secondary</button>
+<button class="btn btn-tertiary">Tertiary</button>
+<button class="btn btn-premium">Upgrade to Premium</button>
+
+<h2>Card pattern</h2>
+<div class="card">
+  <span class="pill-mono">Trending</span>
+  <h3 style="margin-top: 12px;">AI Coding Tutorials</h3>
+  <p style="color: var(--ink-muted); font-size: 14px;">Niche analysis across 132 channels.</p>
+  <div style="margin-top: 16px;">
+    <span class="pill">132 channels</span>
+    <span class="pill">+24% wk</span>
+  </div>
+</div>
+
+<h2>Premium-tier accent block</h2>
+<div class="premium-band">
+  <span class="premium-badge">&#9733; Premium</span>
+  <h3 style="margin-top: 16px;">Unlock the Premium tier</h3>
+  <p>See every emerging niche before it's mainstream. Premium gives you the full pre-breakout feed.</p>
+  <button class="btn btn-premium">Upgrade to Premium</button>
+</div>
+
+<h2>Marketing hero (gradient mesh demo)</h2>
+<div class="marketing-hero">
+  <span class="pill-mono">Now in public beta</span>
+  <h1 style="margin-top: 16px;">Catch the wave before it crests.</h1>
+  <p style="color: var(--ink-muted); font-size: 18px; max-width: 500px;">NicheSurage detects YouTube niches in their emerging phase, before competition floods in.</p>
+  <button class="btn btn-primary">Start exploring</button>
+  <button class="btn btn-secondary">View pricing</button>
+</div>
+
+</body>
+</html>
