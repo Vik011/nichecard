@@ -95,3 +95,136 @@ typography:
     lineHeight: 1.30
     letterSpacing: 0.22em
     textTransform: uppercase
+---
+
+## 1. Visual Theme & Atmosphere
+
+NicheSurage reads as a **software-craft dashboard**: near-black canvas, dense type, single emerald accent, hairline panel borders. Every page surface descends from one of four levels, canvas to raised to elevated to overlay, and the level is what conveys hierarchy, not color. The product feel is "research workstation", not "marketing splash."
+
+Three surfaces compose the system. Use exactly one per page:
+
+1. **Dashboard surface (default)** — `/discover`, `/admin`, `/dashboard`, all modals. Dark, dense, emerald-positive.
+2. **Marketing & pricing surface** — `/`, `/pricing`, the upgrade modal. Stripe-inspired: weight-300 display serif at hero scale, single gradient mesh band, tabular numerics for prices, white-leaning cards on a slightly cooler dark.
+3. **Premium-tier accent** — Premium badge on NicheCard, Premium-locked overlays, "Upgrade to Premium" CTAs. Deep indigo-violet block (`#1b1938`-family) used as a 200–400px-tall section band, never as full-page canvas. Reserved exclusively for the highest-value upsell moments; never for Basic or Free messaging.
+
+## 2. Color Palette & Roles
+
+(See frontmatter `colors:` for hex values.)
+
+| Role | Token | Live CSS var | Used on |
+|------|-------|--------------|---------|
+| Canvas | `canvas` | `--color-bg-base` | `<body>` background, full-page sections |
+| Raised | `surface-raised` | `--color-bg-raised` | Cards, side panels, nav bar |
+| Elevated | `surface-elevated` | `--color-bg-elevated` | Modals, dropdowns, second-level surfaces inside cards |
+| Overlay | `surface-overlay` | `--color-bg-overlay` | Popovers, tooltips, third-level (modal-inside-card) |
+| Hover | `surface-hover` | `--color-bg-hover` | Row hover, button hover |
+| Hairline soft | `hairline-soft` | `--color-border-soft` | Inner card dividers, subtle grid lines |
+| Hairline edge | `hairline-edge` | `--color-border-edge` | Card outer borders, input borders |
+| Ink | `ink` | `--foreground` | Primary text |
+| Ink muted | `ink-muted` | _proposed, wired in Task 7_ | Secondary text, meta |
+| Ink subtle | `ink-subtle` | _proposed, wired in Task 7_ | Tertiary text, disabled state |
+| Accent emerald | `accent-emerald` | `--color-accent-emerald` | Positive signals (high trend score, healthy verdict, primary CTA fill) |
+| Accent emerald bright | `accent-emerald-bright` | `--color-accent-emerald-bright` | Hover state of emerald, focus ring, sparkline strokes |
+| On-accent | `on-accent` | _proposed, wired in Task 7_ | Foreground text on emerald fill (e.g., primary button text) |
+
+**Rule:** emerald is NEVER decorative. It marks positive signal or primary action. Never use it as a background for inert sections.
+
+**Naming bridge for agents:** DESIGN.md uses semantic role names (`surface-raised`, `hairline-edge`, `ink`). Live `globals.css` uses category names (`--color-bg-raised`, `--color-border-edge`, `--foreground`). When emitting CSS, reach for the existing live variable in the right column. Do not invent new `--color-canvas` or `--color-ink` variables; the rename is a documentation-only abstraction.
+
+## 3. Typography Rules
+
+(See frontmatter `typography:` for the full scale.)
+
+- **Display serif (`display-xxl/xl/lg`):** Instrument Serif at large sizes with negative letter-spacing. ONLY on hero H1 and section landmark H1 on marketing surface. Never inside dashboard cards.
+- **Headline / card-title / subhead:** Geist Sans, weights 500–600, negative letter-spacing scaling with size.
+- **Body / body-sm:** Geist Sans 400, neutral tracking, 1.5–1.55 line-height for reading density.
+- **Caption:** Geist Sans 500, slightly above body weight to keep 12px legible on dark backgrounds.
+- **Mono-num:** Geist Mono with `font-variant-numeric: tabular-nums`. ALL numeric data in dashboard cards (view counts, score, %, currency) uses this; tabular alignment is what separates "dashboard" from "blog."
+- **Mono-label:** Geist Mono uppercase with `0.22em` tracking. Eyebrow labels above sections, status pills: "BREAKOUT", "PREMIUM", "TRENDING".
+
+**LetterSpacing unit convention:** the type ladder documents letter-spacing in `px` for design-time precision (e.g., `display-xxl` is `-1.8px` at 72px). When emitting Tailwind classes use the `em` equivalent so values scale with the font size: `-1.8px / 72px ≈ -0.025em`. Existing landing components already use this convention (`tracking-[-0.02em]`, `tracking-[-0.025em]`). Convert before applying; never hard-code `letter-spacing: -1.8px` in CSS where the element font-size might change responsively.
+
+## 4. Component Stylings
+
+### Buttons
+- **Primary (emerald):** `bg-accent-emerald text-on-accent`, hover to `bg-accent-emerald-bright`, focus ring `accent-emerald-bright` at 2px offset. Radius `rounded-md` (6px). Height 36/40/44 (sm/md/lg). Weight 500.
+- **Secondary (ghost-on-dark):** `bg-transparent border border-hairline-edge text-ink`, hover to `bg-surface-hover`.
+- **Tertiary (text-only):** `bg-transparent text-ink-muted`, hover to `text-ink`. No border. Used inside dense card chrome.
+- **Premium upgrade CTA:** see §Premium-tier accent below.
+
+### Cards (NicheCard, generic panel)
+- `bg-surface-raised border border-hairline-edge rounded-xl` (12px). Inner padding `p-5` to `p-6`. Inner dividers `border-t border-hairline-soft`.
+- Shadow: `shadow-elev-1` default, `shadow-elev-2` on hover (with `translate-y-[-1px]` lift), `shadow-elev-3` on focus-visible.
+- Hover transition: 150ms ease-out. Never overshoot; this is a workstation, not a toy.
+
+### Inputs
+- `bg-surface-elevated border border-hairline-edge text-ink placeholder:text-ink-subtle rounded-md px-3 py-2 text-sm`.
+- Focus: `outline-none ring-2 ring-accent-emerald-bright/40 border-accent-emerald`.
+
+### Pills / Badges
+- Default: `bg-surface-elevated text-ink-muted rounded-full px-2.5 py-0.5 text-xs font-medium`.
+- Mono-label variant: `font-mono uppercase tracking-label text-[11px]`.
+- Status colors: emerald (positive), amber (`#f59e0b`, warning), red (`#ef4444`, alert). Apply only as foreground + 10% background tint, never as full saturated fill.
+
+### Nav bar
+- `bg-canvas/80 backdrop-blur-md border-b border-hairline-edge`. Height 56px. Logo + segmented control + user menu. Body type Geist Sans 14px weight-500.
+
+### Modal
+- Outer: `bg-canvas/80` backdrop with `backdrop-blur-sm`. Inner panel: `bg-surface-elevated border border-hairline-edge rounded-2xl shadow-elev-3`. Max-width `max-w-6xl` desktop, full-width bottom-sheet on mobile (per `feat/niche-detail-modal-redesign`).
+
+## 5. Layout Principles
+
+- **Spacing scale:** Tailwind default (4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96). Section vertical rhythm uses `py-12 lg:py-20` on marketing surface, `py-6 lg:py-8` on dashboard.
+- **Grid:** Dashboard uses 12-column at `max-w-7xl` with `px-4 lg:px-8`. Marketing uses 12-column at `max-w-6xl` with `px-6 lg:px-12` for a tighter editorial feel.
+- **Whitespace:** Dense (Linear-density) on dashboard cards; content edges within `p-5`. Generous on marketing; section padding `py-20` minimum, hero `py-32`.
+
+## 6. Depth & Elevation
+
+| Level | Token | Used on |
+|-------|-------|---------|
+| 0 (flat) | (no shadow) | Canvas-level page sections |
+| 1 | `shadow-elev-1` | Default cards, nav bar |
+| 2 | `shadow-elev-2` | Hover state of cards, sticky headers |
+| 3 | `shadow-elev-3` | Modals, popovers, focus state |
+
+Surface levels (raised → elevated → overlay) carry depth visually; shadows are additive emphasis, not the primary cue.
+
+## 7. Do's and Don'ts
+
+**Do:**
+- Use emerald for positive signal and primary action only.
+- Use mono for ALL dashboard numerics (tabular alignment).
+- Use Instrument Serif display sparingly; hero H1 and section landmark H1 only.
+- Keep dashboard cards on `surface-raised`; nest modals on `surface-elevated`; popovers on `surface-overlay`.
+- Use hairline borders (`hairline-edge` 8% white) for card outlines; never solid 1px borders at 20–50% white.
+
+**Don't:**
+- Don't use emerald as a background tint for inert sections.
+- Don't mix display serif and sans serif in the same H1; pick one per surface.
+- Don't introduce additional accent colors. Status colors (amber, red) are functional, not decorative.
+- Don't flat-fill saturated colors. Status pills use foreground color + 10% background tint.
+- Don't use radius > 12px on cards or > 8px on inputs. Round-everything is a toy aesthetic.
+- Don't put marketing-surface gradients on dashboard pages.
+- Don't use premium-tier indigo for Free or Basic messaging; it dilutes the Premium signal.
+
+## 8. Responsive Behavior
+
+- Breakpoints: Tailwind defaults (`sm 640`, `md 768`, `lg 1024`, `xl 1280`, `2xl 1536`).
+- Touch targets at least 44×44 on `<= md`. Pills with action become full-height buttons on mobile.
+- NicheCard grid: 1 col `< md`, 2 col `md`, 3 col `lg`, 4 col `xl`.
+- Modal: centered dialog `>= md`, bottom-sheet drag-to-dismiss `< md` (per `BottomSheet.tsx`).
+- Type collapses: `display-xxl` 72px to 48px `< md`, `display-xl` 56px to 40px `< md`, `headline` 28px to 24px `< md`.
+
+## 9. Agent Prompt Guide
+
+Quick reference for AI agents implementing UI:
+
+**For a dashboard card:**
+> "Render a card on `surface-raised` with `hairline-edge` 1px border, radius 12, padding 20–24. Title in `card-title` Geist Sans 600 with -0.3px tracking. Body in `body` Geist Sans 14/22. Numerics in `mono-num`. Emerald only on positive-signal pills or the primary CTA."
+
+**For a marketing hero (see §Marketing surface block below):**
+> "Use `display-xxl` Instrument Serif 72px weight-400 negative tracking -1.8px (apply as `tracking-[-0.025em]` in Tailwind). Place over the canvas with the single gradient-mesh band background (see §Marketing surface). Hero CTA is emerald primary button."
+
+**For a Premium upgrade prompt (see §Premium-tier accent block below):**
+> "Wrap the prompt in a Premium accent block: deep indigo `#1b1938` panel, `gold-mute` `#cbb275` hairline, Premium badge in mono-label uppercase. CTA is gold-fill button reading 'Upgrade to Premium'."
+
