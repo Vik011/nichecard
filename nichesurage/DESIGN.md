@@ -21,6 +21,16 @@ colors:
   accent-emerald-bright: "#34d399"
   on-accent: "#04140d"
   # === Marketing & pricing surface (filled in Task 4) ===
+  marketing-canvas: "#0a0a0c"
+  marketing-canvas-cool: "#080912"
+  marketing-hero-gradient-1: "#533afd"
+  marketing-hero-gradient-2: "#1a8cd8"
+  marketing-hero-gradient-3: "#10b981"
+  marketing-card: "#0f1016"
+  marketing-card-hover: "#14151d"
+  marketing-ink: "#ededed"
+  marketing-ink-mute: "#a8acbb"
+  pricing-tabular-num: "#ededed"
   # === Premium-tier accent surface (filled in Task 5) ===
 
 typography:
@@ -229,4 +239,55 @@ Quick reference for AI agents implementing UI:
 
 **For a Premium upgrade prompt (see §Premium-tier accent block below):**
 > "Wrap the prompt in a Premium accent block (see §Premium-tier accent below for full token names). Deep indigo `premium-canvas` panel with a subtle gold hairline border. Premium badge in mono-label uppercase, gold-on-deep-indigo. CTA is gold-fill button (`premium-gold` background, `premium-canvas-deep` text) reading 'Upgrade to Premium'."
+
+---
+
+## §Marketing surface (landing + pricing + upgrade modal)
+
+**When to apply:** `/`, `/pricing`, the upgrade modal (`<UpgradeModal>`), any future blog/changelog pages. Everything else uses the dashboard surface.
+
+### Canvas + hero
+- Body canvas: `marketing-canvas` (same `#0a0a0c` as dashboard, no jump).
+- Hero only: full-width band, `padding-block: 96px lg:160px`, with a **single gradient mesh** absolutely positioned behind the content, opacity 0.35, blur 100px.
+
+Gradient mesh CSS (place in `globals.css` under a `.marketing-hero-mesh` utility class):
+
+```css
+.marketing-hero-mesh {
+  background-image:
+    radial-gradient(ellipse 800px 400px at 20% 30%, var(--marketing-hero-gradient-1, #533afd) 0%, transparent 60%),
+    radial-gradient(ellipse 600px 400px at 80% 20%, var(--marketing-hero-gradient-2, #1a8cd8) 0%, transparent 60%),
+    radial-gradient(ellipse 700px 300px at 50% 80%, var(--marketing-hero-gradient-3, #10b981) 0%, transparent 60%);
+  filter: blur(80px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+```
+
+ONE mesh per page, in the hero. Not on every section.
+
+### Typography on marketing surface
+- Hero H1: `display-xxl` (Instrument Serif 72px, line-height 1.05, tracking -1.8px applied as `tracking-[-0.025em]`). Mobile collapse: 48px.
+- Section H1: `display-xl` (Instrument Serif 56px). Mobile: 40px.
+- Eyebrow above H1: `mono-label` uppercase emerald.
+- Subheading under H1: `subhead` (Geist Sans 16px weight-500), `ink-muted` color.
+
+### Pricing cards
+- Background: `marketing-card`. Border: `hairline-edge`. Radius: `rounded-2xl` (16px, per §7 floating-surface carve-out).
+- Tier name: `card-title` Geist Sans 600.
+- Price: `display-lg` Instrument Serif 40px, **with `mono-num` for the digits** (composite — serif euro/dollar symbol + mono digits gives the editorial-finance feel Stripe uses). `font-variant-numeric: tabular-nums`.
+- Per-month label: `caption` Geist Sans 500 `ink-subtle`.
+- Feature list: `body` Geist Sans 14px, emerald check icons, `ink-muted` line text.
+- "Most popular" pill (on Basic, the default conversion target): `accent-emerald` background with `on-accent` text, position absolute top-right corner.
+- Premium tier card: see §Premium-tier accent block.
+
+### Stripe checkout transition
+The Stripe-hosted checkout page is light-themed by default. To minimize the jump:
+- Just before redirecting to Stripe, show a 200ms `bg-canvas` to `bg-surface-glass-strong` fade with a small "Redirecting to secure checkout..." caption.
+- Configure Stripe Checkout `branding.primary_color` in Dashboard → Settings → Branding to `#10b981` so the Stripe page mirrors the emerald CTA.
+
+### Don'ts on marketing surface
+- Don't put more than one gradient mesh on a page.
+- Don't make every section feel like a hero. Hero is hero; the rest is editorial density (Linear cadence) with whitespace.
+- Don't drop the marketing surface inside the dashboard. The route boundary is the rule.
 
