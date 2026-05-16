@@ -303,6 +303,7 @@ export const COPY = {
     pricingCtaFree: 'Get Started',
     pricingCtaBasic: 'Start Basic',
     pricingCtaPremium: 'Go Premium',
+    pricingPremiumTrust: 'Cancel anytime · Secure checkout via Stripe',
     // Sprint A.7 — feature lists rewritten to match the actual three-tier
     // funnel: 1 reveal /6h for free, top 5 per format /24h + 1 AI deep-dive
     // for basic, unlimited everything for premium.
@@ -639,6 +640,7 @@ export const COPY = {
     pricingCtaFree: 'Jetzt starten',
     pricingCtaBasic: 'Basic starten',
     pricingCtaPremium: 'Premium holen',
+    pricingPremiumTrust: 'Jederzeit kündbar · Sichere Zahlung über Stripe',
     // Sprint A.7 — Feature-Listen entsprechen jetzt der Drei-Tier-Logik.
     pricingFreeFeatures: [
       '1 freigeschaltete Nische, rotiert alle 6h',
