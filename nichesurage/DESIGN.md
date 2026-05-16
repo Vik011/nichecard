@@ -251,7 +251,7 @@ Quick reference for AI agents implementing UI:
 
 ## §Marketing surface (landing + pricing + upgrade modal)
 
-**When to apply:** `/`, `/pricing`, the upgrade modal (`<UpgradeModal>`), any future blog/changelog pages. Everything else uses the dashboard surface.
+**When to apply:** `/`, `/pricing`, the upgrade modal (`<UpsellModal>`), any future blog/changelog pages. Everything else uses the dashboard surface.
 
 ### Canvas + hero
 - Body canvas: `marketing-canvas` (same `#0a0a0c` as dashboard, no jump).
@@ -304,7 +304,7 @@ The Stripe-hosted checkout page is light-themed by default. To minimize the jump
 
 **When to apply:** EXCLUSIVELY on:
 1. The Premium tier card in `/pricing`.
-2. The "Upgrade to Premium" CTA inside `<UpgradeModal>`.
+2. The "Upgrade to Premium" CTA inside `<UpsellModal>`.
 3. The Premium badge that appears on NicheCard when a niche is Premium-locked.
 4. The locked-content overlay on premium niches when the viewer is Free/Basic.
 
@@ -313,7 +313,7 @@ The Stripe-hosted checkout page is light-themed by default. To minimize the jump
 ### Block structure
 A Premium accent surface is a **bounded section**, never a full-page canvas. It appears as a band or panel inside an otherwise dashboard-surface or marketing-surface page.
 
-**Band variant** (used in `/pricing` and `<UpgradeModal>`):
+**Band variant** (used in `/pricing` and `<UpsellModal>`):
 - Background: `premium-canvas` (`#1b1938`).
 - Top + bottom hairline: `premium-hairline`.
 - Inner radial glow centered: `premium-violet-glow` 30% alpha, blur 120px, positioned center-top.
