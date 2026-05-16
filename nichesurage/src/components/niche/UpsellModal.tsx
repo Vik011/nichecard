@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { LockSimple, X } from '@phosphor-icons/react/dist/ssr'
 import type { UserTier } from '@/lib/types'
@@ -19,8 +19,6 @@ interface UpsellModalProps {
 // work behind the dialog. PREMIUM never sees this modal because their
 // cards aren't paywalled.
 export function UpsellModal({ tier, copy, onClose }: UpsellModalProps) {
-  const dialogRef = useRef<HTMLDivElement>(null)
-
   // Escape closes; click outside the dialog also closes (handled by the
   // backdrop button below). Keeping the focus-trap minimal — full a11y
   // polish can come later, the priority right now is the conversion CTA.
@@ -92,7 +90,6 @@ export function UpsellModal({ tier, copy, onClose }: UpsellModalProps) {
       />
 
       <div
-        ref={dialogRef}
         className={`relative w-full max-w-md overflow-hidden rounded-2xl p-7 ${theme.panel}`}
       >
         {/* Gold hairline: the shared "exclusive layer" identity element.
