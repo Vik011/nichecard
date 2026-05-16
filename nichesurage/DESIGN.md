@@ -34,7 +34,7 @@ colors:
   premium-canvas-deep: "#0e0c1f"
   premium-violet-glow: "#5e6ad2"
   premium-hairline: "rgba(255,255,255,0.10)"
-  premium-gold: "#cbb275"
+  premium-gold: "#c3b088"
   premium-gold-bright: "#e2c989"
   premium-gold-muted: "#8a7847"
   premium-ink: "#ffffff"
@@ -333,7 +333,7 @@ A Premium accent surface is a **bounded section**, never a full-page canvas. It 
 ### Premium upgrade CTA button
 This is the ONLY button in the system that uses gold fill. Reserved.
 
-- Background: `premium-gold` (`#cbb275`).
+- Background: `premium-gold` (`#c3b088`).
 - Text: `premium-canvas-deep` (`#0e0c1f`), Geist Sans 600.
 - Hover: `premium-gold-bright`.
 - Focus ring: `premium-gold-bright` 2px offset.
