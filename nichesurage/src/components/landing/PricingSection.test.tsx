@@ -59,10 +59,22 @@ describe('PricingSection', () => {
     })
   })
 
-  it('Premium tier card has glow glass class', () => {
+  it('Premium tier card has the gilded glow class', () => {
     const { container } = render(<PricingSection copy={copy} />)
-    const cards = container.querySelectorAll('[class*="glass-glow"]')
+    const cards = container.querySelectorAll('[class*="premium-card-glow"]')
     expect(cards.length).toBeGreaterThan(0)
+  })
+
+  it('Premium CTA uses the gold fill', () => {
+    render(<PricingSection copy={copy} />)
+    expect(
+      screen.getByText(copy.pricingCtaPremium).closest('a'),
+    ).toHaveClass('bg-premium-gold')
+  })
+
+  it('Premium card shows the trust signal line', () => {
+    render(<PricingSection copy={copy} />)
+    expect(screen.getByText(copy.pricingPremiumTrust)).toBeInTheDocument()
   })
 
   it('Basic tier card has emerald ring class', () => {

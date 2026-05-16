@@ -44,7 +44,7 @@
   --premium-canvas-deep: #0e0c1f;
   --premium-violet-glow: #5e6ad2;
   --premium-hairline: rgba(255, 255, 255, 0.10);
-  --premium-gold: #cbb275;
+  --premium-gold: #c3b088;
   --premium-gold-bright: #e2c989;
   --premium-gold-muted: #8a7847;
   --premium-ink: #ffffff;
@@ -266,4 +266,28 @@ body {
   filter: blur(80px);
   opacity: 0.35;
   pointer-events: none;
+}
+
+/* Premium-tier hover glow. ~0.9s ambient glow on the Premium upsell
+   surfaces. rgba(195,176,136,…) is --premium-gold (#c3b088); the box-shadow
+   needs an alpha channel, which a hex var cannot supply, so it is inlined. */
+.premium-modal-glow {
+  box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.85);
+  transition: box-shadow 0.9s ease;
+}
+.premium-modal-glow:hover {
+  box-shadow:
+    0 40px 110px -28px rgba(0, 0, 0, 0.85),
+    0 0 60px -8px rgba(94, 106, 210, 0.30),
+    0 0 38px -10px rgba(195, 176, 136, 0.20);
+}
+
+.premium-card-glow {
+  box-shadow: 0 34px 70px -34px rgba(0, 0, 0, 0.9);
+  transition: box-shadow 0.9s ease;
+}
+.premium-card-glow:hover {
+  box-shadow:
+    0 34px 70px -32px rgba(0, 0, 0, 0.9),
+    0 0 46px -12px rgba(195, 176, 136, 0.20);
 }
