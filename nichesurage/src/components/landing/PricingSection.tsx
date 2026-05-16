@@ -117,7 +117,7 @@ export function PricingSection({ copy }: PricingSectionProps) {
                   tier.highlight
                     ? 'relative glass rounded-2xl p-8 ring-1 ring-emerald-500/30'
                     : tier.isPremium
-                    ? 'relative glass glass-glow rounded-2xl p-8'
+                    ? 'relative bg-charcoal-900 rounded-2xl p-8 ring-1 ring-premium-gold/20 premium-card-glow'
                     : 'relative gborder bg-charcoal-900 rounded-2xl p-8'
                 }
               >
@@ -127,12 +127,31 @@ export function PricingSection({ copy }: PricingSectionProps) {
                   </span>
                 )}
                 {tier.isPremium && (
-                  <span className="absolute -top-3 right-6 text-[10px] font-semibold tracking-[0.22em] text-emerald-300 uppercase bg-charcoal-900 px-3">
-                    {copy.pricingBestValueBadge}
-                  </span>
+                  <>
+                    {/* Clip wrapper: matches the card box, clips the hairline
+                        and top gradient to the rounded corners. The card
+                        itself stays overflow-visible so the badge can
+                        straddle the top edge. */}
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none"
+                    >
+                      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-premium-gold/80 to-transparent" />
+                      <div className="absolute top-0 inset-x-0 h-[15%] bg-gradient-to-b from-premium-gold/[0.07] to-transparent" />
+                    </div>
+                    <span className="absolute -top-3 right-6 text-[9px] font-medium tracking-[0.28em] text-premium-gold/75 uppercase bg-charcoal-900 px-3">
+                      {copy.pricingBestValueBadge}
+                    </span>
+                  </>
                 )}
                 <div className="mb-6">
-                  <h3 className="text-[15px] font-semibold text-slate-100 mb-3 uppercase tracking-[0.18em] text-slate-300">{tier.name}</h3>
+                  <h3
+                    className={`text-[15px] font-semibold mb-3 uppercase tracking-[0.18em] ${
+                      tier.isPremium ? 'text-premium-gold' : 'text-slate-300'
+                    }`}
+                  >
+                    {tier.name}
+                  </h3>
                   <div className="flex items-baseline gap-1">
                     <span className="text-5xl font-semibold text-slate-100 tracking-tight">{price}</span>
                     <span className="text-slate-400 text-sm">{perLabel}</span>
@@ -148,7 +167,11 @@ export function PricingSection({ copy }: PricingSectionProps) {
                         aria-hidden
                         weight="fill"
                         size={16}
-                        className="text-emerald-400/90 mt-0.5 shrink-0"
+                        className={`mt-0.5 shrink-0 ${
+                          tier.isPremium
+                            ? 'text-premium-gold'
+                            : 'text-emerald-400/90'
+                        }`}
                       />
                       <span>{feature}</span>
                     </li>
@@ -160,11 +183,18 @@ export function PricingSection({ copy }: PricingSectionProps) {
                   className={
                     tier.highlight
                       ? 'block w-full text-center py-3 px-4 rounded-xl font-semibold bg-white text-charcoal-900 hover:bg-slate-100 transition-all shadow-[0_8px_24px_-8px_rgba(0,0,0,0.2)]'
+                      : tier.isPremium
+                      ? 'block w-full text-center py-3 px-4 rounded-xl font-semibold bg-premium-gold text-premium-canvas-deep hover:bg-premium-gold-bright transition-all'
                       : 'block w-full text-center py-3 px-4 rounded-xl font-semibold gborder bg-charcoal-800 text-slate-200 hover:bg-charcoal-700 transition-colors'
                   }
                 >
                   {tier.cta}
                 </a>
+                {tier.isPremium && (
+                  <p className="text-center text-[11px] text-slate-500 mt-3">
+                    {copy.pricingPremiumTrust}
+                  </p>
+                )}
               </MotionCard>
             )
           })}
