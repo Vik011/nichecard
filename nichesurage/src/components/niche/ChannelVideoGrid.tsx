@@ -16,7 +16,7 @@ type LoadState =
   | { kind: 'error'; message: string }
   | { kind: 'ready'; videos: ChannelVideo[] }
 
-const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-emerald-300'
+const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-accent-emerald-bright'
 
 export function ChannelVideoGrid({ channelId, copy }: ChannelVideoGridProps) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
@@ -56,7 +56,7 @@ export function ChannelVideoGrid({ channelId, copy }: ChannelVideoGridProps) {
           <button
             type="button"
             onClick={() => setState({ kind: 'loading' })}
-            className="text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-charcoal-800/60 text-slate-200 hover:bg-charcoal-700/60 transition-colors"
+            className="text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-surface-elevated/60 text-ink hover:bg-surface-overlay/60 transition-colors"
           >
             {copy.videosRetry}
           </button>
@@ -66,7 +66,7 @@ export function ChannelVideoGrid({ channelId, copy }: ChannelVideoGridProps) {
       {state.kind === 'ready' && state.videos.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-8 text-center">
           <EmptyMagnifier size={64} />
-          <p className="text-slate-500 text-sm">{copy.videosEmpty}</p>
+          <p className="text-ink-subtle text-sm">{copy.videosEmpty}</p>
         </div>
       )}
 
@@ -89,7 +89,7 @@ function VideoTile({ video, copy }: { video: ChannelVideo; copy: CopyKeys }) {
       rel="noopener noreferrer"
       className="block group"
     >
-      <div className="aspect-video w-full rounded-lg overflow-hidden bg-charcoal-800">
+      <div className="aspect-video w-full rounded-lg overflow-hidden bg-surface-elevated">
         {video.thumbnail && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -100,10 +100,10 @@ function VideoTile({ video, copy }: { video: ChannelVideo; copy: CopyKeys }) {
           />
         )}
       </div>
-      <div className="text-slate-200 text-sm font-medium line-clamp-2 mt-2 group-hover:text-slate-100 transition-colors">
+      <div className="text-ink text-sm font-medium line-clamp-2 mt-2 transition-colors">
         {video.title}
       </div>
-      <div className="text-slate-500 text-xs mt-1 tabular-nums">
+      <div className="text-ink-subtle text-xs mt-1 tabular-nums">
         {formatViews(video.viewCount)} {copy.videosViewsLabel} · {timeAgo(video.publishedAt)}
       </div>
     </a>

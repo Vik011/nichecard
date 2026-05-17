@@ -63,14 +63,14 @@ export function UpsellModal({ tier, copy, onClose }: UpsellModalProps) {
       }
     : {
         panel:
-          'glass ring-1 ring-emerald-500/30 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.7)]',
+          'glass ring-1 ring-accent-emerald/30 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.7)]',
         hairline: false,
-        iconChip: 'bg-emerald-500/10 ring-1 ring-emerald-500/30',
-        icon: 'text-emerald-300',
-        title: 'text-slate-100',
-        body: 'text-slate-400',
-        cta: 'bg-white text-charcoal-900 hover:bg-slate-100',
-        secondary: 'text-slate-500 hover:text-slate-300',
+        iconChip: 'bg-accent-emerald/10 ring-1 ring-accent-emerald/30',
+        icon: 'text-accent-emerald-bright',
+        title: 'text-ink',
+        body: 'text-ink-muted',
+        cta: 'bg-white text-surface-raised hover:bg-slate-100',
+        secondary: 'text-ink-subtle hover:text-ink-muted',
       }
 
   return (
@@ -105,7 +105,7 @@ export function UpsellModal({ tier, copy, onClose }: UpsellModalProps) {
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="absolute top-3 right-3 text-slate-500 hover:text-slate-200 transition-colors p-1.5"
+          className="absolute top-3 right-3 text-ink-subtle hover:text-ink transition-colors p-1.5"
         >
           <X weight="bold" size={16} aria-hidden />
         </button>

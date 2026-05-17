@@ -23,7 +23,7 @@ export function HealthCheckButton({ scanResultId, nicheLabel, userTier }: Health
         aria-disabled="true"
         title="Premium feature"
         onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
-        className="text-slate-600 opacity-60 p-1.5 rounded-lg cursor-not-allowed"
+        className="text-ink-subtle opacity-60 p-1.5 rounded-lg cursor-not-allowed"
       >
         <Heartbeat weight="duotone" size={18} aria-hidden />
       </button>
@@ -36,7 +36,7 @@ export function HealthCheckButton({ scanResultId, nicheLabel, userTier }: Health
         type="button"
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true) }}
         aria-label={`Health check for ${nicheLabel}`}
-        className="text-emerald-300 hover:brightness-110 p-1.5 rounded-lg transition-all"
+        className="text-accent-emerald-bright hover:brightness-110 p-1.5 rounded-lg transition-all"
       >
         <Heartbeat weight="duotone" size={18} aria-hidden />
       </button>

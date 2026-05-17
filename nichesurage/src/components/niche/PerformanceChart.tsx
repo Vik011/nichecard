@@ -8,7 +8,7 @@ interface PerformanceChartProps {
   tier?: SparklineTier
 }
 
-const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-emerald-300'
+const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-accent-emerald-bright'
 
 function formatDay(iso: string): string {
   const d = new Date(iso)
@@ -20,7 +20,7 @@ export function PerformanceChart({ history, copy, tier }: PerformanceChartProps)
     return (
       <section className="glass rounded-2xl p-6 mb-6">
         <div className={eyebrow + ' mb-3'}>{copy.chartTitle}</div>
-        <p className="text-slate-500 text-sm text-center py-8">
+        <p className="text-ink-subtle text-sm text-center py-8">
           {copy.chartEmpty}
         </p>
       </section>
@@ -37,9 +37,9 @@ export function PerformanceChart({ history, copy, tier }: PerformanceChartProps)
       <div className="flex justify-center mb-4">
         <Sparkline data={history} variant="detail" tier={tier} />
       </div>
-      <div className="flex justify-between text-slate-500 text-xs tabular-nums mt-2 px-2">
+      <div className="flex justify-between text-ink-subtle text-xs tabular-nums mt-2 px-2">
         <span>{formatDay(first.day)}</span>
-        <span className="text-slate-300">
+        <span className="text-ink-muted">
           {copy.chartMaxSpike}: <span className="font-semibold">{maxSpike.toFixed(1)}×</span>
         </span>
         <span>{formatDay(last.day)}</span>

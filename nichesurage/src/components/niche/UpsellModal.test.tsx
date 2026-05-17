@@ -29,7 +29,7 @@ describe('UpsellModal', () => {
       <UpsellModal tier="free" copy={copy} onClose={() => {}} />,
     )
     expect(
-      container.querySelector('[class*="ring-emerald-500"]'),
+      container.querySelector('[class*="ring-accent-emerald"]'),
     ).not.toBeNull()
     expect(
       container.querySelector('[class*="from-premium-canvas"]'),

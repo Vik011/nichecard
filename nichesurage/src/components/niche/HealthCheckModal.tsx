@@ -51,8 +51,8 @@ interface ScoreTier {
 }
 
 function scoreTier(score: number): ScoreTier {
-  if (score >= 70) return { textClass: 'text-emerald-300', label: 'EXCELLENT' }
-  if (score >= 50) return { textClass: 'text-emerald-300', label: 'STRONG' }
+  if (score >= 70) return { textClass: 'text-accent-emerald-bright', label: 'EXCELLENT' }
+  if (score >= 50) return { textClass: 'text-accent-emerald-bright', label: 'STRONG' }
   if (score >= 30) return { textClass: 'text-amber-300', label: 'AVERAGE' }
   return { textClass: 'text-red-400', label: 'WEAK' }
 }
@@ -99,7 +99,7 @@ export function HealthCheckModal({ scanResultId, nicheLabel, onClose }: HealthCh
       role="dialog"
       aria-modal="true"
       aria-label={`Niche Health Check for ${nicheLabel}`}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm px-4 py-8"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-canvas/70 backdrop-blur-sm px-4 py-8"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
@@ -109,15 +109,15 @@ export function HealthCheckModal({ scanResultId, nicheLabel, onClose }: HealthCh
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-100 transition-colors p-1.5 rounded-lg"
+          className="absolute top-4 right-4 text-ink-muted hover:text-ink transition-colors p-1.5 rounded-lg"
         >
           <X weight="bold" size={18} aria-hidden />
         </button>
 
-        <div className="mb-1 text-[10px] font-semibold tracking-[0.22em] text-emerald-300 uppercase">
+        <div className="mb-1 text-[10px] font-semibold tracking-[0.22em] text-accent-emerald-bright uppercase">
           Niche Health Check
         </div>
-        <h2 className="text-xl font-semibold text-slate-100 tracking-tight mb-6">{nicheLabel}</h2>
+        <h2 className="text-xl font-semibold text-ink tracking-tight mb-6">{nicheLabel}</h2>
 
         {state.kind === 'loading' && <LoadingBody />}
         {state.kind === 'error' && (
@@ -144,14 +144,14 @@ function LoadingBody() {
   return (
     <div data-testid="health-check-loading" className="flex flex-col items-center gap-5 py-4">
       <div className="relative w-20 h-20">
-        <div className="absolute inset-0 rounded-full border-2 border-emerald-500/10" />
-        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-emerald-400 animate-spin" style={{ animationDuration: '1.6s' }} />
+        <div className="absolute inset-0 rounded-full border-2 border-accent-emerald/10" />
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-accent-emerald-bright animate-spin" style={{ animationDuration: '1.6s' }} />
         <div className="absolute inset-0 flex items-center justify-center">
-          <Heartbeat weight="duotone" size={36} className="text-emerald-300 animate-pulse" aria-hidden />
+          <Heartbeat weight="duotone" size={36} className="text-accent-emerald-bright animate-pulse" aria-hidden />
         </div>
       </div>
 
-      <p className="text-slate-200 text-sm font-medium text-center min-h-[1.25rem] transition-opacity duration-300">
+      <p className="text-ink text-sm font-medium text-center min-h-[1.25rem] transition-opacity duration-300">
         {LOADING_STAGES[stage]}
       </p>
 
@@ -160,13 +160,13 @@ function LoadingBody() {
           <div
             key={i}
             className={`h-1 w-10 rounded-full transition-colors duration-300 ${
-              i <= stage ? 'bg-emerald-400' : 'bg-charcoal-700'
+              i <= stage ? 'bg-accent-emerald-bright' : 'bg-surface-overlay'
             }`}
           />
         ))}
       </div>
 
-      <p className="text-slate-600 text-[10px] uppercase tracking-[0.18em] mt-1">
+      <p className="text-ink-subtle text-[10px] uppercase tracking-[0.18em] mt-1">
         First load takes ~20–30s · cached for 7 days after
       </p>
     </div>
@@ -180,7 +180,7 @@ function ErrorBody({ message, onRetry }: { message: string; onRetry: () => void 
       <button
         type="button"
         onClick={onRetry}
-        className="self-start text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-charcoal-800 text-slate-200 hover:bg-charcoal-700 transition-colors"
+        className="self-start text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-surface-elevated text-ink hover:bg-surface-overlay transition-colors"
       >
         Try again
       </button>
@@ -197,7 +197,7 @@ function ReadyBody({ data }: { data: HealthCheckResponse }) {
           {data.score}
         </span>
         <div className="flex flex-col">
-          <span className="text-slate-500 text-sm">/100</span>
+          <span className="text-ink-subtle text-sm">/100</span>
           <span className={`text-[10px] font-semibold tracking-[0.22em] uppercase ${tier.textClass} mt-0.5`}>
             {tier.label}
           </span>
@@ -210,14 +210,14 @@ function ReadyBody({ data }: { data: HealthCheckResponse }) {
           const pct = Math.round((value / max) * 100)
           return (
             <div key={key} className="flex items-center gap-3 text-xs">
-              <span className="w-28 text-slate-400">{label}</span>
-              <div className="flex-1 h-1.5 bg-charcoal-800 rounded-full overflow-hidden">
+              <span className="w-28 text-ink-muted">{label}</span>
+              <div className="flex-1 h-1.5 bg-surface-elevated rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-emerald-400/80"
+                  className="h-full bg-accent-emerald-bright/80"
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <span className="w-12 text-right text-slate-500 tabular-nums">
+              <span className="w-12 text-right text-ink-subtle tabular-nums">
                 {value.toFixed(1)}/{max}
               </span>
             </div>
@@ -225,10 +225,10 @@ function ReadyBody({ data }: { data: HealthCheckResponse }) {
         })}
       </div>
 
-      <p className="text-slate-200 text-[15px] leading-relaxed">{data.verdict}</p>
+      <p className="text-ink text-[15px] leading-relaxed">{data.verdict}</p>
 
       {data.cached && (
-        <p className="text-slate-600 text-[10px] uppercase tracking-[0.18em]">
+        <p className="text-ink-subtle text-[10px] uppercase tracking-[0.18em]">
           Cached · refreshes after 7 days
         </p>
       )}
