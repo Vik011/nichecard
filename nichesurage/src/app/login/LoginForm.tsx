@@ -249,15 +249,15 @@ export function LoginForm() {
         <div className="flex justify-center mb-7">
           <LogoStacked iconSize={64} />
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-100 mb-2 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink mb-2 text-center">
           Sign in
         </h1>
-        <p className="text-slate-400 text-sm mb-6 text-center">
+        <p className="text-ink-muted text-sm mb-6 text-center">
           We use Google sign-in to keep accounts real. No passwords to remember.
         </p>
 
         {plan && billing && (
-          <div className="mb-5 text-xs text-emerald-300 bg-charcoal-800/60 gborder rounded-lg px-3 py-2">
+          <div className="mb-5 text-xs text-accent-emerald-bright bg-surface-elevated/60 gborder rounded-lg px-3 py-2">
             After login you&apos;ll go straight to checkout for{' '}
             {plan === 'premium' ? 'Premium' : 'Basic'} ({billing}).
           </div>
@@ -290,13 +290,13 @@ export function LoginForm() {
           </div>
         )}
 
-        <p className="mt-6 text-slate-500 text-[11px] leading-relaxed">
+        <p className="mt-6 text-ink-subtle text-[11px] leading-relaxed">
           By signing in you agree to our{' '}
-          <a href="/terms" className="underline-offset-4 hover:underline hover:text-slate-300">
+          <a href="/terms" className="underline-offset-4 hover:underline hover:text-ink-muted">
             Terms
           </a>{' '}
           and{' '}
-          <a href="/privacy" className="underline-offset-4 hover:underline hover:text-slate-300">
+          <a href="/privacy" className="underline-offset-4 hover:underline hover:text-ink-muted">
             Privacy Policy
           </a>
           .
