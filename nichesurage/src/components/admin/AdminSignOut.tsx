@@ -19,7 +19,7 @@ export function AdminSignOut() {
     <button
       type="button"
       onClick={signOut}
-      className="rounded-md border border-slate-800/60 px-3 py-1 text-xs text-slate-300 hover:border-slate-700 hover:text-slate-100"
+      className="rounded-md border border-hairline-edge/60 px-3 py-1 text-xs text-ink-muted hover:border-hairline-edge hover:text-ink"
     >
       Sign out
     </button>

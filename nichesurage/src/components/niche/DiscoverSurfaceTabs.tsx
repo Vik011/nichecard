@@ -24,7 +24,7 @@ const TABS: Array<{ id: DiscoverSurface; label: string; hint: string }> = [
 export function DiscoverSurfaceTabs({ selected, onChange }: DiscoverSurfaceTabsProps) {
   return (
     <div className="flex justify-center mb-5">
-      <div className="inline-flex items-center gap-1 bg-charcoal-900/60 ring-1 ring-slate-800 rounded-full p-1" role="tablist">
+      <div className="inline-flex items-center gap-1 bg-surface-raised/60 ring-1 ring-hairline-edge rounded-full p-1" role="tablist">
         {TABS.map((tab) => {
           const active = selected === tab.id
           return (
@@ -37,8 +37,8 @@ export function DiscoverSurfaceTabs({ selected, onChange }: DiscoverSurfaceTabsP
               onClick={() => onChange(tab.id)}
               className={
                 active
-                  ? 'text-sm font-semibold px-5 py-2 rounded-full bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30 transition-colors'
-                  : 'text-sm font-semibold px-5 py-2 rounded-full text-slate-400 hover:text-slate-200 transition-colors'
+                  ? 'text-sm font-semibold px-5 py-2 rounded-full bg-accent-emerald/15 text-accent-emerald-bright ring-1 ring-accent-emerald/30 transition-colors'
+                  : 'text-sm font-semibold px-5 py-2 rounded-full text-ink-muted hover:text-ink transition-colors'
               }
             >
               {tab.label}

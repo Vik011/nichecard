@@ -62,7 +62,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
       {/* Top-line KPIs */}
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-ink-subtle">
           Users
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -84,7 +84,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
       {/* Operational health */}
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-ink-subtle">
           Operations
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -125,12 +125,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
       {/* Recent signups */}
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-ink-subtle">
           Recent signups (latest {recent.length})
         </h2>
-        <div className="overflow-hidden rounded-xl border border-slate-800/60 bg-charcoal-900/60">
+        <div className="overflow-hidden rounded-xl border border-hairline-edge/60 bg-surface-raised/60">
           <table className="w-full text-sm">
-            <thead className="bg-charcoal-900 text-[11px] uppercase tracking-[0.14em] text-slate-500">
+            <thead className="bg-surface-raised text-[11px] uppercase tracking-[0.14em] text-ink-subtle">
               <tr>
                 <th className="px-4 py-2 text-left">Email</th>
                 <th className="px-4 py-2 text-left">Tier</th>
@@ -140,18 +140,18 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             <tbody>
               {recent.length === 0 && (
                 <tr>
-                  <td className="px-4 py-6 text-center text-slate-500" colSpan={3}>
+                  <td className="px-4 py-6 text-center text-ink-subtle" colSpan={3}>
                     No signups yet.
                   </td>
                 </tr>
               )}
               {recent.map((u) => (
-                <tr key={u.id} className="border-t border-slate-800/60">
-                  <td className="px-4 py-2 text-slate-300">{u.email}</td>
+                <tr key={u.id} className="border-t border-hairline-edge/60">
+                  <td className="px-4 py-2 text-ink-muted">{u.email}</td>
                   <td className="px-4 py-2">
                     <TierBadge tier={u.tier} />
                   </td>
-                  <td className="px-4 py-2 text-slate-500">{formatRelative(u.created_at)}</td>
+                  <td className="px-4 py-2 text-ink-subtle">{formatRelative(u.created_at)}</td>
                 </tr>
               ))}
             </tbody>
@@ -179,8 +179,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 {failed.map((e) => (
                   <tr key={e.event_id} className="border-t border-rose-900/30">
                     <td className="px-4 py-2 font-mono text-xs text-rose-200">{e.event_id}</td>
-                    <td className="px-4 py-2 text-slate-300">{e.event_type}</td>
-                    <td className="px-4 py-2 text-slate-500">{formatRelative(e.received_at)}</td>
+                    <td className="px-4 py-2 text-ink-muted">{e.event_type}</td>
+                    <td className="px-4 py-2 text-ink-subtle">{formatRelative(e.received_at)}</td>
                     <td className="px-4 py-2 text-rose-300">{e.processing_error}</td>
                   </tr>
                 ))}
@@ -192,7 +192,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
       {/* User lookup — server-action-free, just a GET form */}
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-ink-subtle">
           User lookup
         </h2>
         <form className="mb-3 flex gap-2" action="/admin">
@@ -201,19 +201,19 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             name="q"
             defaultValue={lookupQuery}
             placeholder="Search by email (partial match)"
-            className="flex-1 rounded-lg border border-slate-800/60 bg-charcoal-900/60 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-emerald-500/40 focus:outline-none"
+            className="flex-1 rounded-lg border border-hairline-edge/60 bg-surface-raised/60 px-4 py-2 text-sm text-ink placeholder:text-ink-subtle focus:border-accent-emerald/40 focus:outline-none"
           />
           <button
             type="submit"
-            className="rounded-lg border border-slate-800/60 bg-charcoal-900/60 px-4 py-2 text-sm text-slate-200 hover:border-slate-700"
+            className="rounded-lg border border-hairline-edge/60 bg-surface-raised/60 px-4 py-2 text-sm text-ink-muted hover:border-hairline-edge"
           >
             Search
           </button>
         </form>
         {lookupQuery && (
-          <div className="overflow-hidden rounded-xl border border-slate-800/60 bg-charcoal-900/60">
+          <div className="overflow-hidden rounded-xl border border-hairline-edge/60 bg-surface-raised/60">
             <table className="w-full text-sm">
-              <thead className="bg-charcoal-900 text-[11px] uppercase tracking-[0.14em] text-slate-500">
+              <thead className="bg-surface-raised text-[11px] uppercase tracking-[0.14em] text-ink-subtle">
                 <tr>
                   <th className="px-4 py-2 text-left">Email</th>
                   <th className="px-4 py-2 text-left">Tier</th>
@@ -225,20 +225,20 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               <tbody>
                 {lookupResults.length === 0 && (
                   <tr>
-                    <td className="px-4 py-6 text-center text-slate-500" colSpan={5}>
+                    <td className="px-4 py-6 text-center text-ink-subtle" colSpan={5}>
                       No matches for &quot;{lookupQuery}&quot;.
                     </td>
                   </tr>
                 )}
                 {lookupResults.map((u) => (
-                  <tr key={u.id} className="border-t border-slate-800/60">
-                    <td className="px-4 py-2 text-slate-300">{u.email}</td>
+                  <tr key={u.id} className="border-t border-hairline-edge/60">
+                    <td className="px-4 py-2 text-ink-muted">{u.email}</td>
                     <td className="px-4 py-2">
                       <TierBadge tier={u.tier} />
                     </td>
-                    <td className="px-4 py-2 text-slate-500">{u.subscription_status ?? '—'}</td>
-                    <td className="px-4 py-2 text-slate-500">{formatRelative(u.created_at)}</td>
-                    <td className="px-4 py-2 font-mono text-xs text-slate-600">{u.id}</td>
+                    <td className="px-4 py-2 text-ink-subtle">{u.subscription_status ?? '—'}</td>
+                    <td className="px-4 py-2 text-ink-subtle">{formatRelative(u.created_at)}</td>
+                    <td className="px-4 py-2 font-mono text-xs text-ink-subtle">{u.id}</td>
                   </tr>
                 ))}
               </tbody>
@@ -255,7 +255,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 function StripeModeBanner({ mode }: { mode: 'live' | 'test' | 'unknown' }) {
   if (mode === 'live') {
     return (
-      <div className="rounded-lg border border-emerald-900/50 bg-emerald-950/40 px-4 py-2 text-sm text-emerald-300">
+      <div className="rounded-lg border border-accent-emerald/30 bg-accent-emerald/10 px-4 py-2 text-sm text-accent-emerald-bright">
         <strong>Stripe: LIVE</strong> — payments are real.
       </div>
     )
@@ -287,11 +287,11 @@ function SentryLinkCard() {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="rounded-xl border border-slate-800/60 bg-charcoal-900/60 px-5 py-4 transition-colors hover:border-slate-700"
+      className="rounded-xl border border-hairline-edge/60 bg-surface-raised/60 px-5 py-4 transition-colors hover:border-hairline-edge"
     >
-      <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Errors</div>
-      <div className="mt-2 text-base font-semibold text-slate-200">Open Sentry →</div>
-      <div className="mt-1 text-xs text-slate-500">live error feed</div>
+      <div className="text-[11px] uppercase tracking-[0.18em] text-ink-subtle">Errors</div>
+      <div className="mt-2 text-base font-semibold text-ink-muted">Open Sentry →</div>
+      <div className="mt-1 text-xs text-ink-subtle">live error feed</div>
     </a>
   )
 }
@@ -299,10 +299,10 @@ function SentryLinkCard() {
 function TierBadge({ tier }: { tier: 'free' | 'basic' | 'premium' }) {
   const cls =
     tier === 'premium'
-      ? 'border-emerald-600/40 bg-emerald-950/20 text-emerald-300'
+      ? 'border-accent-emerald/40 bg-accent-emerald/10 text-accent-emerald-bright'
       : tier === 'basic'
-      ? 'border-emerald-700/60 bg-emerald-950/40 text-emerald-200'
-      : 'border-slate-800/60 bg-charcoal-900/40 text-slate-400'
+      ? 'border-accent-emerald/20 bg-accent-emerald/5 text-accent-emerald'
+      : 'border-hairline-edge/60 bg-surface-raised/40 text-ink-muted'
   return (
     <span className={`inline-block rounded border px-2 py-0.5 text-[11px] uppercase tracking-wider ${cls}`}>
       {tier}
