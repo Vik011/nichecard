@@ -114,13 +114,13 @@ function CenteredDialog({ open, onClose, ariaLabel, children }: NicheDetailModal
         aria-modal="true"
         aria-label={ariaLabel ?? 'Niche detail'}
         tabIndex={-1}
-        className="relative w-full max-w-6xl max-h-[85vh] overflow-y-auto overflow-x-hidden bg-charcoal-950 rounded-2xl shadow-2xl border border-white/[0.06] outline-none"
+        className="relative w-full max-w-6xl max-h-[85vh] overflow-y-auto overflow-x-hidden bg-canvas rounded-2xl shadow-2xl border border-hairline-soft outline-none"
       >
         <button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="sticky top-3 z-10 ml-auto mr-3 mt-3 flex h-9 w-9 items-center justify-center rounded-full bg-charcoal-900/80 text-slate-300 hover:bg-charcoal-800 hover:text-white border border-white/[0.06] backdrop-blur-md transition-colors"
+          className="sticky top-3 z-10 ml-auto mr-3 mt-3 flex h-9 w-9 items-center justify-center rounded-full bg-surface-raised/80 text-ink-muted hover:bg-surface-elevated hover:text-ink border border-hairline-soft backdrop-blur-md transition-colors"
         >
           <X weight="bold" size={16} aria-hidden />
         </button>

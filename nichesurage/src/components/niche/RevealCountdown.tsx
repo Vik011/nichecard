@@ -60,14 +60,14 @@ export function RevealCountdown({ tier, copy }: RevealCountdownProps) {
       : `${m}m ${s.toString().padStart(2, '0')}s`
 
   return (
-    <div className="inline-flex items-center gap-2 bg-charcoal-900/70 gborder rounded-full px-3 py-1.5 text-[12px] backdrop-blur-md">
-      <Hourglass weight="duotone" size={13} className="text-emerald-300" aria-hidden />
-      <span className="text-slate-400 uppercase tracking-[0.18em] text-[10px] font-semibold">
+    <div className="inline-flex items-center gap-2 bg-surface-raised/70 gborder rounded-full px-3 py-1.5 text-[12px] backdrop-blur-md">
+      <Hourglass weight="duotone" size={13} className="text-accent-emerald-bright" aria-hidden />
+      <span className="text-ink-muted uppercase tracking-[0.18em] text-[10px] font-semibold">
         {copy.revealNextLabel}
       </span>
-      <span className="text-slate-100 font-semibold tabular-nums">{formatted}</span>
-      <span className="text-slate-600">·</span>
-      <span className="text-slate-500 text-[11px]">{copy.revealFreeBadge}</span>
+      <span className="text-ink font-semibold tabular-nums">{formatted}</span>
+      <span className="text-ink-subtle">·</span>
+      <span className="text-ink-subtle text-[11px]">{copy.revealFreeBadge}</span>
     </div>
   )
 }
@@ -81,8 +81,8 @@ function StaticBadge({
 }) {
   const cls =
     variant === 'premium'
-      ? 'bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/30'
-      : 'bg-charcoal-900/70 text-slate-300 gborder'
+      ? 'bg-accent-emerald/10 text-accent-emerald-bright ring-1 ring-accent-emerald/30'
+      : 'bg-surface-raised/70 text-ink-muted gborder'
   return (
     <div
       className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] backdrop-blur-md ${cls}`}

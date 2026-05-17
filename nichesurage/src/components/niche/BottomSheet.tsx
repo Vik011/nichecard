@@ -106,7 +106,7 @@ export function BottomSheet({ open, onClose, ariaLabel, children }: BottomSheetP
         aria-label={ariaLabel ?? 'Niche detail'}
         tabIndex={-1}
         style={{ transform: `translateY(${translateY}px)` }}
-        className={`relative w-full max-h-[90vh] overflow-y-auto overflow-x-hidden bg-charcoal-950 rounded-t-2xl shadow-2xl border-t border-x border-white/[0.06] outline-none ${transitionClass}`}
+        className={`relative w-full max-h-[90vh] overflow-y-auto overflow-x-hidden bg-canvas rounded-t-2xl shadow-2xl border-t border-x border-hairline-soft outline-none ${transitionClass}`}
       >
         <div className="flex justify-center pt-2 pb-1" aria-hidden>
           <div data-testid="bottom-sheet-handle" className="h-1 w-9 rounded-full bg-white/20" />
@@ -115,7 +115,7 @@ export function BottomSheet({ open, onClose, ariaLabel, children }: BottomSheetP
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-charcoal-900/80 text-slate-300 hover:bg-charcoal-800 hover:text-white border border-white/[0.06] backdrop-blur-md transition-colors"
+          className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-surface-raised/80 text-ink-muted hover:bg-surface-elevated hover:text-ink border border-hairline-soft backdrop-blur-md transition-colors"
         >
           <X weight="bold" size={16} aria-hidden />
         </button>
