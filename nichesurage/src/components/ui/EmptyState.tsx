@@ -31,13 +31,13 @@ export function EmptyState({ illustration, title, body, cta }: EmptyStateProps) 
     >
       <div className="glass glass-glow rounded-2xl p-8 text-center">
         <div className="flex justify-center mb-5">{illustration}</div>
-        <h3 className="text-slate-100 text-base font-semibold mb-1.5">{title}</h3>
-        {body && <p className="text-slate-500 text-sm leading-relaxed mb-5">{body}</p>}
+        <h3 className="text-ink text-base font-semibold mb-1.5">{title}</h3>
+        {body && <p className="text-ink-subtle text-sm leading-relaxed mb-5">{body}</p>}
         {cta && (
           cta.href ? (
             <a
               href={cta.href}
-              className="inline-block text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-charcoal-800/60 text-slate-200 hover:bg-charcoal-700/60 transition-colors"
+              className="inline-block text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-surface-elevated/60 text-ink hover:bg-surface-overlay/60 transition-colors"
             >
               {cta.label}
             </a>
@@ -45,7 +45,7 @@ export function EmptyState({ illustration, title, body, cta }: EmptyStateProps) 
             <button
               type="button"
               onClick={cta.onClick}
-              className="text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-charcoal-800/60 text-slate-200 hover:bg-charcoal-700/60 transition-colors"
+              className="text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-surface-elevated/60 text-ink hover:bg-surface-overlay/60 transition-colors"
             >
               {cta.label}
             </button>
