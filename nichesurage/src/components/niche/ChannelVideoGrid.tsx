@@ -100,7 +100,7 @@ function VideoTile({ video, copy }: { video: ChannelVideo; copy: CopyKeys }) {
           />
         )}
       </div>
-      <div className="text-ink text-sm font-medium line-clamp-2 mt-2 transition-colors">
+      <div className="text-ink text-sm font-medium line-clamp-2 mt-2">
         {video.title}
       </div>
       <div className="text-ink-subtle text-xs mt-1 tabular-nums">

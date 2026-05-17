@@ -158,7 +158,7 @@ function ReadyBody({ data, copy }: { data: HealthCheckResponse; copy: CopyKeys }
             type="button"
             onClick={() => setExpanded(e => !e)}
             data-testid="health-check-verdict-toggle"
-            className="text-accent-emerald-bright text-xs font-medium transition-colors"
+            className="text-accent-emerald-bright text-xs font-medium transition-colors hover:brightness-110"
           >
             {expanded ? 'Show less' : 'Show more'}
           </button>
