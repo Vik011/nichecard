@@ -97,7 +97,7 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
               'text-[15px] font-semibold px-6 py-3 rounded-xl',
               'border border-hairline-edge bg-surface-raised/40 backdrop-blur-sm text-ink',
               'transition-colors duration-200 ease-out',
-              'hover:border-slate-500 hover:bg-surface-elevated/60 hover:text-white',
+              'hover:bg-surface-elevated/60 hover:text-ink',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emerald/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
             ].join(' ')}
           >
@@ -122,7 +122,7 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
               'text-[15px] font-semibold px-6 py-3 rounded-xl',
               'border border-hairline-edge/50 bg-surface-raised/40 backdrop-blur-sm text-ink',
               'transition-colors duration-200 ease-out',
-              'hover:border-slate-500 hover:bg-surface-elevated/60 hover:text-white',
+              'hover:bg-surface-elevated/60 hover:text-ink',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emerald/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
             ].join(' ')}
           >

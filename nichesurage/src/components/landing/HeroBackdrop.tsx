@@ -156,8 +156,8 @@ function RadarVisual() {
       <div className="absolute inset-[192px] rounded-full border border-hairline-edge/14" />
 
       {/* Crosshairs */}
-      <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-600/18 to-transparent" />
-      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-slate-600/18 to-transparent" />
+      <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-hairline-edge/18 to-transparent" />
+      <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-hairline-edge/18 to-transparent" />
 
       {/* Sweep arm — narrower trail (40°) and slower duration (8s via inline
           override) so the radar feels deliberate, not anxious. */}

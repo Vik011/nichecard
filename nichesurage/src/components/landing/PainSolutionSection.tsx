@@ -47,7 +47,7 @@ export function PainSolutionSection({ copy }: PainSolutionSectionProps) {
                     size={18}
                     className="text-red-500/30 mt-0.5 shrink-0"
                   />
-                  <span className="leading-relaxed line-through decoration-slate-700/70">
+                  <span className="leading-relaxed line-through decoration-ink-subtle/70">
                     {item}
                   </span>
                 </li>
