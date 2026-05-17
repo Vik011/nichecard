@@ -104,7 +104,7 @@ export function NicheDetailHeader({
                   'hover:-translate-y-[1px] hover:bg-[#E60000]',
                   'hover:shadow-[0_4px_18px_-4px_rgba(255,0,0,0.55)]',
                   'active:translate-y-0',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0000]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',  // ring-offset-slate-950: off-scale, left as-is
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0000]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
                 ].join(' ')}
               >
                 <YoutubeLogo

@@ -82,7 +82,7 @@ export function NicheCardLocked({ card }: Props) {
       </div>
 
       {/* Lock CTA */}
-      <div className="bg-gradient-to-br from-slate-900 to-purple-950/40 border border-indigo-900/50 rounded-xl p-3 text-center">
+      <div className="bg-gradient-to-br from-surface-elevated to-purple-950/40 border border-indigo-900/50 rounded-xl p-3 text-center">
         <p className="text-indigo-400 text-[10px] mb-2">🔒 Channel name, niche &amp; link locked</p>
         <Button variant="primary" size="sm" className="w-full">
           Unlock for €9/mo →
