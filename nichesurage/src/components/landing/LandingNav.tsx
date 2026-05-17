@@ -39,7 +39,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
           href="/"
           className="flex items-center gap-2.5 text-xl font-extrabold tracking-tight text-ink hover:opacity-80 transition-opacity"
         >
-          <Logo size={30} className="text-white" />
+          <Logo size={30} className="text-ink" />
           SurgeNiche
         </Link>
 
@@ -89,7 +89,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
                 href="/discover"
                 className={[
                   'text-[13px] font-semibold px-4 py-2 rounded-lg',
-                  'text-ink hover:text-ink',
+                  'text-ink',
                   'border border-hairline-edge',
                   'bg-surface-raised/40 hover:bg-surface-elevated/60 backdrop-blur-sm',
                   'transition-colors duration-200',

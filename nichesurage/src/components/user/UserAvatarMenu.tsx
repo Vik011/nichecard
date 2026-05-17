@@ -75,7 +75,7 @@ export function UserAvatarMenu({ email, tier, labels }: UserAvatarMenuProps) {
       ? 'ring-accent-emerald-bright/60 hover:ring-accent-emerald-bright/80'
       : tier === 'basic'
       ? 'ring-accent-emerald/40 hover:ring-accent-emerald/60'
-      : 'ring-hairline-edge hover:ring-hairline-edge'
+      : 'ring-hairline-edge'
 
   const tierLabel =
     tier === 'premium'
