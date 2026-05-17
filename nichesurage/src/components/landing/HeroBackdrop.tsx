@@ -88,25 +88,25 @@ export function HeroBackdrop({ copy, pings, channelsLast24h }: HeroBackdropProps
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 30 }}
               transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="bg-charcoal-900/80 backdrop-blur-md gborder rounded-2xl p-4 shadow-[0_18px_48px_-12px_rgba(0,0,0,0.6)]"
+              className="bg-surface-raised/80 backdrop-blur-md gborder rounded-2xl p-4 shadow-[0_18px_48px_-12px_rgba(0,0,0,0.6)]"
             >
               <div className="flex items-start gap-3">
                 <div className="relative shrink-0 mt-1.5">
-                  <span aria-hidden className="absolute inset-0 -m-1 rounded-full bg-emerald-400/30 animate-ping" />
-                  <span aria-hidden className="relative block w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.9)]" />
+                  <span aria-hidden className="absolute inset-0 -m-1 rounded-full bg-accent-emerald-bright/30 animate-ping" />
+                  <span aria-hidden className="relative block w-2 h-2 rounded-full bg-accent-emerald-bright shadow-[0_0_10px_rgba(16,185,129,0.9)]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-emerald-300 text-[9px] font-semibold uppercase tracking-[0.22em] mb-1">
+                  <div className="text-accent-emerald-bright text-[9px] font-semibold uppercase tracking-[0.22em] mb-1">
                     {copy.radarPingPrefix}
                   </div>
-                  <div className="text-slate-100 text-lg font-semibold tracking-tight tabular-nums leading-none mb-1.5">
+                  <div className="text-ink text-lg font-semibold tracking-tight tabular-nums leading-none mb-1.5">
                     {current.outlierRatio.toFixed(1)}× outlier
                   </div>
-                  <div className="text-slate-400 text-[11px] truncate">
+                  <div className="text-ink-muted text-[11px] truncate">
                     {current.clusterLabel ?? copy.radarUnclusteredLabel}
-                    <span className="text-slate-600 mx-1">·</span>
+                    <span className="text-ink-subtle mx-1">·</span>
                     {current.contentType === 'shorts' ? copy.radarFormatShorts : copy.radarFormatLongform}
-                    <span className="text-slate-600 mx-1">·</span>
+                    <span className="text-ink-subtle mx-1">·</span>
                     {current.language?.toUpperCase()}
                   </div>
                 </div>
@@ -136,8 +136,8 @@ const PING_POSITIONS: Array<{
   glow: string
 }> = [
   { top: '24%', left: '68%', size: 'w-2.5 h-2.5', color: 'bg-rose-400',     delay: '0s',   duration: '3.2s', glow: '0 0 18px rgba(251,113,133,0.9)' },
-  { top: '64%', left: '30%', size: 'w-2 h-2',     color: 'bg-emerald-400',  delay: '1.4s', duration: '3.6s', glow: '0 0 14px rgba(16,185,129,0.85)' },
-  { top: '46%', left: '78%', size: 'w-1.5 h-1.5', color: 'bg-emerald-400',  delay: '2.7s', duration: '3.0s', glow: '0 0 12px rgba(16,185,129,0.85)' },
+  { top: '64%', left: '30%', size: 'w-2 h-2',     color: 'bg-accent-emerald-bright',  delay: '1.4s', duration: '3.6s', glow: '0 0 14px rgba(16,185,129,0.85)' },
+  { top: '46%', left: '78%', size: 'w-1.5 h-1.5', color: 'bg-accent-emerald-bright',  delay: '2.7s', duration: '3.0s', glow: '0 0 12px rgba(16,185,129,0.85)' },
 ]
 
 function RadarVisual() {
@@ -149,11 +149,11 @@ function RadarVisual() {
     <div className="relative w-[42rem] h-[42rem] sm:w-[52rem] sm:h-[52rem] md:w-[64rem] md:h-[64rem] lg:w-[72rem] lg:h-[72rem]">
       {/* Concentric rings — slightly brighter than the previous pass so the
           radar reads at 55% opacity without mix-blend tricks. */}
-      <div className="absolute inset-0       rounded-full border border-slate-700/35" />
-      <div className="absolute inset-12      rounded-full border border-slate-700/30" />
-      <div className="absolute inset-24      rounded-full border border-slate-700/24" />
-      <div className="absolute inset-[144px] rounded-full border border-slate-700/18" />
-      <div className="absolute inset-[192px] rounded-full border border-slate-700/14" />
+      <div className="absolute inset-0       rounded-full border border-hairline-edge/35" />
+      <div className="absolute inset-12      rounded-full border border-hairline-edge/30" />
+      <div className="absolute inset-24      rounded-full border border-hairline-edge/24" />
+      <div className="absolute inset-[144px] rounded-full border border-hairline-edge/18" />
+      <div className="absolute inset-[192px] rounded-full border border-hairline-edge/14" />
 
       {/* Crosshairs */}
       <div className="absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-600/18 to-transparent" />
@@ -177,7 +177,7 @@ function RadarVisual() {
           every 6.5s. The radar "found something." */}
       <span
         aria-hidden
-        className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full border border-emerald-400 detection-pulse motion-reduce:hidden"
+        className="absolute top-1/2 left-1/2 w-3 h-3 rounded-full border border-accent-emerald-bright detection-pulse motion-reduce:hidden"
       />
 
       {/* Three strategic detection dots */}
@@ -199,7 +199,7 @@ function RadarVisual() {
       {/* Center pip */}
       <span
         aria-hidden
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_28px_rgba(16,185,129,0.95)]"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-accent-emerald-bright shadow-[0_0_28px_rgba(16,185,129,0.95)]"
       />
     </div>
   )

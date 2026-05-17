@@ -21,7 +21,7 @@ export function FaqSection({ copy }: FaqSectionProps) {
   return (
     <section id="faq" className="py-20 px-6">
       <div className="max-w-3xl mx-auto">
-        <h2 className="font-display text-4xl md:text-5xl font-normal text-center text-slate-100 tracking-[-0.01em] mb-10">
+        <h2 className="font-display text-4xl md:text-5xl font-normal text-center text-ink tracking-[-0.01em] mb-10">
           {copy.faqTitle}
         </h2>
         <div className="flex flex-col gap-3">
@@ -30,21 +30,21 @@ export function FaqSection({ copy }: FaqSectionProps) {
             return (
               <div
                 key={i}
-                className="gborder rounded-2xl bg-charcoal-900/40 backdrop-blur-md overflow-hidden"
+                className="gborder rounded-2xl bg-surface-raised/40 backdrop-blur-md overflow-hidden"
               >
                 <button
                   type="button"
                   aria-expanded={isOpen}
                   onClick={() => setOpenIndex(isOpen ? null : i)}
-                  className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left text-slate-100 hover:bg-charcoal-800/40 transition-colors"
+                  className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left text-ink hover:bg-surface-elevated/40 transition-colors"
                 >
                   <span className="text-[15px] font-medium leading-snug">{item.q}</span>
-                  <span aria-hidden className="text-emerald-300 shrink-0">
+                  <span aria-hidden className="text-accent-emerald-bright shrink-0">
                     {isOpen ? <Minus weight="bold" size={16} /> : <Plus weight="bold" size={16} />}
                   </span>
                 </button>
                 {isOpen && (
-                  <div className="px-5 pb-5 pt-1 text-slate-400 text-sm leading-relaxed">
+                  <div className="px-5 pb-5 pt-1 text-ink-muted text-sm leading-relaxed">
                     {item.a}
                   </div>
                 )}

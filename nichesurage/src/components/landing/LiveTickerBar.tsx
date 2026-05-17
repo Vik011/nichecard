@@ -34,28 +34,28 @@ export function LiveTickerBar({
       // BELOW the fixed nav. Without it, the nav (position:fixed) takes
       // no vertical space in flow and the ticker renders at top:0,
       // overlapping the logo and clipping behind the right-side controls.
-      className="mt-16 border-b border-white/[0.05] bg-charcoal-900/30 backdrop-blur-md"
+      className="mt-16 border-b border-hairline-soft bg-surface-raised/30 backdrop-blur-md"
     >
       <div className="max-w-6xl mx-auto px-6 py-2 flex items-center justify-center gap-3 sm:gap-5 text-[12px] sm:text-[13px]">
         {/* LIVE pulse + label */}
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-emerald/30 bg-accent-emerald/10 px-2.5 py-0.5">
           <span aria-hidden="true" className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-emerald-bright opacity-75" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent-emerald-bright" />
           </span>
-          <span className="text-emerald-300/95 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.2em]">
+          <span className="text-accent-emerald-bright/95 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.2em]">
             {copy.tickerLive}
           </span>
         </span>
 
         {/* Stat 1: spiked last hour */}
-        <span className="text-slate-300 whitespace-nowrap">
+        <span className="text-ink-muted whitespace-nowrap">
           {copy.tickerSpikedLastHour(spikedLastHour)}
         </span>
 
         {/* Separator + Stat 2 hidden on small screens to avoid wrap */}
-        <span aria-hidden className="text-slate-600 hidden sm:inline">·</span>
-        <span className="text-slate-400 whitespace-nowrap hidden sm:inline">
+        <span aria-hidden className="text-ink-subtle hidden sm:inline">·</span>
+        <span className="text-ink-muted whitespace-nowrap hidden sm:inline">
           {copy.tickerNichesToday(nichesSurfacedToday)}
         </span>
       </div>

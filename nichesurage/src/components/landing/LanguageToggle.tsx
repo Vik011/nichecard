@@ -14,20 +14,20 @@ export function LanguageToggle({ lang, onChange }: LanguageToggleProps) {
         aria-pressed={lang === 'en'}
         className={`px-2 py-0.5 rounded transition-colors ${
           lang === 'en'
-            ? 'text-slate-100 font-semibold'
-            : 'text-slate-500 hover:text-slate-300'
+            ? 'text-ink font-semibold'
+            : 'text-ink-subtle hover:text-ink-muted'
         }`}
       >
         EN
       </button>
-      <span className="text-slate-700">|</span>
+      <span className="text-ink-subtle">|</span>
       <button
         onClick={() => onChange('de')}
         aria-pressed={lang === 'de'}
         className={`px-2 py-0.5 rounded transition-colors ${
           lang === 'de'
-            ? 'text-slate-100 font-semibold'
-            : 'text-slate-500 hover:text-slate-300'
+            ? 'text-ink font-semibold'
+            : 'text-ink-subtle hover:text-ink-muted'
         }`}
       >
         DE

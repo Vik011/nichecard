@@ -21,10 +21,10 @@ export function AppPreviewSection({ niches, copy, isLoggedIn = false }: AppPrevi
       <div className="max-w-6xl mx-auto">
         {/* Heading */}
         <div className="text-center mb-12">
-          <h2 className="font-display text-4xl md:text-5xl font-normal mb-3 text-slate-100 tracking-[-0.01em] text-balance">
+          <h2 className="font-display text-4xl md:text-5xl font-normal mb-3 text-ink tracking-[-0.01em] text-balance">
             {copy.previewTitle}
           </h2>
-          <p className="text-slate-400 text-[17px]">{copy.previewSub}</p>
+          <p className="text-ink-muted text-[17px]">{copy.previewSub}</p>
         </div>
 
         {/* Card grid with fade overlay */}
@@ -60,7 +60,7 @@ export function AppPreviewSection({ niches, copy, isLoggedIn = false }: AppPrevi
           <Link
             // Unified Discover surface — point straight at /discover.
             href={isLoggedIn ? '/discover' : '/login'}
-            className="group relative inline-flex items-center gap-2 text-[15px] font-semibold px-7 py-3 rounded-xl bg-white text-charcoal-900 hover:bg-slate-100 transition-all"
+            className="group relative inline-flex items-center gap-2 text-[15px] font-semibold px-7 py-3 rounded-xl bg-white text-surface-raised hover:bg-slate-100 transition-all"
           >
             <span>{isLoggedIn ? copy.navOpenApp : copy.previewCta}</span>
             <ArrowRight

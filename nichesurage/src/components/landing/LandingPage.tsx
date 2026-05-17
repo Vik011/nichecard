@@ -37,7 +37,7 @@ export function LandingPage({ niches, radar }: LandingPageProps) {
   const { isLoggedIn } = useUser()
 
   return (
-    <div className="relative min-h-screen text-slate-100">
+    <div className="relative min-h-screen text-ink">
       <LandingNav copy={copy} lang={lang} onLangChange={setLang} />
       <LiveTickerBar
         copy={copy}

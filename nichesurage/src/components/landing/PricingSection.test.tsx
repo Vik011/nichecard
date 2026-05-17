@@ -79,7 +79,7 @@ describe('PricingSection', () => {
 
   it('Basic tier card has emerald ring class', () => {
     const { container } = render(<PricingSection copy={copy} />)
-    const cards = container.querySelectorAll('[class*="ring-emerald-500"]')
+    const cards = container.querySelectorAll('[class*="ring-accent-emerald"]')
     expect(cards.length).toBeGreaterThan(0)
   })
 

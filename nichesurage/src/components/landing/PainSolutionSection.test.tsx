@@ -47,6 +47,6 @@ describe('PainSolutionSection', () => {
     const solution = container.querySelector('[data-tone="solution"]')
     expect(pain).toBeInTheDocument()
     expect(solution).toBeInTheDocument()
-    expect(solution?.className).toMatch(/ring-emerald-500/)
+    expect(solution?.className).toMatch(/ring-accent-emerald/)
   })
 })

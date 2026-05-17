@@ -23,7 +23,7 @@ export function PainSolutionSection({ copy }: PainSolutionSectionProps) {
   return (
     <section className="py-24 px-6">
       <div className="max-w-4xl mx-auto">
-        <h2 className="font-display text-4xl md:text-5xl font-normal text-center mb-14 text-slate-100 tracking-[-0.01em] text-balance">
+        <h2 className="font-display text-4xl md:text-5xl font-normal text-center mb-14 text-ink tracking-[-0.01em] text-balance">
           {copy.painHeadline}
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-7 items-stretch">
@@ -32,15 +32,15 @@ export function PainSolutionSection({ copy }: PainSolutionSectionProps) {
               slate icons, and line-through text decoration that reads
               like an old completed-then-discarded checklist. */}
           <div
-            className="relative gborder bg-charcoal-950/30 rounded-xl p-8 opacity-75 transition-opacity duration-300 hover:opacity-90"
+            className="relative gborder bg-canvas/30 rounded-xl p-8 opacity-75 transition-opacity duration-300 hover:opacity-90"
             data-tone="pain"
           >
-            <h3 className="text-[13px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-6">
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.18em] text-ink-subtle mb-6">
               {copy.painTitle}
             </h3>
             <ul className="space-y-4">
               {copy.painItems.map((item, i) => (
-                <li key={i} className="flex items-start gap-3 text-slate-500">
+                <li key={i} className="flex items-start gap-3 text-ink-subtle">
                   <XCircle
                     aria-hidden
                     weight="fill"
@@ -60,24 +60,24 @@ export function PainSolutionSection({ copy }: PainSolutionSectionProps) {
               live-status green pulse next to the title to telegraph
               "this is the active state, right now." */}
           <div
-            className="relative glass glass-glow rounded-xl p-8 ring-1 ring-emerald-500/30 shadow-[0_24px_60px_-16px_rgba(16,185,129,0.2)]"
+            className="relative glass glass-glow rounded-xl p-8 ring-1 ring-accent-emerald/30 shadow-[0_24px_60px_-16px_rgba(16,185,129,0.2)]"
             data-tone="solution"
           >
-            <h3 className="text-[13px] font-semibold uppercase tracking-[0.18em] text-emerald-300 mb-6 flex items-center gap-2.5">
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.18em] text-accent-emerald-bright mb-6 flex items-center gap-2.5">
               {copy.solutionTitle}
               <span aria-hidden className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-emerald-bright opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent-emerald-bright" />
               </span>
             </h3>
             <ul className="space-y-4">
               {copy.solutionItems.map((item, i) => (
-                <li key={i} className="flex items-start gap-3 text-slate-100">
+                <li key={i} className="flex items-start gap-3 text-ink">
                   <CheckCircle
                     aria-hidden
                     weight="fill"
                     size={18}
-                    className="text-emerald-400 mt-0.5 shrink-0"
+                    className="text-accent-emerald-bright mt-0.5 shrink-0"
                   />
                   <span className="leading-relaxed">{item}</span>
                 </li>

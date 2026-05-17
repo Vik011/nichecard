@@ -32,7 +32,7 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
   return (
     <section id="how" className="py-24 px-6 scroll-mt-20">
       <div className="max-w-6xl mx-auto">
-        <h2 className="font-display text-4xl md:text-5xl font-normal text-center mb-14 text-slate-100 tracking-[-0.01em]">
+        <h2 className="font-display text-4xl md:text-5xl font-normal text-center mb-14 text-ink tracking-[-0.01em]">
           {copy.featuresTitle}
         </h2>
 
@@ -46,11 +46,11 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
             return (
               <MotionCard
                 key={feature.title}
-                className="relative rounded-2xl p-8 glass glass-glow ring-1 ring-emerald-500/25 shadow-[0_24px_60px_-16px_rgba(16,185,129,0.15)]"
+                className="relative rounded-2xl p-8 glass glass-glow ring-1 ring-accent-emerald/25 shadow-[0_24px_60px_-16px_rgba(16,185,129,0.15)]"
               >
                 <span
                   data-testid={`feature-premium-badge-${feature.icon}`}
-                  className="absolute top-5 right-5 text-[10px] font-semibold tracking-[0.22em] text-emerald-300 uppercase"
+                  className="absolute top-5 right-5 text-[10px] font-semibold tracking-[0.22em] text-accent-emerald-bright uppercase"
                 >
                   {copy.featuresPremiumBadge}
                 </span>
@@ -60,10 +60,10 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
                     size={40}
                     aria-hidden="true"
                     data-testid={`feature-icon-${feature.icon}`}
-                    className="text-emerald-300 mb-6"
+                    className="text-accent-emerald-bright mb-6"
                   />
                 )}
-                <h3 className="font-display text-2xl font-normal text-slate-100 mb-3 tracking-[-0.01em]">
+                <h3 className="font-display text-2xl font-normal text-ink mb-3 tracking-[-0.01em]">
                   {feature.title}
                 </h3>
                 {status && (
@@ -71,14 +71,14 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
                     data-testid={`feature-status-${feature.icon}`}
                     className={
                       status === 'live'
-                        ? 'inline-block mb-4 text-[10px] font-semibold tracking-[0.18em] text-emerald-300 uppercase'
-                        : 'inline-block mb-4 text-[10px] font-semibold tracking-[0.18em] text-slate-500 uppercase'
+                        ? 'inline-block mb-4 text-[10px] font-semibold tracking-[0.18em] text-accent-emerald-bright uppercase'
+                        : 'inline-block mb-4 text-[10px] font-semibold tracking-[0.18em] text-ink-subtle uppercase'
                     }
                   >
                     {status === 'live' ? copy.featuresStatusLive : copy.featuresStatusSoon}
                   </span>
                 )}
-                <p className="text-slate-300 text-[15px] leading-relaxed">{feature.desc}</p>
+                <p className="text-ink-muted text-[15px] leading-relaxed">{feature.desc}</p>
               </MotionCard>
             )
           })}
@@ -97,12 +97,12 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
             return (
               <MotionCard
                 key={feature.title}
-                className={`relative rounded-xl p-6 bg-charcoal-900 ${isPremium ? 'glass glass-glow' : 'gborder'}`}
+                className={`relative rounded-xl p-6 bg-surface-raised ${isPremium ? 'glass glass-glow' : 'gborder'}`}
               >
                 {isPremium && (
                   <span
                     data-testid={`feature-premium-badge-${feature.icon}`}
-                    className="absolute top-4 right-4 text-[10px] font-semibold tracking-[0.18em] text-emerald-300 uppercase"
+                    className="absolute top-4 right-4 text-[10px] font-semibold tracking-[0.18em] text-accent-emerald-bright uppercase"
                   >
                     {copy.featuresPremiumBadge}
                   </span>
@@ -113,23 +113,23 @@ export function FeaturesSection({ copy }: FeaturesSectionProps) {
                     size={30}
                     aria-hidden="true"
                     data-testid={`feature-icon-${feature.icon}`}
-                    className="text-emerald-300 mb-5"
+                    className="text-accent-emerald-bright mb-5"
                   />
                 )}
-                <h3 className="text-slate-100 font-semibold mb-2 text-[15px]">{feature.title}</h3>
+                <h3 className="text-ink font-semibold mb-2 text-[15px]">{feature.title}</h3>
                 {status && (
                   <span
                     data-testid={`feature-status-${feature.icon}`}
                     className={
                       status === 'live'
-                        ? 'inline-block mb-3 text-[10px] font-semibold tracking-[0.18em] text-emerald-300 uppercase'
-                        : 'inline-block mb-3 text-[10px] font-semibold tracking-[0.18em] text-slate-500 uppercase'
+                        ? 'inline-block mb-3 text-[10px] font-semibold tracking-[0.18em] text-accent-emerald-bright uppercase'
+                        : 'inline-block mb-3 text-[10px] font-semibold tracking-[0.18em] text-ink-subtle uppercase'
                     }
                   >
                     {status === 'live' ? copy.featuresStatusLive : copy.featuresStatusSoon}
                   </span>
                 )}
-                <p className="text-slate-400 text-sm leading-relaxed">{feature.desc}</p>
+                <p className="text-ink-muted text-sm leading-relaxed">{feature.desc}</p>
               </MotionCard>
             )
           })}
