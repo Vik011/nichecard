@@ -23,6 +23,9 @@
   /* Foreground */
   --background: var(--color-bg-base);
   --foreground: #ededed;
+  --color-ink-muted: #a8acbb;
+  --color-ink-subtle: #6b7081;
+  --color-on-accent: #04140d;
 
   /* Motion durations */
   --motion-fast: 150ms;
