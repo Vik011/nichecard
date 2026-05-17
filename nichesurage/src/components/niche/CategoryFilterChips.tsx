@@ -42,8 +42,8 @@ interface ChipProps {
 function Chip({ active, onClick, children }: ChipProps) {
   const base = 'text-xs font-semibold px-3.5 py-1.5 rounded-full transition-colors whitespace-nowrap'
   const cls = active
-    ? `${base} bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30`
-    : `${base} bg-charcoal-900/40 text-slate-400 ring-1 ring-slate-700 hover:text-slate-200 hover:ring-slate-500`
+    ? `${base} bg-accent-emerald/15 text-accent-emerald-bright ring-1 ring-accent-emerald/30`
+    : `${base} bg-surface-raised/40 text-ink-muted ring-1 ring-hairline-edge hover:text-ink`
   return (
     <button
       type="button"

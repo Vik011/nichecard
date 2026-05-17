@@ -37,7 +37,7 @@ describe('PainSolutionSection', () => {
   it('solution card carries emerald visual emphasis vs pain card', () => {
     // After the comparison-drama redesign (2026-05-06 round 3) and the
     // 2026-05-08 brand cleanup (no-blue), the solution card uses
-    // ring-emerald-500 + glass-glow + drop-shadow. The pain card is
+    // ring-accent-emerald + glass-glow + drop-shadow. The pain card is
     // de-emphasized via opacity-75 + slate desaturation. Test asserts
     // the data-tone hooks exist (stable selector for future styling
     // rewrites) AND the emerald ring class is present on the solution
@@ -47,6 +47,6 @@ describe('PainSolutionSection', () => {
     const solution = container.querySelector('[data-tone="solution"]')
     expect(pain).toBeInTheDocument()
     expect(solution).toBeInTheDocument()
-    expect(solution?.className).toMatch(/ring-emerald-500/)
+    expect(solution?.className).toMatch(/ring-accent-emerald/)
   })
 })

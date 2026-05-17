@@ -12,12 +12,12 @@ interface ScoreTier {
 
 function scoreTier(score: number): ScoreTier {
   if (score >= 70) return {
-    textClass: 'text-emerald-400',
+    textClass: 'text-accent-emerald-bright',
     glowShadow: 'drop-shadow-[0_0_24px_rgba(52,211,153,0.55)]',
     label: 'EXCELLENT',
   }
   if (score >= 50) return {
-    textClass: 'text-slate-300',
+    textClass: 'text-ink-muted',
     glowShadow: 'drop-shadow-[0_0_18px_rgba(148,163,184,0.30)]',
     label: 'STRONG',
   }
@@ -64,10 +64,10 @@ export function NicheDetailHeader({
     <section className="glass glass-glow rounded-2xl p-7 mb-6">
       <div className="flex flex-col md:flex-row justify-between items-start gap-6">
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-emerald-300 mb-2">
+          <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-accent-emerald-bright mb-2">
             {eyebrow}
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-100 truncate">
+          <h1 className="text-3xl font-bold tracking-tight text-ink truncate">
             {niche.channelName ?? '—'}
           </h1>
           {(() => {
@@ -82,7 +82,7 @@ export function NicheDetailHeader({
               : null
             const subLabel = bucketLabel ?? niche.nicheLabel
             return subLabel ? (
-              <p className="text-slate-400 text-sm mt-1.5 truncate">{subLabel}</p>
+              <p className="text-ink-muted text-sm mt-1.5 truncate">{subLabel}</p>
             ) : null
           })()}
           <div className="flex items-center gap-3 mt-4">
@@ -104,7 +104,7 @@ export function NicheDetailHeader({
                   'hover:-translate-y-[1px] hover:bg-[#E60000]',
                   'hover:shadow-[0_4px_18px_-4px_rgba(255,0,0,0.55)]',
                   'active:translate-y-0',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0000]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0000]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
                 ].join(' ')}
               >
                 <YoutubeLogo
@@ -138,7 +138,7 @@ export function NicheDetailHeader({
             {niche.opportunityScore}
           </div>
           <div className="flex items-center justify-end gap-2 mt-2">
-            <span className="text-slate-500 text-sm">/100</span>
+            <span className="text-ink-subtle text-sm">/100</span>
             <span className={`text-[10px] font-semibold tracking-[0.22em] uppercase ${tier.textClass}`}>
               {tier.label}
             </span>

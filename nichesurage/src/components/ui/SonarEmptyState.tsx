@@ -12,9 +12,9 @@ export function SonarEmptyState({ caption, hint }: SonarEmptyStateProps) {
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
       <div className="relative w-40 h-40 mb-8">
         {/* Concentric rings */}
-        <div className="absolute inset-0 rounded-full border border-slate-700/20" />
-        <div className="absolute inset-4 rounded-full border border-slate-700/15" />
-        <div className="absolute inset-8 rounded-full border border-slate-700/10" />
+        <div className="absolute inset-0 rounded-full border border-hairline-edge/20" />
+        <div className="absolute inset-4 rounded-full border border-hairline-edge/15" />
+        <div className="absolute inset-8 rounded-full border border-hairline-edge/10" />
 
         {/* Sweep arm via conic-gradient mask */}
         <div
@@ -31,29 +31,29 @@ export function SonarEmptyState({ caption, hint }: SonarEmptyStateProps) {
         {/* Static dots that ping at staggered intervals */}
         <span
           aria-hidden
-          className="absolute top-[28%] left-[60%] w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping motion-reduce:animate-none"
+          className="absolute top-[28%] left-[60%] w-1.5 h-1.5 rounded-full bg-accent-emerald-bright animate-ping motion-reduce:animate-none"
           style={{ animationDelay: '0s' }}
         />
         <span
           aria-hidden
-          className="absolute top-[62%] left-[34%] w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping motion-reduce:animate-none"
+          className="absolute top-[62%] left-[34%] w-1.5 h-1.5 rounded-full bg-accent-emerald-bright animate-ping motion-reduce:animate-none"
           style={{ animationDelay: '1.2s' }}
         />
         <span
           aria-hidden
-          className="absolute top-[42%] left-[78%] w-1 h-1 rounded-full bg-emerald-400/80 animate-ping motion-reduce:animate-none"
+          className="absolute top-[42%] left-[78%] w-1 h-1 rounded-full bg-accent-emerald-bright/80 animate-ping motion-reduce:animate-none"
           style={{ animationDelay: '0.6s' }}
         />
 
         {/* Center pip */}
         <span
           aria-hidden
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.6)]"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-accent-emerald-bright shadow-[0_0_12px_rgba(16,185,129,0.6)]"
         />
       </div>
 
-      <p className="text-slate-200 font-semibold tracking-tight">{caption}</p>
-      {hint && <p className="text-slate-500 text-sm mt-2 max-w-md">{hint}</p>}
+      <p className="text-ink font-semibold tracking-tight">{caption}</p>
+      {hint && <p className="text-ink-subtle text-sm mt-2 max-w-md">{hint}</p>}
     </div>
   )
 }

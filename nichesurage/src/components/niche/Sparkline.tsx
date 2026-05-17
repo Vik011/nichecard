@@ -29,7 +29,7 @@ export function tierFromScore(score: number): SparklineTier {
 
 export function Sparkline({ data, variant, tier = 'strong' }: SparklineProps) {
   if (data.length < 2) {
-    return <span className="text-slate-600 text-xs tabular-nums">—</span>
+    return <span className="text-ink-subtle text-xs tabular-nums">—</span>
   }
   const { w, h, strokeW } = DIMENSIONS[variant]
   const max = Math.max(...data.map(d => d.spikeX), 1)

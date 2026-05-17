@@ -18,14 +18,14 @@ function ageMonths(createdAt: string): number {
   return Math.max(0, Math.floor((now.getTime() - created.getTime()) / (30 * 24 * 60 * 60 * 1000)))
 }
 
-const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-emerald-300'
+const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-accent-emerald-bright'
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="glass rounded-xl p-4">
       <div className={eyebrow + ' mb-2'}>{label}</div>
-      <div className="text-2xl font-semibold text-slate-100 tabular-nums">{value}</div>
-      {sub && <div className="text-slate-500 text-xs mt-1">{sub}</div>}
+      <div className="text-2xl font-semibold text-ink tabular-nums">{value}</div>
+      {sub && <div className="text-ink-subtle text-xs mt-1">{sub}</div>}
     </div>
   )
 }

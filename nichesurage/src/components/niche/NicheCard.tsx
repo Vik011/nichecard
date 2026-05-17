@@ -67,7 +67,7 @@ const LANG_FLAG: Record<ContentLanguage, string> = { en: '🇬🇧', de: '🇩�
 const VIRALITY_STYLE: Record<ViralityRating, string> = {
   excellent: 'text-green-400',
   good: 'text-yellow-400',
-  average: 'text-slate-400',
+  average: 'text-ink-muted',
 }
 
 const VIRALITY_LABEL: Record<ViralityRating, string> = {
@@ -96,17 +96,17 @@ interface ScoreTier {
 
 function scoreTier(score: number): ScoreTier {
   if (score >= 70) return {
-    textClass: 'text-emerald-400',
+    textClass: 'text-accent-emerald-bright',
     glowShadow: 'drop-shadow-[0_0_18px_rgba(52,211,153,0.55)]',
     label: 'EXCELLENT',
   }
   if (score >= 50) return {
-    textClass: 'text-slate-400',
+    textClass: 'text-ink-muted',
     glowShadow: 'drop-shadow-[0_0_12px_rgba(148,163,184,0.30)]',
     label: 'STRONG',
   }
   return {
-    textClass: 'text-slate-300',
+    textClass: 'text-ink-muted',
     glowShadow: 'drop-shadow-[0_0_12px_rgba(148,163,184,0.30)]',
     label: 'AVERAGE',
   }
@@ -116,20 +116,20 @@ function scoreTier(score: number): ScoreTier {
 // matching height, padding, gap, and rounded radius. Type variants
 // (data colour, icon colour) are applied via additional classes per chip.
 const CHIP_BASE =
-  'inline-flex items-center gap-1 bg-slate-800/70 px-2 py-0.5 rounded-full text-xs'
+  'inline-flex items-center gap-1 bg-surface-overlay/70 px-2 py-0.5 rounded-full text-xs'
 const CHIP_ICON_SIZE = 11
 
 function ShortsMetrics({ data, locked }: { data: ShortsNicheCardData; locked: boolean }) {
   return (
     <>
       {!locked && data.avgViewDurationPct !== undefined && (
-        <span className={`${CHIP_BASE} text-slate-400`}>
+        <span className={`${CHIP_BASE} text-ink-muted`}>
           <Clock size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
           {data.avgViewDurationPct}% duration
         </span>
       )}
       {!locked && data.hookScore !== undefined && (
-        <span className={`${CHIP_BASE} text-slate-400`}>
+        <span className={`${CHIP_BASE} text-ink-muted`}>
           <Target size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
           hook {data.hookScore}
         </span>
@@ -154,7 +154,7 @@ function LongformMetrics({ data, locked }: { data: LongformNicheCardData; locked
         </span>
       )}
       {!locked && data.avgViewsPerVideo !== undefined && (
-        <span className={`${CHIP_BASE} text-slate-300`}>
+        <span className={`${CHIP_BASE} text-ink-muted`}>
           <Eye size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
           {formatK(data.avgViewsPerVideo)} views/video
         </span>
@@ -198,7 +198,7 @@ export function NicheCard({
     'rounded-xl p-4 block w-full text-left',
     'transition-[transform,box-shadow] duration-200 ease-out',
     'hover:-translate-y-[2px] hover:shadow-[0_10px_28px_-14px_rgba(16,185,129,0.35)]',
-    'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30',
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-emerald/30',
   ].filter(Boolean).join(' ')
 
   const cardBody = (
@@ -206,7 +206,7 @@ export function NicheCard({
       {/* Header: rank label + format badge + actions */}
       <div className="flex justify-between items-start mb-1">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="text-slate-500 text-[10px] uppercase tracking-[0.18em] font-semibold shrink-0">
+          <div className="text-ink-subtle text-[10px] uppercase tracking-[0.18em] font-semibold shrink-0">
             Niche #{rank}
           </div>
           <ContentTypeBadge type={data.contentType} />
@@ -235,7 +235,7 @@ export function NicheCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <LockedField locked={locked}>
-              <span className="text-slate-100 text-base font-bold block truncate">
+              <span className="text-ink text-base font-bold block truncate">
                 {data.channelName ?? '—'}
               </span>
             </LockedField>
@@ -243,7 +243,7 @@ export function NicheCard({
               <LockSimple
                 weight="fill"
                 size={12}
-                className="text-slate-500 shrink-0"
+                className="text-ink-subtle shrink-0"
                 aria-label="Locked"
               />
             )}
@@ -260,7 +260,7 @@ export function NicheCard({
               : null
             const label = bucketLabel ?? data.nicheLabel
             return label ? (
-              <div className="text-slate-400 text-xs mt-0.5 truncate">{label}</div>
+              <div className="text-ink-muted text-xs mt-0.5 truncate">{label}</div>
             ) : null
           })()}
         </div>
@@ -268,11 +268,11 @@ export function NicheCard({
           <div className={`text-4xl font-extrabold leading-none tabular-nums ${tier.textClass} ${tier.glowShadow}`}>
             {data.opportunityScore}
           </div>
-          <div className="text-slate-500 text-[9px] uppercase tracking-[0.18em] font-semibold mt-1">
+          <div className="text-ink-subtle text-[9px] uppercase tracking-[0.18em] font-semibold mt-1">
             {tier.label}
           </div>
           {data.outlierRatio !== undefined && (
-            <div className="mt-1 text-emerald-300 text-xs font-semibold">
+            <div className="mt-1 text-accent-emerald-bright text-xs font-semibold">
               {data.outlierRatio.toFixed(1)}× outlier
             </div>
           )}
@@ -288,11 +288,11 @@ export function NicheCard({
 
       {/* Badge row */}
       <div className="flex flex-wrap gap-1.5">
-        <span className={`${CHIP_BASE} text-slate-300`}>
+        <span className={`${CHIP_BASE} text-ink-muted`}>
           <Television size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
           {data.videoCount} videos
         </span>
-        <span className={`${CHIP_BASE} text-slate-300`}>
+        <span className={`${CHIP_BASE} text-ink-muted`}>
           <UsersThree size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
           {data.subscriberRange}
         </span>
@@ -305,7 +305,7 @@ export function NicheCard({
             {VIRALITY_LABEL[data.viralityRating]}
           </span>
         </LockedField>
-        <span className={`${CHIP_BASE} text-slate-300`}>
+        <span className={`${CHIP_BASE} text-ink-muted`}>
           <span aria-hidden className="leading-none text-[11px]">
             {LANG_FLAG[data.language]}
           </span>
@@ -322,7 +322,7 @@ export function NicheCard({
           </span>
         )}
         {!locked && data.engagementRate !== undefined && (
-          <span className={`${CHIP_BASE} text-slate-300`}>
+          <span className={`${CHIP_BASE} text-ink-muted`}>
             <TrendUp size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
             {data.engagementRate}% eng
           </span>

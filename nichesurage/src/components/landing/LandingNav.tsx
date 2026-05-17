@@ -29,7 +29,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
         scrolled
-          ? 'backdrop-blur-xl bg-charcoal-900/60 border-b border-white/[0.06]'
+          ? 'backdrop-blur-xl bg-surface-raised/60 border-b border-hairline-soft'
           : 'bg-transparent'
       }`}
     >
@@ -37,22 +37,22 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
         {/* Logo */}
         <Link
           href="/"
-          className="flex items-center gap-2.5 text-xl font-extrabold tracking-tight text-white hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2.5 text-xl font-extrabold tracking-tight text-ink hover:opacity-80 transition-opacity"
         >
-          <Logo size={30} className="text-white" />
+          <Logo size={30} className="text-ink" />
           SurgeNiche
         </Link>
 
         {/* Desktop links */}
-        <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
-          <Link href="/discover" className="hover:text-slate-100 transition-colors">
+        <nav className="hidden md:flex items-center gap-6 text-sm text-ink-muted">
+          <Link href="/discover" className="hover:text-ink transition-colors">
             {copy.navDiscover}
           </Link>
-          <a href="#pricing" className="hover:text-slate-100 transition-colors">
+          <a href="#pricing" className="hover:text-ink transition-colors">
             {copy.navPricing}
           </a>
           {isLoggedIn && (
-            <Link href="/dashboard" className="hover:text-slate-100 transition-colors">
+            <Link href="/dashboard" className="hover:text-ink transition-colors">
               {copy.navDashboard}
             </Link>
           )}
@@ -89,11 +89,11 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
                 href="/discover"
                 className={[
                   'text-[13px] font-semibold px-4 py-2 rounded-lg',
-                  'text-slate-200 hover:text-white',
-                  'border border-slate-700 hover:border-slate-500',
-                  'bg-charcoal-900/40 hover:bg-charcoal-800/60 backdrop-blur-sm',
+                  'text-ink',
+                  'border border-hairline-edge',
+                  'bg-surface-raised/40 hover:bg-surface-elevated/60 backdrop-blur-sm',
                   'transition-colors duration-200',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emerald/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
                 ].join(' ')}
               >
                 {copy.navOpenApp}
@@ -103,19 +103,19 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
             <>
               <Link
                 href="/login"
-                className="text-[13px] text-slate-400 hover:text-slate-100 transition-colors px-3 py-2 rounded-lg border border-slate-700 hover:border-slate-500"
+                className="text-[13px] text-ink-muted hover:text-ink transition-colors px-3 py-2 rounded-lg border border-hairline-edge hover:bg-surface-hover"
               >
                 {copy.navLogin}
               </Link>
               <Link
                 href="/login"
                 className={[
-                  'text-[13px] font-semibold px-4 py-2 rounded-lg text-charcoal-900',
+                  'text-[13px] font-semibold px-4 py-2 rounded-lg text-surface-raised',
                   'bg-white hover:bg-slate-100',
                   'shadow-[0_4px_14px_-4px_rgba(0,0,0,0.25)]',
                   'transition-[transform,box-shadow] duration-200 ease-out',
                   'hover:-translate-y-[1px] hover:shadow-[0_6px_18px_-4px_rgba(0,0,0,0.3)]',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emerald/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
                 ].join(' ')}
               >
                 {copy.navCta}
@@ -126,7 +126,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
 
         {/* Mobile hamburger */}
         <button
-          className="md:hidden text-slate-400 hover:text-slate-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="md:hidden text-ink-muted hover:text-ink min-h-[44px] min-w-[44px] flex items-center justify-center"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
@@ -140,15 +140,15 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
 
       {/* Mobile drawer */}
       {menuOpen && (
-        <div id="mobile-nav-drawer" className="md:hidden bg-slate-900 border-t border-slate-800 px-6 py-4 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-4rem)]">
-          <Link href="/discover" className="text-slate-300 hover:text-white transition-colors py-2.5 block" onClick={() => setMenuOpen(false)}>
+        <div id="mobile-nav-drawer" className="md:hidden bg-surface-elevated border-t border-hairline-edge px-6 py-4 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-4rem)]">
+          <Link href="/discover" className="text-ink-muted hover:text-ink transition-colors py-2.5 block" onClick={() => setMenuOpen(false)}>
             {copy.navDiscover}
           </Link>
-          <a href="#pricing" className="text-slate-300 hover:text-white transition-colors py-2.5 block" onClick={() => setMenuOpen(false)}>
+          <a href="#pricing" className="text-ink-muted hover:text-ink transition-colors py-2.5 block" onClick={() => setMenuOpen(false)}>
             {copy.navPricing}
           </a>
           {isLoggedIn && (
-            <Link href="/dashboard" className="text-slate-300 hover:text-white transition-colors py-2.5 block" onClick={() => setMenuOpen(false)}>
+            <Link href="/dashboard" className="text-ink-muted hover:text-ink transition-colors py-2.5 block" onClick={() => setMenuOpen(false)}>
               {copy.navDashboard}
             </Link>
           )}
@@ -164,10 +164,10 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
                   className={[
                     'text-[10px] font-semibold tracking-[0.18em] uppercase px-2 py-1 rounded-md',
                     tier === 'premium'
-                      ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30'
+                      ? 'bg-accent-emerald/15 text-accent-emerald-bright ring-1 ring-accent-emerald/30'
                       : tier === 'basic'
-                      ? 'bg-slate-800 text-slate-300 ring-1 ring-slate-700'
-                      : 'bg-slate-800 text-slate-400 ring-1 ring-slate-700',
+                      ? 'bg-surface-overlay text-ink-muted ring-1 ring-hairline-edge'
+                      : 'bg-surface-overlay text-ink-muted ring-1 ring-hairline-edge',
                   ].join(' ')}
                 >
                   {tier === 'premium'
@@ -177,14 +177,14 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
                     : copy.topNavTierFree}
                 </span>
                 {email && (
-                  <span className="text-sm text-slate-400 truncate" title={email}>
+                  <span className="text-sm text-ink-muted truncate" title={email}>
                     {email}
                   </span>
                 )}
               </div>
               <Link
                 href="/discover"
-                className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-white text-charcoal-900 hover:bg-slate-100"
+                className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-white text-surface-raised hover:bg-slate-100"
                 onClick={() => setMenuOpen(false)}
               >
                 {copy.navOpenApp}
@@ -194,14 +194,14 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
             <>
               <Link
                 href="/login"
-                className="text-slate-300 hover:text-white transition-colors text-sm py-2.5 block"
+                className="text-ink-muted hover:text-ink transition-colors text-sm py-2.5 block"
                 onClick={() => setMenuOpen(false)}
               >
                 {copy.navLogin}
               </Link>
               <Link
                 href="/login"
-                className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-white text-charcoal-900 hover:bg-slate-100"
+                className="text-center text-sm font-semibold px-4 py-2 rounded-lg bg-white text-surface-raised hover:bg-slate-100"
                 onClick={() => setMenuOpen(false)}
               >
                 {copy.navCta}

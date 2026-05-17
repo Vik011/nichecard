@@ -29,10 +29,10 @@ export function HeroStatsBar({ copy, spikingNow }: HeroStatsBarProps) {
     <div className="mt-8 sm:mt-12 max-w-3xl mx-auto px-2 grid grid-cols-[1fr_1.5fr_1fr] gap-4 sm:gap-6 items-center">
       {/* Left: channels per scan */}
       <div className="flex flex-col items-center sm:items-start gap-1">
-        <span className="font-display text-3xl sm:text-4xl text-slate-100 leading-none">
+        <span className="font-display text-3xl sm:text-4xl text-ink leading-none">
           230+
         </span>
-        <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+        <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
           {copy.heroStatsChannelsScan}
         </span>
       </div>
@@ -44,24 +44,24 @@ export function HeroStatsBar({ copy, spikingNow }: HeroStatsBarProps) {
           the bar fills its cell. */}
       <div className="flex flex-col items-center gap-2">
         <div className="w-full flex items-center gap-2">
-          <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 whitespace-nowrap">
+          <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-subtle whitespace-nowrap">
             {copy.heroStatsNextScan}
           </span>
-          <div className="flex-1 h-1 rounded-full bg-slate-800 overflow-hidden">
+          <div className="flex-1 h-1 rounded-full bg-surface-overlay overflow-hidden">
             <div
-              className="h-full bg-emerald-400/80 transition-[width] duration-1000 ease-linear"
+              className="h-full bg-accent-emerald-bright/80 transition-[width] duration-1000 ease-linear"
               style={{ width: `${progressPct}%` }}
             />
           </div>
-          <span className="text-[12px] sm:text-[13px] font-semibold tabular-nums text-slate-200 whitespace-nowrap">
+          <span className="text-[12px] sm:text-[13px] font-semibold tabular-nums text-ink whitespace-nowrap">
             {minutes}:{seconds.toString().padStart(2, '0')}
           </span>
         </div>
         <div className="flex items-baseline gap-1.5">
-          <span className="font-display text-xl sm:text-2xl text-slate-100 leading-none tabular-nums">
+          <span className="font-display text-xl sm:text-2xl text-ink leading-none tabular-nums">
             {spikingNow}
           </span>
-          <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
             {copy.heroStatsSpikingNow}
           </span>
         </div>
@@ -69,10 +69,10 @@ export function HeroStatsBar({ copy, spikingNow }: HeroStatsBarProps) {
 
       {/* Right: scan interval */}
       <div className="flex flex-col items-center sm:items-end gap-1">
-        <span className="font-display text-3xl sm:text-4xl text-slate-100 leading-none">
+        <span className="font-display text-3xl sm:text-4xl text-ink leading-none">
           {copy.heroStatsScanIntervalValue}
         </span>
-        <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+        <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-subtle">
           {copy.heroStatsScanInterval}
         </span>
       </div>

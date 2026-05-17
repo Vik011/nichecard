@@ -26,16 +26,16 @@ export function FreeDemoBanner({ nicheId, copy }: FreeDemoBannerProps) {
     <section
       role="status"
       aria-live="polite"
-      className="glass glass-glow rounded-2xl p-5 mb-6 flex items-start gap-4 border border-emerald-400/20"
+      className="glass glass-glow rounded-2xl p-5 mb-6 flex items-start gap-4 border border-accent-emerald-bright/20"
     >
       <div className="shrink-0 mt-0.5">
-        <Sparkle weight="duotone" size={22} className="text-emerald-300" aria-hidden />
+        <Sparkle weight="duotone" size={22} className="text-accent-emerald-bright" aria-hidden />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-slate-100 text-sm font-medium leading-snug">
+        <p className="text-ink text-sm font-medium leading-snug">
           {copy.freeDemoBannerHeadline}
         </p>
-        <p className="text-slate-400 text-[13px] leading-snug mt-1">
+        <p className="text-ink-muted text-[13px] leading-snug mt-1">
           {copy.freeDemoBannerSub}
         </p>
       </div>

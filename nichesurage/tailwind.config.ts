@@ -11,22 +11,27 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
-        slate: {
-          950: "var(--color-bg-base)",
+        canvas: "var(--color-bg-base)",
+        surface: {
+          raised: "var(--color-bg-raised)",
+          elevated: "var(--color-bg-elevated)",
+          overlay: "var(--color-bg-overlay)",
+          hover: "var(--color-bg-hover)",
         },
-        carbon: {
-          950: "var(--color-bg-base)",
-          900: "var(--color-bg-raised)",
-          800: "var(--color-bg-elevated)",
-          700: "var(--color-bg-overlay)",
-          600: "var(--color-bg-hover)",
+        ink: {
+          DEFAULT: "var(--foreground)",
+          muted: "var(--color-ink-muted)",
+          subtle: "var(--color-ink-subtle)",
         },
-        charcoal: {
-          900: "var(--color-bg-raised)",
-          800: "var(--color-bg-elevated)",
-          700: "var(--color-bg-overlay)",
-          600: "var(--color-bg-hover)",
+        hairline: {
+          soft: "var(--color-border-soft)",
+          edge: "var(--color-border-edge)",
         },
+        accent: {
+          emerald: "var(--color-accent-emerald)",
+          "emerald-bright": "var(--color-accent-emerald-bright)",
+        },
+        "on-accent": "var(--color-on-accent)",
         marketing: {
           canvas: "var(--marketing-canvas)",
           "canvas-cool": "var(--marketing-canvas-cool)",

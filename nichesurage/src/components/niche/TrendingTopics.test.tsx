@@ -42,7 +42,7 @@ describe('TrendingTopics', () => {
     render(<TrendingTopics eyebrow="Trending topics" activeClusterId="c1" contentType="shorts" />)
     await waitFor(() => {
       const link = screen.getByRole('listitem')
-      expect(link.className).toMatch(/ring-emerald/)
+      expect(link.className).toMatch(/ring-accent-emerald/)
     })
   })
 

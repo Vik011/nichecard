@@ -49,7 +49,7 @@ export function TrendingTopics({
   if (clusters !== null && clusters.length === 0) {
     if (!emptyHint) return null
     return (
-      <div className="mb-5 text-slate-500 text-xs italic">
+      <div className="mb-5 text-ink-subtle text-xs italic">
         {emptyHint}
       </div>
     )
@@ -57,7 +57,7 @@ export function TrendingTopics({
 
   return (
     <div className="mb-5">
-      <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-emerald-300 mb-2">
+      <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-accent-emerald-bright mb-2">
         {eyebrow}
       </div>
       <div
@@ -69,7 +69,7 @@ export function TrendingTopics({
               <div
                 key={i}
                 aria-hidden
-                className="shimmer h-7 w-32 shrink-0 rounded-full bg-charcoal-800/60"
+                className="shimmer h-7 w-32 shrink-0 rounded-full bg-surface-elevated/60"
               />
             ))
           : clusters.map(c => {
@@ -81,12 +81,12 @@ export function TrendingTopics({
                   href={buildClusterHref(c.id)}
                   className={`group glass rounded-full px-3.5 py-1.5 text-xs whitespace-nowrap transition-all shrink-0 ${
                     isActive
-                      ? 'ring-1 ring-emerald-400 text-slate-100 bg-charcoal-700/60'
-                      : 'hover:ring-1 hover:ring-emerald-500/30 text-slate-300'
+                      ? 'ring-1 ring-accent-emerald-bright text-ink bg-surface-overlay/60'
+                      : 'hover:ring-1 hover:ring-accent-emerald/30 text-ink-muted'
                   }`}
                 >
                   <span className="font-medium">{c.label}</span>
-                  <span className="text-slate-500 ml-2">{c.memberCount}</span>
+                  <span className="text-ink-subtle ml-2">{c.memberCount}</span>
                 </Link>
               )
             })}

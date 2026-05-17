@@ -34,13 +34,13 @@ export function TopNav() {
   ]
 
   return (
-    <header className="sticky top-0 z-30 backdrop-blur-md bg-slate-950/70 border-b border-slate-800/60">
+    <header className="sticky top-0 z-30 backdrop-blur-md bg-canvas/70 border-b border-hairline-edge/60">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
         <Link
           href="/"
-          className="flex items-center gap-2 text-white font-bold tracking-tight text-base hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2 text-ink font-bold tracking-tight text-base hover:opacity-80 transition-opacity"
         >
-          <Logo size={26} className="text-white" />
+          <Logo size={26} className="text-ink" />
           SurgeNiche
         </Link>
 
@@ -52,8 +52,8 @@ export function TopNav() {
               aria-current={isActive ? 'page' : undefined}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30'
-                  : 'text-slate-400 hover:text-slate-100'
+                  ? 'bg-accent-emerald/15 text-accent-emerald-bright ring-1 ring-accent-emerald/30'
+                  : 'text-ink-muted hover:text-ink'
               }`}
             >
               {label}
@@ -62,7 +62,7 @@ export function TopNav() {
         </nav>
 
         {loading ? (
-          <div className="w-9 h-9 rounded-full bg-charcoal-800 ring-2 ring-slate-700 animate-pulse" aria-hidden />
+          <div className="w-9 h-9 rounded-full bg-surface-elevated ring-2 ring-hairline-edge animate-pulse" aria-hidden />
         ) : (
           <UserAvatarMenu
             email={email ?? null}

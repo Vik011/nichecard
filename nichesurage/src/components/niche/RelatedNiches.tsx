@@ -19,7 +19,7 @@ interface RelatedNichesProps {
   onCardClick?: (id: string) => void
 }
 
-const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-emerald-300'
+const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-accent-emerald-bright'
 
 export function RelatedNiches({ niche, userTier, copy, onCardClick }: RelatedNichesProps) {
   const [related, setRelated] = useState<NicheCardData[]>([])
@@ -58,7 +58,7 @@ export function RelatedNiches({ niche, userTier, copy, onCardClick }: RelatedNic
     return (
       <section className="mb-6">
         <div className={eyebrow + ' mb-2'}>{copy.relatedEyebrow}</div>
-        <h2 className="text-xl font-semibold tracking-tight text-slate-100 mb-5">
+        <h2 className="text-xl font-semibold tracking-tight text-ink mb-5">
           {copy.relatedHeading}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -77,7 +77,7 @@ export function RelatedNiches({ niche, userTier, copy, onCardClick }: RelatedNic
   return (
     <section className="mb-6">
       <div className={eyebrow + ' mb-2'}>{copy.relatedEyebrow}</div>
-      <h2 className="text-xl font-semibold tracking-tight text-slate-100 mb-5">
+      <h2 className="text-xl font-semibold tracking-tight text-ink mb-5">
         {copy.relatedHeading}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -21,7 +21,7 @@ export function ManageSubscriptionButton() {
       type="button"
       onClick={open}
       disabled={loading}
-      className="block text-xs text-slate-400 hover:text-slate-200 mt-1.5 disabled:opacity-50"
+      className="block text-xs text-ink-muted hover:text-ink mt-1.5 disabled:opacity-50"
     >
       {loading ? 'Opening…' : 'Manage subscription'}
     </button>

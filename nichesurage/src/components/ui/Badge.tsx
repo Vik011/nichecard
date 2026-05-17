@@ -6,15 +6,15 @@ interface BadgeProps {
 
 export function Badge({ children, variant = 'lang', className = '' }: BadgeProps) {
   const variants = {
-    'tier-free': 'bg-slate-800 text-slate-400 border border-slate-700',
+    'tier-free': 'bg-surface-overlay text-ink-muted border border-hairline-edge',
     'tier-basic': 'bg-blue-950 text-blue-400 border border-blue-800',
     'tier-premium': 'bg-indigo-950 text-indigo-300 border border-indigo-800',
     'spike': 'bg-orange-950 text-orange-400 font-bold',
     'spike-mega': 'bg-orange-900 text-orange-300 font-bold',
     'virality-excellent': 'bg-transparent text-green-400',
     'virality-good': 'bg-transparent text-yellow-400',
-    'virality-average': 'bg-transparent text-slate-400',
-    'lang': 'bg-slate-800 text-slate-500',
+    'virality-average': 'bg-transparent text-ink-muted',
+    'lang': 'bg-surface-overlay text-ink-subtle',
   }
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${variants[variant]} ${className}`}>

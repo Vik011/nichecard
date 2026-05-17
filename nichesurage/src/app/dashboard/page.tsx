@@ -39,21 +39,21 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto">
+    <main className="min-h-screen bg-canvas text-ink px-4 py-8 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-8 max-w-2xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold">My Channels</h1>
-          <p className="text-slate-500 text-sm mt-0.5">{email}</p>
+          <p className="text-ink-subtle text-sm mt-0.5">{email}</p>
         </div>
         <div className="text-right">
-          <span className="inline-block bg-charcoal-800 border border-slate-700 text-slate-400 text-xs font-semibold px-3 py-1 rounded-full">
+          <span className="inline-block bg-surface-elevated border border-hairline-edge text-ink-muted text-xs font-semibold px-3 py-1 rounded-full">
             {tierLabel[tier]}
           </span>
           {tier !== 'premium' && (
             <a
               href="/#pricing"
-              className="block text-xs text-slate-400 hover:text-slate-200 mt-1.5"
+              className="block text-xs text-ink-muted hover:text-ink mt-1.5"
             >
               Upgrade →
             </a>
@@ -65,7 +65,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Saved count */}
-      <p className="text-slate-500 text-sm mb-5 max-w-2xl mx-auto">
+      <p className="text-ink-subtle text-sm mb-5 max-w-2xl mx-auto">
         {savedNiches.length === 0
           ? 'No saved niches'
           : `${savedNiches.length} saved niche${savedNiches.length === 1 ? '' : 's'}`}

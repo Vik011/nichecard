@@ -39,13 +39,13 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
         <div
           role="status"
           aria-label={copy.heroPulse}
-          className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 mb-6"
+          className="inline-flex items-center gap-2 rounded-full border border-accent-emerald/30 bg-accent-emerald/10 px-3.5 py-1 mb-6"
         >
           <span aria-hidden="true" className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-emerald-bright opacity-75" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent-emerald-bright" />
           </span>
-          <span aria-hidden="true" className="text-emerald-300/95 text-[11px] font-semibold uppercase tracking-[0.2em]">
+          <span aria-hidden="true" className="text-accent-emerald-bright/95 text-[11px] font-semibold uppercase tracking-[0.2em]">
             {copy.heroPulse}
           </span>
         </div>
@@ -54,11 +54,11 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
             on the keyword phrase, italic on the action verb. The split
             gives the H1 typographic momentum and matches an editorial
             section-header cadence (vs a flat single-line banner). */}
-        <h1 className="font-display tracking-[-0.02em] text-slate-100 text-balance mb-5 drop-shadow-[0_2px_24px_rgba(6,9,16,0.85)]">
+        <h1 className="font-display tracking-[-0.02em] text-ink text-balance mb-5 drop-shadow-[0_2px_24px_rgba(6,9,16,0.85)]">
           <span className="block text-[44px] sm:text-[58px] md:text-[72px] font-normal leading-[1.02]">
             {copy.heroHeadlineMain}
           </span>
-          <span className="block italic font-normal text-[40px] sm:text-[52px] md:text-[68px] leading-[1.02] text-slate-200">
+          <span className="block italic font-normal text-[40px] sm:text-[52px] md:text-[68px] leading-[1.02] text-ink">
             {copy.heroHeadlineEmphasis}
           </span>
         </h1>
@@ -66,7 +66,7 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
         {/* Founder narrative as italic tagline directly under the H1.
             Bumped up from slate-400 to slate-300 for stronger contrast
             (audit P1 a11y fix; italic serif on dark was borderline). */}
-        <p className="font-display italic text-[17px] sm:text-[19px] text-slate-300 mb-7 max-w-md mx-auto leading-[1.45] text-balance">
+        <p className="font-display italic text-[17px] sm:text-[19px] text-ink-muted mb-7 max-w-md mx-auto leading-[1.45] text-balance">
           {copy.heroNarrative}
         </p>
 
@@ -74,7 +74,7 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
             AA-compliant body text on dark background (audit P0). Bold
             strong on the value-prop fragment anchors the eye on the
             differentiator ("the small accounts that started moving"). */}
-        <p className="text-[16px] sm:text-[18px] text-slate-200 mb-9 max-w-xl mx-auto leading-[1.55] text-balance">
+        <p className="text-[16px] sm:text-[18px] text-ink mb-9 max-w-xl mx-auto leading-[1.55] text-balance">
           {copy.heroSubLeading}{' '}
           <strong className="font-semibold text-white">
             {copy.heroSubBold}
@@ -95,10 +95,10 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
             className={[
               'group inline-flex items-center gap-2 w-full sm:w-auto justify-center',
               'text-[15px] font-semibold px-6 py-3 rounded-xl',
-              'border border-slate-700 bg-charcoal-900/40 backdrop-blur-sm text-slate-100',
+              'border border-hairline-edge bg-surface-raised/40 backdrop-blur-sm text-ink',
               'transition-colors duration-200 ease-out',
-              'hover:border-slate-500 hover:bg-charcoal-800/60 hover:text-white',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
+              'hover:bg-surface-elevated/60',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emerald/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
             ].join(' ')}
           >
             <span>{isLoggedIn ? copy.navOpenApp : copy.heroCta}</span>
@@ -120,10 +120,10 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
             className={[
               'inline-flex items-center w-full sm:w-auto justify-center',
               'text-[15px] font-semibold px-6 py-3 rounded-xl',
-              'border border-slate-700/50 bg-charcoal-900/40 backdrop-blur-sm text-slate-200',
+              'border border-hairline-edge/50 bg-surface-raised/40 backdrop-blur-sm text-ink',
               'transition-colors duration-200 ease-out',
-              'hover:border-slate-500 hover:bg-charcoal-800/60 hover:text-white',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 focus-visible:ring-offset-2 focus-visible:ring-offset-carbon-950',
+              'hover:bg-surface-elevated/60',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emerald/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
             ].join(' ')}
           >
             {copy.heroCta2}

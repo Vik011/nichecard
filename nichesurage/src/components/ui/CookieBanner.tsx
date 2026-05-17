@@ -38,24 +38,24 @@ export function CookieBanner() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 p-4">
-      <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-carbon-900/95 backdrop-blur-sm border border-white/[0.08] rounded-t-xl sm:rounded-xl sm:mb-4 p-4 shadow-2xl">
-        <p className="flex-1 text-sm text-slate-300">
+      <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-surface-raised/95 backdrop-blur-sm border border-hairline-edge rounded-t-xl sm:rounded-xl sm:mb-4 p-4 shadow-2xl">
+        <p className="flex-1 text-sm text-ink-muted">
           We use cookies to improve your experience. Analytics cookies are used only with your
           consent.{' '}
-          <Link href="/privacy" className="text-slate-200 hover:text-white underline transition-colors">
+          <Link href="/privacy" className="text-ink underline transition-colors">
             Learn more in our Privacy Policy.
           </Link>
         </p>
         <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
           <button
             onClick={() => handleConsent('accepted')}
-            className="flex-1 sm:flex-none bg-white text-charcoal-900 hover:bg-slate-100 text-sm font-medium px-4 py-2.5 min-h-[44px] rounded-lg transition-colors"
+            className="flex-1 sm:flex-none bg-white text-surface-raised hover:bg-slate-100 text-sm font-medium px-4 py-2.5 min-h-[44px] rounded-lg transition-colors"
           >
             Accept
           </button>
           <button
             onClick={() => handleConsent('declined')}
-            className="flex-1 sm:flex-none text-slate-400 hover:text-slate-200 text-sm px-4 py-2.5 min-h-[44px] transition-colors rounded-lg"
+            className="flex-1 sm:flex-none text-ink-muted hover:text-ink text-sm px-4 py-2.5 min-h-[44px] transition-colors rounded-lg"
           >
             Decline
           </button>

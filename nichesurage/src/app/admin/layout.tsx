@@ -14,21 +14,21 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const user = await requireAdmin()
 
   return (
-    <div className="min-h-screen bg-charcoal-950 text-slate-100">
-      <header className="sticky top-0 z-30 border-b border-slate-800/60 bg-charcoal-950/80 backdrop-blur-md">
+    <div className="min-h-screen bg-canvas text-ink">
+      <header className="sticky top-0 z-30 border-b border-hairline-edge/60 bg-canvas/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
           <div className="flex items-baseline gap-3">
-            <Link href="/admin" className="text-base font-semibold tracking-tight text-slate-100">
-              SurgeNiche <span className="text-emerald-300">Admin</span>
+            <Link href="/admin" className="text-base font-semibold tracking-tight text-ink">
+              SurgeNiche <span className="text-accent-emerald-bright">Admin</span>
             </Link>
             <Link
               href="/discover?type=shorts"
-              className="text-xs text-slate-500 hover:text-slate-300"
+              className="text-xs text-ink-subtle hover:text-ink-muted"
             >
               ← Back to app
             </Link>
           </div>
-          <div className="flex items-center gap-3 text-xs text-slate-400">
+          <div className="flex items-center gap-3 text-xs text-ink-muted">
             <span className="hidden sm:inline">{user.email}</span>
             <AdminSignOut />
           </div>

@@ -80,10 +80,10 @@ export default function NicheDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 max-w-6xl mx-auto">
+    <main className="min-h-screen bg-canvas text-ink px-4 py-8 max-w-6xl mx-auto">
       <Link
         href={backHref}
-        className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-100 mb-6 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink mb-6 transition-colors"
       >
         <CaretLeft weight="bold" size={14} aria-hidden />
         {copy.detailBack}
@@ -103,7 +103,7 @@ export default function NicheDetailPage() {
 
 function DetailSkeleton() {
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-8 max-w-6xl mx-auto" data-testid="niche-detail-skeleton">
+    <div className="min-h-screen bg-canvas px-4 py-8 max-w-6xl mx-auto" data-testid="niche-detail-skeleton">
       {/* Back link */}
       <div className="h-5 w-20 shimmer rounded mb-6" />
 

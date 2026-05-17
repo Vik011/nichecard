@@ -54,14 +54,14 @@ export function BookmarkButton({ nicheId, isSaved, userTier, savedCount, onToggl
         disabled={loading}
         className={`p-1.5 rounded-lg transition-colors text-lg leading-none ${
           isSaved
-            ? 'text-indigo-400 hover:text-red-400 hover:bg-slate-800'
-            : 'text-slate-600 hover:text-indigo-400 hover:bg-slate-800'
+            ? 'text-indigo-400 hover:text-red-400 hover:bg-surface-elevated'
+            : 'text-ink-subtle hover:text-indigo-400 hover:bg-surface-elevated'
         } disabled:opacity-50`}
       >
         {isSaved ? '★' : '☆'}
       </button>
       {tooltip && (
-        <div className="absolute right-0 top-9 z-10 bg-slate-800 border border-slate-700 text-slate-300 text-xs rounded-lg px-3 py-2 w-52 shadow-xl">
+        <div className="absolute right-0 top-9 z-10 bg-surface-elevated border border-hairline-edge text-ink-muted text-xs rounded-lg px-3 py-2 w-52 shadow-xl">
           {tooltip}
         </div>
       )}

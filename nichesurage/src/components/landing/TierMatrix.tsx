@@ -16,16 +16,16 @@ export function TierMatrix({ copy }: TierMatrixProps) {
   return (
     <section className="py-16 px-6">
       <div className="max-w-5xl mx-auto">
-        <h3 className="text-xl md:text-2xl font-semibold text-slate-100 tracking-tight mb-6 text-center">
+        <h3 className="text-xl md:text-2xl font-semibold text-ink tracking-tight mb-6 text-center">
           {copy.tierMatrixTitle}
         </h3>
-        <div className="overflow-x-auto rounded-2xl gborder bg-charcoal-900/40 backdrop-blur-md">
+        <div className="overflow-x-auto rounded-2xl gborder bg-surface-raised/40 backdrop-blur-md">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-slate-500 border-b border-slate-800/60">
+              <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-ink-subtle border-b border-hairline-edge/60">
                 <th className="px-5 py-4 font-semibold">{cols.feature}</th>
                 <th className="px-5 py-4 font-semibold">{cols.free}</th>
-                <th className="px-5 py-4 font-semibold text-emerald-300">{cols.basic}</th>
+                <th className="px-5 py-4 font-semibold text-accent-emerald-bright">{cols.basic}</th>
                 <th className="px-5 py-4 font-semibold">{cols.premium}</th>
               </tr>
             </thead>
@@ -35,14 +35,14 @@ export function TierMatrix({ copy }: TierMatrixProps) {
                   key={i}
                   className={
                     i % 2 === 0
-                      ? 'bg-charcoal-900/20'
+                      ? 'bg-surface-raised/20'
                       : ''
                   }
                 >
-                  <td className="px-5 py-3.5 text-slate-300 font-medium">{row.label}</td>
-                  <td className="px-5 py-3.5 text-slate-400">{row.free}</td>
-                  <td className="px-5 py-3.5 text-slate-100 font-medium">{row.basic}</td>
-                  <td className="px-5 py-3.5 text-slate-300">{row.premium}</td>
+                  <td className="px-5 py-3.5 text-ink-muted font-medium">{row.label}</td>
+                  <td className="px-5 py-3.5 text-ink-muted">{row.free}</td>
+                  <td className="px-5 py-3.5 text-ink font-medium">{row.basic}</td>
+                  <td className="px-5 py-3.5 text-ink-muted">{row.premium}</td>
                 </tr>
               ))}
             </tbody>

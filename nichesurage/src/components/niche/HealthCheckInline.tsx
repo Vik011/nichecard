@@ -43,14 +43,14 @@ interface ScoreTierStyle {
 }
 
 function scoreTier(score: number, copy: CopyKeys): ScoreTierStyle {
-  if (score >= 70) return { textClass: 'text-emerald-300', label: 'EXCELLENT' }
-  if (score >= 50) return { textClass: 'text-emerald-300', label: 'STRONG' }
+  if (score >= 70) return { textClass: 'text-accent-emerald-bright', label: 'EXCELLENT' }
+  if (score >= 50) return { textClass: 'text-accent-emerald-bright', label: 'STRONG' }
   if (score >= 30) return { textClass: 'text-amber-300', label: 'AVERAGE' }
   return { textClass: 'text-red-400', label: 'WEAK' }
   void copy
 }
 
-const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-emerald-300'
+const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-accent-emerald-bright'
 
 export function HealthCheckInline({ scanResultId, userTier, copy }: HealthCheckInlineProps) {
   const allowed = canUseAIFeatures(userTier)
@@ -109,10 +109,10 @@ export function HealthCheckInline({ scanResultId, userTier, copy }: HealthCheckI
   return (
     <section className="glass rounded-2xl p-6 mb-6">
       <div className="flex items-center gap-2 mb-2">
-        <Heartbeat weight="duotone" size={14} className="text-emerald-300" aria-hidden />
+        <Heartbeat weight="duotone" size={14} className="text-accent-emerald-bright" aria-hidden />
         <div className={eyebrow}>{copy.healthEyebrow}</div>
       </div>
-      <h2 className="text-xl font-semibold tracking-tight text-slate-100 mb-5">
+      <h2 className="text-xl font-semibold tracking-tight text-ink mb-5">
         {copy.healthHeading}
       </h2>
 
@@ -124,7 +124,7 @@ export function HealthCheckInline({ scanResultId, userTier, copy }: HealthCheckI
           <button
             type="button"
             onClick={() => setState({ kind: 'loading' })}
-            className="text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-charcoal-800/60 text-slate-200 hover:bg-charcoal-700/60 transition-colors"
+            className="text-[13px] font-semibold px-4 py-2 rounded-lg gborder bg-surface-elevated/60 text-ink hover:bg-surface-overlay/60 transition-colors"
           >
             {copy.anglesRetry}
           </button>
@@ -151,14 +151,14 @@ function ReadyBody({ data, copy }: { data: HealthCheckResponse; copy: CopyKeys }
     <div data-testid="health-check-ready" className="flex flex-col gap-6">
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="flex-1 flex flex-col gap-2 items-start">
-          <p className={`text-slate-200 text-[15px] leading-relaxed ${expanded ? '' : 'line-clamp-6'}`}>
+          <p className={`text-ink text-[15px] leading-relaxed ${expanded ? '' : 'line-clamp-6'}`}>
             {data.verdict}
           </p>
           <button
             type="button"
             onClick={() => setExpanded(e => !e)}
             data-testid="health-check-verdict-toggle"
-            className="text-emerald-300 text-xs font-medium hover:text-emerald-200 transition-colors"
+            className="text-accent-emerald-bright text-xs font-medium transition-colors hover:brightness-110"
           >
             {expanded ? 'Show less' : 'Show more'}
           </button>
@@ -168,7 +168,7 @@ function ReadyBody({ data, copy }: { data: HealthCheckResponse; copy: CopyKeys }
             <span className={`text-5xl font-semibold tracking-tight tabular-nums ${tier.textClass}`}>
               {data.score}
             </span>
-            <span className="text-slate-500 text-sm">/100</span>
+            <span className="text-ink-subtle text-sm">/100</span>
           </div>
           <span className={`text-[10px] font-semibold tracking-[0.22em] uppercase ${tier.textClass} mt-0.5 block`}>
             {tier.label}
@@ -182,14 +182,14 @@ function ReadyBody({ data, copy }: { data: HealthCheckResponse; copy: CopyKeys }
           const pct = Math.round((value / max) * 100)
           return (
             <div key={key} className="flex items-center gap-3 text-xs">
-              <span className="w-28 text-slate-400">{label}</span>
-              <div className="flex-1 h-1.5 bg-charcoal-800 rounded-full overflow-hidden">
+              <span className="w-28 text-ink-muted">{label}</span>
+              <div className="flex-1 h-1.5 bg-surface-elevated rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-emerald-400/80"
+                  className="h-full bg-accent-emerald-bright/80"
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <span className="w-12 text-right text-slate-500 tabular-nums">
+              <span className="w-12 text-right text-ink-subtle tabular-nums">
                 {value.toFixed(1)}/{max}
               </span>
             </div>
@@ -214,17 +214,17 @@ function HealthLoading({ copy }: { copy: CopyKeys }) {
   return (
     <div data-testid="health-check-loading" className="flex flex-col items-center gap-5 py-6">
       <div className="relative w-16 h-16">
-        <div className="absolute inset-0 rounded-full border-2 border-emerald-500/10" />
+        <div className="absolute inset-0 rounded-full border-2 border-accent-emerald/10" />
         <div
-          className="absolute inset-0 rounded-full border-2 border-transparent border-t-emerald-400 animate-spin"
+          className="absolute inset-0 rounded-full border-2 border-transparent border-t-accent-emerald-bright animate-spin"
           style={{ animationDuration: '1.6s' }}
         />
         <div className="absolute inset-0 flex items-center justify-center">
-          <Heartbeat weight="duotone" size={28} className="text-emerald-300 animate-pulse" aria-hidden />
+          <Heartbeat weight="duotone" size={28} className="text-accent-emerald-bright animate-pulse" aria-hidden />
         </div>
       </div>
 
-      <p className="text-slate-200 text-sm font-medium text-center min-h-[1.25rem] transition-opacity duration-300">
+      <p className="text-ink text-sm font-medium text-center min-h-[1.25rem] transition-opacity duration-300">
         {stages[stage]}
       </p>
 
@@ -233,13 +233,13 @@ function HealthLoading({ copy }: { copy: CopyKeys }) {
           <div
             key={i}
             className={`h-1 w-10 rounded-full transition-colors duration-300 ${
-              i <= stage ? 'bg-emerald-400' : 'bg-charcoal-700'
+              i <= stage ? 'bg-accent-emerald-bright' : 'bg-surface-overlay'
             }`}
           />
         ))}
       </div>
 
-      <p className="text-slate-600 text-[10px] uppercase tracking-[0.18em]">
+      <p className="text-ink-subtle text-[10px] uppercase tracking-[0.18em]">
         {copy.anglesLoadingHint}
       </p>
     </div>
@@ -250,37 +250,37 @@ function LockedTeaser({ copy }: { copy: CopyKeys }) {
   return (
     <section className="glass rounded-2xl p-6 mb-6 relative overflow-hidden">
       <div className="flex items-center gap-2 mb-2">
-        <Heartbeat weight="duotone" size={14} className="text-emerald-300" aria-hidden />
+        <Heartbeat weight="duotone" size={14} className="text-accent-emerald-bright" aria-hidden />
         <div className={eyebrow}>{copy.healthEyebrow}</div>
       </div>
-      <h2 className="text-xl font-semibold tracking-tight text-slate-100 mb-5">
+      <h2 className="text-xl font-semibold tracking-tight text-ink mb-5">
         {copy.healthHeading}
       </h2>
 
       <div className="flex flex-col gap-2" aria-hidden style={{ filter: 'blur(8px)', pointerEvents: 'none' }}>
         {[1, 2, 3, 4, 5].map(i => (
           <div key={i} className="flex items-center gap-3 text-xs">
-            <div className="w-28 h-3 bg-charcoal-800/80 rounded" />
-            <div className="flex-1 h-1.5 bg-charcoal-800/60 rounded-full" />
-            <div className="w-12 h-3 bg-charcoal-800/60 rounded" />
+            <div className="w-28 h-3 bg-surface-elevated/80 rounded" />
+            <div className="flex-1 h-1.5 bg-surface-elevated/60 rounded-full" />
+            <div className="w-12 h-3 bg-surface-elevated/60 rounded" />
           </div>
         ))}
       </div>
 
       <div className="absolute inset-0 flex items-center justify-center px-6">
-        <div className="glass rounded-2xl p-6 text-center max-w-sm w-full ring-1 ring-emerald-500/30 shadow-[0_0_40px_-8px_rgba(16,185,129,0.35)]">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/30 mb-3">
-            <LockSimple weight="fill" size={20} className="text-emerald-300" aria-hidden />
+        <div className="glass rounded-2xl p-6 text-center max-w-sm w-full ring-1 ring-accent-emerald/30 shadow-[0_0_40px_-8px_rgba(16,185,129,0.35)]">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-accent-emerald/10 ring-1 ring-accent-emerald/30 mb-3">
+            <LockSimple weight="fill" size={20} className="text-accent-emerald-bright" aria-hidden />
           </div>
-          <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-emerald-300 mb-2">
+          <div className="text-[10px] font-semibold tracking-[0.22em] uppercase text-accent-emerald-bright mb-2">
             {copy.anglesLockedTitle}
           </div>
-          <p className="text-slate-300 text-sm leading-relaxed mb-5">
+          <p className="text-ink-muted text-sm leading-relaxed mb-5">
             {copy.healthLockedBody}
           </p>
           <Link
             href="/#pricing"
-            className="inline-block w-full text-[13px] font-semibold px-4 py-2.5 rounded-lg bg-white text-charcoal-900 hover:bg-slate-100 hover:shadow-none transition-all"
+            className="inline-block w-full text-[13px] font-semibold px-4 py-2.5 rounded-lg bg-white text-surface-raised hover:bg-slate-100 hover:shadow-none transition-all"
           >
             {copy.anglesUpgradeCta}
           </Link>
