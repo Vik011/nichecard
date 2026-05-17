@@ -205,7 +205,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           />
           <button
             type="submit"
-            className="rounded-lg border border-hairline-edge/60 bg-surface-raised/60 px-4 py-2 text-sm text-ink-muted hover:border-hairline-edge"
+            className="rounded-lg border border-hairline-edge/60 bg-surface-raised/60 px-4 py-2 text-sm text-ink hover:border-hairline-edge"
           >
             Search
           </button>
