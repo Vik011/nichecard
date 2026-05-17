@@ -11,22 +11,6 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
-        slate: {
-          950: "var(--color-bg-base)",
-        },
-        carbon: {
-          950: "var(--color-bg-base)",
-          900: "var(--color-bg-raised)",
-          800: "var(--color-bg-elevated)",
-          700: "var(--color-bg-overlay)",
-          600: "var(--color-bg-hover)",
-        },
-        charcoal: {
-          900: "var(--color-bg-raised)",
-          800: "var(--color-bg-elevated)",
-          700: "var(--color-bg-overlay)",
-          600: "var(--color-bg-hover)",
-        },
         canvas: "var(--color-bg-base)",
         surface: {
           raised: "var(--color-bg-raised)",

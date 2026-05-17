@@ -163,8 +163,6 @@ Three surfaces compose the system. Use exactly one per page:
 
 ## 4. Component Stylings
 
-> **Token API status:** The class names below (`bg-surface-raised`, `text-on-accent`, `border-hairline-edge`, etc.) are the **target** Tailwind token API. They become live when Task 6 of this plan wires the tokens into `tailwind.config.ts` + `globals.css`. Until that ships, live components reach the same colors via the existing groups (`glass`, `charcoal-*`, `slate-*`, `text-emerald-*`). After Task 6, the new tokens are the canonical way and existing components migrate opportunistically (no big-bang refactor).
-
 ### Buttons
 - **Primary (emerald):** `bg-accent-emerald text-on-accent`, hover to `bg-accent-emerald-bright`, focus ring `accent-emerald-bright` at 2px offset. Radius `rounded-md` (6px). Height 36/40/44 (sm/md/lg). Weight 500.
 - **Secondary (ghost-on-dark):** `bg-transparent border border-hairline-edge text-ink`, hover to `bg-surface-hover`.
