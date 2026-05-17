@@ -42,7 +42,7 @@ export function CookieBanner() {
         <p className="flex-1 text-sm text-ink-muted">
           We use cookies to improve your experience. Analytics cookies are used only with your
           consent.{' '}
-          <Link href="/privacy" className="text-ink hover:text-ink underline transition-colors">
+          <Link href="/privacy" className="text-ink underline transition-colors">
             Learn more in our Privacy Policy.
           </Link>
         </p>
