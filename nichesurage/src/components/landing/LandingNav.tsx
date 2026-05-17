@@ -90,7 +90,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
                 className={[
                   'text-[13px] font-semibold px-4 py-2 rounded-lg',
                   'text-ink hover:text-ink',
-                  'border border-hairline-edge hover:border-slate-500',
+                  'border border-hairline-edge',
                   'bg-surface-raised/40 hover:bg-surface-elevated/60 backdrop-blur-sm',
                   'transition-colors duration-200',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emerald/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
@@ -103,7 +103,7 @@ export function LandingNav({ copy, lang, onLangChange }: LandingNavProps) {
             <>
               <Link
                 href="/login"
-                className="text-[13px] text-ink-muted hover:text-ink transition-colors px-3 py-2 rounded-lg border border-hairline-edge hover:border-slate-500"
+                className="text-[13px] text-ink-muted hover:text-ink transition-colors px-3 py-2 rounded-lg border border-hairline-edge hover:bg-surface-hover"
               >
                 {copy.navLogin}
               </Link>

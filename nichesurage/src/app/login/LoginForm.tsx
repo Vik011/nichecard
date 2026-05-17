@@ -267,7 +267,7 @@ export function LoginForm() {
           type="button"
           onClick={handleGoogleSignIn}
           disabled={buttonDisabled}
-          className="w-full inline-flex items-center justify-center gap-3 px-5 py-3 rounded-xl bg-white text-slate-900 hover:bg-slate-100 transition-colors font-semibold text-[15px] shadow-[0_8px_24px_-8px_rgba(255,255,255,0.18)] disabled:opacity-60 disabled:cursor-wait"
+          className="w-full inline-flex items-center justify-center gap-3 px-5 py-3 rounded-xl bg-white text-surface-raised hover:bg-slate-100 transition-colors font-semibold text-[15px] shadow-[0_8px_24px_-8px_rgba(255,255,255,0.18)] disabled:opacity-60 disabled:cursor-wait"
         >
           <GoogleGlyph />
           {buttonLabel}
