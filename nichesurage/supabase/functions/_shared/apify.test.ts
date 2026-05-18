@@ -37,12 +37,10 @@ const TOKEN = 'apify_api_faketoken'
 
 const SAMPLE_INPUT: ApifyActorInput = {
   keywords: ['ai tools', 'chatgpt tips'],
-  sortBy: 'viewCount',
-  maxItemsPerQuery: 30,
+  sort: 'r',
+  maxItems: 200,
   uploadDate: 'week',
   duration: 'medium',
-  gl: 'US',
-  hl: 'en',
 }
 
 // --- startApifyRun ----------------------------------------------------------
