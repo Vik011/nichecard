@@ -92,12 +92,17 @@ Deno.serve(async (_req: Request) => {
         }
 
         // 4c. Terminal failure - flip the row to failed and move on.
+        //     A FAILED/TIMED-OUT/ABORTED run still incurred Apify compute
+        //     cost, so persist usageTotalUsd into cost_usd (it may be null -
+        //     write whatever it is) so discover-plan's monthly budget guard
+        //     does not undercount true spend.
         if (TERMINAL_FAILURE.has(runStatus.status)) {
           await supabase
             .from('apify_runs')
             .update({
               status: 'failed',
               apify_status: runStatus.status,
+              cost_usd: runStatus.usageTotalUsd,
               error_message: 'Apify run ended in state ' + runStatus.status,
             })
             .eq('id', run.id)
@@ -120,12 +125,14 @@ Deno.serve(async (_req: Request) => {
         }
 
         // Unknown Apify status - treat as a failure so the row doesn't loop
-        // forever in 'triggered'.
+        // forever in 'triggered'. Persist usageTotalUsd into cost_usd for the
+        // same budget-accuracy reason as the terminal-failure path above.
         await supabase
           .from('apify_runs')
           .update({
             status: 'failed',
             apify_status: runStatus.status,
+            cost_usd: runStatus.usageTotalUsd,
             error_message: 'Unrecognized Apify run state ' + runStatus.status,
           })
           .eq('id', run.id)
@@ -227,6 +234,11 @@ async function ingestRun(
   }
 
   // e. Hydrate channel stats from the YouTube API (helper batches by 50).
+  //    The candidate count hydrated here is bounded indirectly by
+  //    APIFY_MAX_ITEMS_PER_QUERY x QUERIES_PER_RUN (the planner's per-run
+  //    scrape ceiling), and this hydration draws on the SAME YouTube Data API
+  //    key budget as the scan and discover functions - keep that shared quota
+  //    in mind before raising either Apify limit.
   const candidateChannelIds = candidates.map(c => c.channelId)
   const stats = candidateChannelIds.length > 0
     ? await getChannelStats(youtubeKeys, candidateChannelIds)

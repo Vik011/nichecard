@@ -127,7 +127,7 @@ Deno.serve(async (_req: Request) => {
       sortBy: 'relevance',
       maxItemsPerQuery: APIFY_MAX_ITEMS_PER_QUERY,
       uploadDate: 'month',
-      gl: 'us',
+      gl: 'US',
       hl: 'en',
     }
     const { runId, datasetId } = await startApifyRun(

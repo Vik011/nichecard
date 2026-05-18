@@ -17,6 +17,10 @@
 -- IDEMPOTENCY: cron.unschedule first (wrapped in DO block to swallow
 -- not-found error), then cron.schedule to (re-)create. Same pattern as
 -- 0037 and 0043.
+--
+-- DEPLOY ORDER: the `discover-plan` and `discover-ingest` edge functions MUST
+-- be deployed before this migration is applied, otherwise the first cron tick
+-- invokes a function that returns 404.
 
 -- --- Job 1: apify-discover-plan -------------------------------------------
 
