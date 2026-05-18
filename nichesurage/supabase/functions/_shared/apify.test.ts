@@ -37,9 +37,7 @@ const TOKEN = 'apify_api_faketoken'
 
 const SAMPLE_INPUT: ApifyActorInput = {
   keywords: ['ai tools', 'chatgpt tips'],
-  sort: 'r',
   maxItems: 200,
-  uploadDate: 'w',
 }
 
 // --- startApifyRun ----------------------------------------------------------
@@ -235,24 +233,28 @@ Deno.test('getApifyRunStatus: malformed 2xx body ({}) throws a clear Error', asy
 
 const SAMPLE_ITEMS: ApifyVideoItem[] = [
   {
-    channelId: 'UC_abc',
-    channelName: 'AI Hustle Daily',
-    viewCount: 120000,
+    id: 'aaa',
     title: 'I made $10k with ChatGPT',
     url: 'https://www.youtube.com/watch?v=aaa',
-    subscriberCount: '45000',
-    isShortsEligible: false,
-    searchQuery: 'ai tools',
+    duration: 2250,
+    views: 120000,
+    channel: {
+      id: 'UC_abc',
+      name: 'AI Hustle Daily',
+      url: 'https://www.youtube.com/channel/UC_abc',
+    },
   },
   {
-    channelId: 'UC_def',
-    channelName: 'Claude Power Users',
-    viewCount: 88000,
+    id: 'bbb',
     title: 'Claude vs GPT-5 showdown',
     url: 'https://www.youtube.com/watch?v=bbb',
-    subscriberCount: '12000',
-    isShortsEligible: true,
-    searchQuery: 'chatgpt tips',
+    duration: 45,
+    views: 88000,
+    channel: {
+      id: 'UC_def',
+      name: 'Claude Power Users',
+      url: 'https://www.youtube.com/channel/UC_def',
+    },
   },
 ]
 
@@ -265,7 +267,7 @@ Deno.test('getApifyDatasetItems: GETs the datasets items endpoint with fields qu
   assertEquals(url.searchParams.get('format'), 'json')
   assertEquals(
     url.searchParams.get('fields'),
-    'channelId,channelName,viewCount,title,url,subscriberCount,isShortsEligible,searchQuery',
+    'id,title,url,duration,views,channel',
   )
   const headers = calls[0].init?.headers as Record<string, string>
   assertEquals(headers['Authorization'], `Bearer ${TOKEN}`)
@@ -273,6 +275,19 @@ Deno.test('getApifyDatasetItems: GETs the datasets items endpoint with fields qu
 
 Deno.test('getApifyDatasetItems: returns the parsed item array', async () => {
   const { fetch } = makeFetch({ body: SAMPLE_ITEMS })
+  const result = await getApifyDatasetItems(TOKEN, 'ds456', fetch)
+  assertEquals(result, SAMPLE_ITEMS)
+})
+
+Deno.test('getApifyDatasetItems: filters out noResults placeholder items', async () => {
+  // The actor emits `{ noResults: true }` (no channel) for keywords that
+  // yielded nothing. getApifyDatasetItems must drop those.
+  const body = [
+    SAMPLE_ITEMS[0],
+    { noResults: true },
+    SAMPLE_ITEMS[1],
+  ]
+  const { fetch } = makeFetch({ body })
   const result = await getApifyDatasetItems(TOKEN, 'ds456', fetch)
   assertEquals(result, SAMPLE_ITEMS)
 })

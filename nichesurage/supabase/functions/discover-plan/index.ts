@@ -126,9 +126,7 @@ Deno.serve(async (_req: Request) => {
     //    budget: queries x the per-query allowance.
     const input: ApifyActorInput = {
       keywords: plan.keywords,
-      sort: 'r',
       maxItems: QUERIES_PER_RUN * APIFY_MAX_ITEMS_PER_QUERY,
-      uploadDate: 'm',
     }
     const { runId, datasetId } = await startApifyRun(
       apifyToken,
