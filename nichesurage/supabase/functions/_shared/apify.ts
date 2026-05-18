@@ -32,6 +32,8 @@ export interface ApifyVideoItem {
   viewCount: number
   title: string
   url: string
+  // Actor's raw string form of the subscriber count; may be abbreviated
+  // (e.g. "45K"), unlike viewCount which the actor returns as a number.
   subscriberCount: string
   isShortsEligible: boolean
   searchQuery: string
@@ -80,7 +82,7 @@ async function apifyFetch(
 export async function startApifyRun(
   token: string,
   input: ApifyActorInput,
-  options: ApifyRunOptions,
+  options: ApifyRunOptions = {},
   fetchImpl: FetchLike = fetch,
 ): Promise<{ runId: string; datasetId: string }> {
   const url = new URL(`${API_BASE}/acts/${ACTOR_ID}/runs`)
@@ -104,9 +106,15 @@ export async function startApifyRun(
   )
 
   const data = await res.json() as {
-    data: { id: string; defaultDatasetId: string }
+    data?: { id?: unknown; defaultDatasetId?: unknown }
   }
-  return { runId: data.data.id, datasetId: data.data.defaultDatasetId }
+  const id = data?.data?.id
+  const defaultDatasetId = data?.data?.defaultDatasetId
+  if (typeof id !== 'string' || id === '' ||
+      typeof defaultDatasetId !== 'string' || defaultDatasetId === '') {
+    throw new Error('startApifyRun: malformed Apify response')
+  }
+  return { runId: id, datasetId: defaultDatasetId }
 }
 
 /**
@@ -125,25 +133,31 @@ export async function getApifyRunStatus(
 }> {
   const res = await apifyFetch(
     'getApifyRunStatus',
-    `${API_BASE}/actor-runs/${runId}`,
+    `${API_BASE}/actor-runs/${encodeURIComponent(runId)}`,
     token,
     { method: 'GET' },
     fetchImpl,
   )
 
   const data = await res.json() as {
-    data: {
-      status: string
+    data?: {
+      status?: unknown
       usageTotalUsd?: number | null
       finishedAt?: string | null
-      defaultDatasetId: string
+      defaultDatasetId?: unknown
     }
   }
+  const status = data?.data?.status
+  const defaultDatasetId = data?.data?.defaultDatasetId
+  if (typeof status !== 'string' || status === '' ||
+      typeof defaultDatasetId !== 'string' || defaultDatasetId === '') {
+    throw new Error('getApifyRunStatus: malformed Apify response')
+  }
   return {
-    status: data.data.status,
-    usageTotalUsd: data.data.usageTotalUsd ?? null,
-    finishedAt: data.data.finishedAt ?? null,
-    datasetId: data.data.defaultDatasetId,
+    status,
+    usageTotalUsd: data.data?.usageTotalUsd ?? null,
+    finishedAt: data.data?.finishedAt ?? null,
+    datasetId: defaultDatasetId,
   }
 }
 
@@ -156,7 +170,7 @@ export async function getApifyDatasetItems(
   datasetId: string,
   fetchImpl: FetchLike = fetch,
 ): Promise<ApifyVideoItem[]> {
-  const url = new URL(`${API_BASE}/datasets/${datasetId}/items`)
+  const url = new URL(`${API_BASE}/datasets/${encodeURIComponent(datasetId)}/items`)
   url.searchParams.set('format', 'json')
   url.searchParams.set(
     'fields',
@@ -171,5 +185,9 @@ export async function getApifyDatasetItems(
     fetchImpl,
   )
 
-  return await res.json() as ApifyVideoItem[]
+  const data = await res.json()
+  if (!Array.isArray(data)) {
+    throw new Error('getApifyDatasetItems: expected array response')
+  }
+  return data as ApifyVideoItem[]
 }

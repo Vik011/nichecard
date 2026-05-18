@@ -117,6 +117,40 @@ Deno.test('startApifyRun: non-2xx response throws Error with status', async () =
   assertStringIncludes(err.message, '401')
 })
 
+Deno.test('startApifyRun: malformed 2xx body ({data: null}) throws a clear Error', async () => {
+  const { fetch } = makeFetch({ body: { data: null } })
+  const err = await assertRejects(
+    () => startApifyRun(TOKEN, SAMPLE_INPUT, {}, fetch),
+    Error,
+  )
+  assertStringIncludes(err.message, 'startApifyRun: malformed Apify response')
+})
+
+Deno.test('startApifyRun: malformed 2xx body ({}) throws a clear Error', async () => {
+  const { fetch } = makeFetch({ body: {} })
+  const err = await assertRejects(
+    () => startApifyRun(TOKEN, SAMPLE_INPUT, {}, fetch),
+    Error,
+  )
+  assertStringIncludes(err.message, 'startApifyRun: malformed Apify response')
+})
+
+Deno.test('startApifyRun: non-2xx error body over 500 chars is truncated in the message', async () => {
+  const { fetch } = makeFetch({
+    ok: false,
+    status: 502,
+    body: 'x'.repeat(2000),
+  })
+  const err = await assertRejects(
+    () => startApifyRun(TOKEN, SAMPLE_INPUT, {}, fetch),
+    Error,
+  )
+  // body is JSON-stringified then sliced to 500 chars; the prefix
+  // 'startApifyRun failed 502: ' plus the slice bounds total length.
+  assertEquals(err.message.length < 600, true)
+  assertEquals(err.message.includes('x'.repeat(600)), false)
+})
+
 // --- getApifyRunStatus ------------------------------------------------------
 
 Deno.test('getApifyRunStatus: GETs the actor-runs endpoint with the runId', async () => {
@@ -133,7 +167,7 @@ Deno.test('getApifyRunStatus: GETs the actor-runs endpoint with the runId', asyn
   await getApifyRunStatus(TOKEN, 'run123', fetch)
   assertEquals(calls.length, 1)
   assertEquals(calls[0].url, 'https://api.apify.com/v2/actor-runs/run123')
-  assertEquals(calls[0].init?.method ?? 'GET', 'GET')
+  assertEquals(calls[0].init?.method, 'GET')
   const headers = calls[0].init?.headers as Record<string, string>
   assertEquals(headers['Authorization'], `Bearer ${TOKEN}`)
 })
@@ -180,6 +214,24 @@ Deno.test('getApifyRunStatus: non-2xx response throws Error with status', async 
     Error,
   )
   assertStringIncludes(err.message, '404')
+})
+
+Deno.test('getApifyRunStatus: malformed 2xx body ({data: null}) throws a clear Error', async () => {
+  const { fetch } = makeFetch({ body: { data: null } })
+  const err = await assertRejects(
+    () => getApifyRunStatus(TOKEN, 'run123', fetch),
+    Error,
+  )
+  assertStringIncludes(err.message, 'getApifyRunStatus: malformed Apify response')
+})
+
+Deno.test('getApifyRunStatus: malformed 2xx body ({}) throws a clear Error', async () => {
+  const { fetch } = makeFetch({ body: {} })
+  const err = await assertRejects(
+    () => getApifyRunStatus(TOKEN, 'run123', fetch),
+    Error,
+  )
+  assertStringIncludes(err.message, 'getApifyRunStatus: malformed Apify response')
 })
 
 // --- getApifyDatasetItems ---------------------------------------------------
@@ -239,4 +291,19 @@ Deno.test('getApifyDatasetItems: non-2xx response throws Error with status', asy
     Error,
   )
   assertStringIncludes(err.message, '500')
+})
+
+Deno.test('getApifyDatasetItems: returns [] for an empty dataset', async () => {
+  const { fetch } = makeFetch({ body: [] })
+  const result = await getApifyDatasetItems(TOKEN, 'ds456', fetch)
+  assertEquals(result, [])
+})
+
+Deno.test('getApifyDatasetItems: non-array 2xx body throws a clear Error', async () => {
+  const { fetch } = makeFetch({ body: { data: null } })
+  const err = await assertRejects(
+    () => getApifyDatasetItems(TOKEN, 'ds456', fetch),
+    Error,
+  )
+  assertStringIncludes(err.message, 'getApifyDatasetItems: expected array response')
 })
