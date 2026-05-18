@@ -39,8 +39,7 @@ const SAMPLE_INPUT: ApifyActorInput = {
   keywords: ['ai tools', 'chatgpt tips'],
   sort: 'r',
   maxItems: 200,
-  uploadDate: 'week',
-  duration: 'medium',
+  uploadDate: 'w',
 }
 
 // --- startApifyRun ----------------------------------------------------------
