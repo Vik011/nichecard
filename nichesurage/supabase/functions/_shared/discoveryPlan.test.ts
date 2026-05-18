@@ -268,6 +268,69 @@ Deno.test('buildQueryPlan: seedIds correspond to chosen keywords', () => {
   assertEquals(plan.seedIds, ['a-0', 'b-1'])
 })
 
+Deno.test('buildQueryPlan: overflow redistributes across multiple rounds', () => {
+  // crypto has the dominant deficit but only 2 seeds, so it caps and its
+  // overflow flows to finance, which is ALSO near its 2-seed cap, forcing the
+  // overflow to redistribute a second time to ai_tools (which has headroom).
+  // queriesPerRun 10, total available seeds 2 + 2 + 10 = 14 => fill 10.
+  const plan = buildQueryPlan(
+    [
+      { category: 'crypto', deficit: 900 },
+      { category: 'finance', deficit: 80 },
+      { category: 'ai_tools', deficit: 20 },
+    ],
+    {
+      crypto: seeds('c1', 'c2'),
+      finance: seeds('f1', 'f2'),
+      ai_tools: seeds('a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10'),
+    },
+    10,
+  )
+  // crypto capped at 2, finance capped at 2, ai_tools absorbs the remaining 6.
+  assertEquals(plan.categoryTargets.crypto, 2)
+  assertEquals(plan.categoryTargets.finance, 2)
+  assertEquals(plan.categoryTargets.ai_tools, 6)
+  const total = Object.values(plan.categoryTargets).reduce((a, b) => a + b, 0)
+  // Total keywords equal min(queriesPerRun, totalAvailableSeeds) = min(10, 14).
+  assertEquals(total, 10)
+  assertEquals(plan.keywords.length, 10)
+  assertEquals(plan.seedIds.length, 10)
+})
+
+Deno.test('buildQueryPlan: queriesPerRun of 0 returns empty output', () => {
+  const plan = buildQueryPlan(
+    [{ category: 'crypto', deficit: 400 }],
+    { crypto: seeds('c1', 'c2', 'c3') },
+    0,
+  )
+  assertEquals(plan.keywords, [])
+  assertEquals(plan.categoryTargets, {})
+  assertEquals(plan.seedIds, [])
+})
+
+Deno.test('buildQueryPlan: all-zero-deficit input distributes slots evenly', () => {
+  // Degenerate input: every deficit is 0 (totalDeficit === 0 branch). The code
+  // falls back to equal weights, so 8 slots split evenly across 2 categories
+  // with abundant seeds => 4 each.
+  const plan = buildQueryPlan(
+    [
+      { category: 'crypto', deficit: 0 },
+      { category: 'finance', deficit: 0 },
+    ],
+    {
+      crypto: seeds('c1', 'c2', 'c3', 'c4', 'c5'),
+      finance: seeds('f1', 'f2', 'f3', 'f4', 'f5'),
+    },
+    8,
+  )
+  assertEquals(plan.categoryTargets.crypto, 4)
+  assertEquals(plan.categoryTargets.finance, 4)
+  const total = Object.values(plan.categoryTargets).reduce((a, b) => a + b, 0)
+  assertEquals(total, 8)
+  assertEquals(plan.keywords.length, 8)
+  assertEquals(plan.seedIds.length, 8)
+})
+
 // ---- withinMonthlyBudget ----------------------------------------------------
 
 Deno.test('withinMonthlyBudget: comfortably under budget returns true', () => {

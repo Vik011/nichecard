@@ -136,7 +136,10 @@ Deno.serve(async (_req: Request) => {
       { maxTotalChargeUsd: APIFY_MAX_CHARGE_USD },
     )
 
-    // 10. Record the run in apify_runs.
+    // 10. Record the run in apify_runs. The Apify run is already live at this
+    //     point, so if the insert fails we have an orphaned (paid, untracked)
+    //     run. We cannot un-trigger it, so we log its identifiers loudly at
+    //     error level for manual reconciliation before re-throwing.
     const { error: insertErr } = await supabase.from('apify_runs').insert({
       apify_run_id: runId,
       dataset_id: datasetId,
@@ -144,18 +147,34 @@ Deno.serve(async (_req: Request) => {
       query_plan: {
         keywords: plan.keywords,
         categoryTargets: plan.categoryTargets,
+        seedIds: plan.seedIds,
         queriesPerRun: QUERIES_PER_RUN,
         targetPerCategory: TARGET_PER_CATEGORY,
       },
     })
-    if (insertErr) throw insertErr
+    if (insertErr) {
+      console.error(
+        'discover-plan: ORPHANED Apify run - triggered but not recorded. runId=' +
+          runId + ' datasetId=' + datasetId +
+          '. Manually reconcile apify_runs.',
+      )
+      throw insertErr
+    }
 
     // 11. Rotate the used seeds (same end-of-run update as discover/index.ts).
+    //     The Apify run is already triggered and recorded, so a failure here
+    //     must NOT fail the request; log it so a broken LRU rotation (same
+    //     seeds re-picked) is visible.
     if (plan.seedIds.length > 0) {
-      await supabase
+      const { error: rotationErr } = await supabase
         .from('seed_keywords')
         .update({ last_used_at: new Date().toISOString() })
         .in('id', plan.seedIds)
+      if (rotationErr) {
+        console.error(
+          'discover-plan: seed rotation update failed: ' + rotationErr.message,
+        )
+      }
     }
 
     // 12. Done.
