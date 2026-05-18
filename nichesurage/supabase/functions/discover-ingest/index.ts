@@ -22,15 +22,23 @@ import { classifyFaceless } from '../_shared/faceless.ts'
 import { DISCOVERED_CHANNEL_LANGUAGE } from '../_shared/constants.ts'
 import { dedupCandidates, inferContentType } from '../_shared/discoveryIngest.ts'
 
-// Discover gates - copied verbatim from discover/index.ts (lines ~32-69) so
-// Apify-discovered channels clear the exact same promotion bar as seed-search
-// discovered channels. Keep these in sync if discover/index.ts changes.
+// Discover gates - mostly copied verbatim from discover/index.ts (lines
+// ~32-69) so Apify-discovered channels clear the same promotion bar as
+// seed-search discovered channels.
+//
+// EXCEPTION - MAX_AGE: the proof run showed Apify keyword search returns a
+// large share of established channels, and 22 of 68 candidates were rejected
+// as `tooOld` despite already being inside the small-channel subscriber band
+// (5K-400K). A small channel with a recent outlier video is exactly the
+// target regardless of channel age, so the Apify path uses a relaxed age
+// ceiling. MAX_SUBS is deliberately NOT relaxed - rejecting large channels is
+// the gate working as intended.
 const MIN_SUBS_SHORTS = 5_000
 const MIN_SUBS_LONGFORM = 2_000
 const MAX_SUBS_SHORTS = 400_000
 const MAX_SUBS_LONGFORM = 400_000
-const MAX_AGE_MONTHS_SHORTS = 12
-const MAX_AGE_MONTHS_LONGFORM = 24
+const MAX_AGE_MONTHS_SHORTS = 36
+const MAX_AGE_MONTHS_LONGFORM = 48
 const DISCOVER_MIN_VIEWS_SHORTS = 15_000
 const DISCOVER_MIN_VIEWS_LONGFORM = 3_000
 const DISCOVER_MIN_VPS_SHORTS = 200
