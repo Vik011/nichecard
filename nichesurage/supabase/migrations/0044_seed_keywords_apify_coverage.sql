@@ -5,17 +5,17 @@
 -- category the pipeline generates zero queries for that bucket and channels
 -- in that niche are never discovered.
 --
--- Pre-migration distribution (EN, is_active=true):
---   education_howto   13
---   finance           13
---   ai_tools           9
---   true_crime         6
---   gaming_streamers   4
---   self_improvement   1
+-- Pre-migration distribution (EN, is_active=true), including 0041 contributions:
+--   education_howto   13  (from 0038)
+--   finance           21  (13 from 0038 + 8 shorts from 0041)
+--   ai_tools           9  (from 0038)
+--   true_crime         6  (from 0038)
+--   gaming_streamers   4  (from 0038)
+--   self_improvement   6  (1 from 0038 + 5 shorts from 0041)
+--   fitness_health    12  (12 shorts from 0041; no prior longform)
+--   luxury_lifestyle  10  (10 shorts from 0041; no prior longform)
 --   crypto             0  (EMPTY)
 --   tech_reviews       0  (EMPTY)
---   fitness_health     0  (EMPTY - longform; 0041 added shorts-only)
---   luxury_lifestyle   0  (EMPTY - longform; 0041 added shorts-only)
 --   celebrity_drama    0  (EMPTY)
 --   geopolitics_news   0  (EMPTY)
 --
@@ -58,7 +58,7 @@ INSERT INTO seed_keywords (term, language, content_type, priority, category) VAL
   ('gaming PC build guide',                   'en', 'both', 75, 'tech_reviews'),
   ('unboxing new gadgets',                    'en', 'both', 75, 'tech_reviews'),
   ('smart home setup tour',                   'en', 'both', 75, 'tech_reviews'),
-  ('I bought the cheapest',                   'en', 'both', 75, 'tech_reviews'),
+  ('I bought the cheapest laptop on Amazon',   'en', 'both', 75, 'tech_reviews'),
   ('tech that actually changed my life',      'en', 'both', 75, 'tech_reviews'),
   ('headphones review',                       'en', 'both', 75, 'tech_reviews'),
   ('monitor review ultrawide',                'en', 'both', 75, 'tech_reviews'),
@@ -67,7 +67,7 @@ INSERT INTO seed_keywords (term, language, content_type, priority, category) VAL
 
   -- fitness_health (13 new longform/both) ----------------------------------
   ('body recomposition explained',            'en', 'both', 75, 'fitness_health'),
-  ('I worked out every day for',              'en', 'both', 75, 'fitness_health'),
+  ('I worked out every day for 30 days',      'en', 'both', 75, 'fitness_health'),
   ('full body workout at home',               'en', 'both', 75, 'fitness_health'),
   ('how to build muscle fast',                'en', 'both', 75, 'fitness_health'),
   ('weight loss transformation',              'en', 'both', 75, 'fitness_health'),
@@ -81,7 +81,7 @@ INSERT INTO seed_keywords (term, language, content_type, priority, category) VAL
   ('cold plunge benefits',                    'en', 'both', 75, 'fitness_health'),
 
   -- luxury_lifestyle (13 new longform/both) --------------------------------
-  ('spending a week in',                      'en', 'both', 75, 'luxury_lifestyle'),
+  ('spending a week in Dubai',                'en', 'both', 75, 'luxury_lifestyle'),
   ('I stayed at a 5 star hotel',              'en', 'both', 75, 'luxury_lifestyle'),
   ('luxury car review',                       'en', 'both', 75, 'luxury_lifestyle'),
   ('private jet experience',                  'en', 'both', 75, 'luxury_lifestyle'),
@@ -162,17 +162,17 @@ INSERT INTO seed_keywords (term, language, content_type, priority, category) VAL
 ON CONFLICT DO NOTHING;
 
 -- Verify after applying:
---   SELECT category, COUNT(*) FROM seed_keywords WHERE is_active=true AND language='en' GROUP BY category ORDER BY 2 DESC;
---   Expected approximate totals (existing + new):
+--   SELECT category, COUNT(*) FROM seed_keywords WHERE is_active AND language='en' GROUP BY category ORDER BY 2 DESC;
+--   Expected totals (pre-0044 baseline + this migration):
+--     finance           21  (21 pre-existing; unchanged by this migration)
+--     fitness_health    25  (12 from 0041 + 13 new both)
+--     luxury_lifestyle  23  (10 from 0041 + 13 new both)
 --     education_howto   13  (unchanged)
---     finance           13  (unchanged)
---     ai_tools           9  (unchanged)
---     true_crime        12  (6 existing + 6 new)
---     gaming_streamers  12  (4 existing + 8 new)
---     self_improvement  18  (1 existing + 5 from 0041 + 12 new)
 --     crypto            14  (14 new)
 --     tech_reviews      14  (14 new)
---     fitness_health    25  (12 from 0041 shorts + 13 new both)
---     luxury_lifestyle  23  (10 from 0041 shorts + 13 new both)
 --     celebrity_drama   14  (14 new)
 --     geopolitics_news  14  (14 new)
+--     true_crime        12  (6 from 0038 + 6 new)
+--     gaming_streamers  12  (4 from 0038 + 8 new)
+--     self_improvement  18  (6 pre-existing from 0038+0041 + 12 new)
+--     ai_tools           9  (unchanged)
