@@ -33,7 +33,8 @@ Deno.serve(async (_req: Request) => {
     const TARGET_PER_CATEGORY = parseInt(Deno.env.get('TARGET_PER_CATEGORY') ?? '400', 10)
     const APIFY_MAX_CHARGE_USD = parseFloat(Deno.env.get('APIFY_MAX_CHARGE_USD') ?? '0.50')
     const APIFY_MONTHLY_BUDGET_USD = parseFloat(Deno.env.get('APIFY_MONTHLY_BUDGET_USD') ?? '25')
-    const APIFY_MAX_ITEMS_PER_QUERY = parseInt(Deno.env.get('APIFY_MAX_ITEMS_PER_QUERY') ?? '25', 10)
+    const APIFY_MAX_RESULTS = parseInt(Deno.env.get('APIFY_MAX_RESULTS') ?? '5', 10)
+    const APIFY_MAX_RESULTS_SHORTS = parseInt(Deno.env.get('APIFY_MAX_RESULTS_SHORTS') ?? '5', 10)
 
     // 2. Service-role client (bypasses RLS, same import as discover/index.ts).
     const supabase = createClient(supabaseUrl, serviceRoleKey)
@@ -121,18 +122,18 @@ Deno.serve(async (_req: Request) => {
       )
     }
 
-    // 9. Trigger ONE Apify scraper run with the worst-case spend cap.
-    //    The actor has no per-query cap, so maxItems is the total result
-    //    budget: queries x the per-query allowance.
+    // 9. Trigger ONE Apify scraper run. The official actor caps results
+    //    per-query via maxResults / maxResultsShorts; streams are disabled.
+    //    No run options are sent - the proven-working manual run used none.
+    //    APIFY_MAX_CHARGE_USD still feeds the monthly-budget guard above.
     const input: ApifyActorInput = {
-      keywords: plan.keywords,
-      maxItems: QUERIES_PER_RUN * APIFY_MAX_ITEMS_PER_QUERY,
+      searchQueries: plan.keywords,
+      maxResults: APIFY_MAX_RESULTS,
+      maxResultsShorts: APIFY_MAX_RESULTS_SHORTS,
+      maxResultStreams: 0,
+      sortingOrder: 'relevance',
     }
-    const { runId, datasetId } = await startApifyRun(
-      apifyToken,
-      input,
-      { maxTotalChargeUsd: APIFY_MAX_CHARGE_USD },
-    )
+    const { runId, datasetId } = await startApifyRun(apifyToken, input, {})
 
     // 10. Record the run in apify_runs. The Apify run is already live at this
     //     point, so if the insert fails we have an orphaned (paid, untracked)

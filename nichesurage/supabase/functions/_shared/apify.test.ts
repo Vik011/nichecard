@@ -36,8 +36,11 @@ function makeFetch(response: {
 const TOKEN = 'apify_api_faketoken'
 
 const SAMPLE_INPUT: ApifyActorInput = {
-  keywords: ['ai tools', 'chatgpt tips'],
-  maxItems: 200,
+  searchQueries: ['ai tools', 'chatgpt tips'],
+  maxResults: 5,
+  maxResultsShorts: 5,
+  maxResultStreams: 0,
+  sortingOrder: 'relevance',
 }
 
 // --- startApifyRun ----------------------------------------------------------
@@ -49,7 +52,7 @@ Deno.test('startApifyRun: POSTs to the youtube-scraper acts endpoint', async () 
   await startApifyRun(TOKEN, SAMPLE_INPUT, {}, fetch)
   assertEquals(calls.length, 1)
   const url = new URL(calls[0].url)
-  assertEquals(url.origin + url.pathname, 'https://api.apify.com/v2/acts/apidojo~youtube-scraper/runs')
+  assertEquals(url.origin + url.pathname, 'https://api.apify.com/v2/acts/streamers~youtube-scraper/runs')
   assertEquals(calls[0].init?.method, 'POST')
 })
 
@@ -236,25 +239,25 @@ const SAMPLE_ITEMS: ApifyVideoItem[] = [
     id: 'aaa',
     title: 'I made $10k with ChatGPT',
     url: 'https://www.youtube.com/watch?v=aaa',
-    duration: 2250,
-    views: 120000,
-    channel: {
-      id: 'UC_abc',
-      name: 'AI Hustle Daily',
-      url: 'https://www.youtube.com/channel/UC_abc',
-    },
+    duration: '00:37:30',
+    viewCount: 120000,
+    channelId: 'UC_abc',
+    channelName: 'AI Hustle Daily',
+    numberOfSubscribers: 250000,
+    type: 'video',
+    input: 'ai tools',
   },
   {
     id: 'bbb',
     title: 'Claude vs GPT-5 showdown',
     url: 'https://www.youtube.com/watch?v=bbb',
-    duration: 45,
-    views: 88000,
-    channel: {
-      id: 'UC_def',
-      name: 'Claude Power Users',
-      url: 'https://www.youtube.com/channel/UC_def',
-    },
+    duration: '00:45',
+    viewCount: 88000,
+    channelId: 'UC_def',
+    channelName: 'Claude Power Users',
+    numberOfSubscribers: 90000,
+    type: 'video',
+    input: 'chatgpt tips',
   },
 ]
 
@@ -267,7 +270,7 @@ Deno.test('getApifyDatasetItems: GETs the datasets items endpoint with fields qu
   assertEquals(url.searchParams.get('format'), 'json')
   assertEquals(
     url.searchParams.get('fields'),
-    'id,title,url,duration,views,channel',
+    'id,title,url,duration,viewCount,channelId,channelName,numberOfSubscribers,type,input',
   )
   const headers = calls[0].init?.headers as Record<string, string>
   assertEquals(headers['Authorization'], `Bearer ${TOKEN}`)
@@ -279,17 +282,29 @@ Deno.test('getApifyDatasetItems: returns the parsed item array', async () => {
   assertEquals(result, SAMPLE_ITEMS)
 })
 
-Deno.test('getApifyDatasetItems: filters out noResults placeholder items', async () => {
-  // The actor emits `{ noResults: true }` (no channel) for keywords that
-  // yielded nothing. getApifyDatasetItems must drop those.
+Deno.test('getApifyDatasetItems: filters out NO_VIDEOS placeholder items', async () => {
+  // The official actor emits `{ url, error: 'NO_VIDEOS', input }` (no
+  // channelId, type not 'video') for queries that yielded nothing.
+  // getApifyDatasetItems must drop those.
   const body = [
     SAMPLE_ITEMS[0],
-    { noResults: true },
+    { url: 'https://www.youtube.com/results?search_query=x', error: 'NO_VIDEOS', input: 'x' },
     SAMPLE_ITEMS[1],
   ]
   const { fetch } = makeFetch({ body })
   const result = await getApifyDatasetItems(TOKEN, 'ds456', fetch)
   assertEquals(result, SAMPLE_ITEMS)
+})
+
+Deno.test('getApifyDatasetItems: drops a non-video item even when it has a channelId', async () => {
+  // type must be exactly 'video'; a channelId alone is not enough.
+  const body = [
+    SAMPLE_ITEMS[0],
+    { ...SAMPLE_ITEMS[1], type: 'channel' },
+  ]
+  const { fetch } = makeFetch({ body })
+  const result = await getApifyDatasetItems(TOKEN, 'ds456', fetch)
+  assertEquals(result, [SAMPLE_ITEMS[0]])
 })
 
 Deno.test('getApifyDatasetItems: non-2xx response throws Error with status', async () => {
