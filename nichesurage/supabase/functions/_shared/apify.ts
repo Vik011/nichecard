@@ -14,15 +14,16 @@ export type { FetchLike }
 const ACTOR_ID = 'apidojo~youtube-scraper'
 const API_BASE = 'https://api.apify.com/v2'
 
-// Actor input for the apidojo/youtube-scraper search mode.
+// Actor input for the apidojo/youtube-scraper search mode. Field names match
+// the actor's live input schema: keyword search via `keywords`, `sort` ('r' is
+// relevance, the actor default), `maxItems` caps total results for the run.
+// `uploadDate`/`duration` accept 'all' plus the documented filter values.
 export interface ApifyActorInput {
   keywords: string[]
-  sortBy: 'relevance' | 'date' | 'viewCount'
-  maxItemsPerQuery: number
-  uploadDate?: 'hour' | 'today' | 'week' | 'month' | 'year'
-  duration?: 'short' | 'medium' | 'long'
-  gl?: string
-  hl?: string
+  sort?: string
+  maxItems?: number
+  uploadDate?: string
+  duration?: string
 }
 
 // One search-result row returned in the run's default dataset.

@@ -122,13 +122,13 @@ Deno.serve(async (_req: Request) => {
     }
 
     // 9. Trigger ONE Apify scraper run with the worst-case spend cap.
+    //    The actor has no per-query cap, so maxItems is the total result
+    //    budget: queries x the per-query allowance.
     const input: ApifyActorInput = {
       keywords: plan.keywords,
-      sortBy: 'relevance',
-      maxItemsPerQuery: APIFY_MAX_ITEMS_PER_QUERY,
+      sort: 'r',
+      maxItems: QUERIES_PER_RUN * APIFY_MAX_ITEMS_PER_QUERY,
       uploadDate: 'month',
-      gl: 'US',
-      hl: 'en',
     }
     const { runId, datasetId } = await startApifyRun(
       apifyToken,
