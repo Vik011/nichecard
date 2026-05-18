@@ -164,6 +164,10 @@ Deno.serve(async (_req: Request) => {
  * candidates, gate them through the discover thresholds, niche-label and insert
  * the survivors into channels_watchlist, then mark the apify_runs row ingested.
  *
+ * Re-entrancy: a mid-loop throw leaves the run status='triggered', and the next
+ * cron tick safely re-ingests because already-inserted channels are deduped via
+ * the existing-ids Set and a 23505 unique violation covers any remaining race.
+ *
  * @returns the number of channels actually inserted.
  */
 async function ingestRun(
@@ -179,6 +183,12 @@ async function ingestRun(
   const items: ApifyVideoItem[] = await getApifyDatasetItems(apifyToken, run.dataset_id)
 
   // b. Load existing watchlist channel ids so we never re-insert a channel.
+  //    This select intentionally does NOT filter evicted_at IS NULL: an evicted
+  //    channel still has a row (the youtube_channel_id UNIQUE constraint
+  //    persists), so including evicted ids in the Set avoids attempting a
+  //    doomed INSERT that would just hit a swallowed 23505. Resurrecting an
+  //    evicted channel would require UPDATE logic and is out of scope here -
+  //    this discovery path is insert-only by design.
   const { data: existing, error: existingErr } = await supabase
     .from('channels_watchlist')
     .select('youtube_channel_id')
@@ -187,12 +197,22 @@ async function ingestRun(
     (existing ?? []).map((c: { youtube_channel_id: string }) => c.youtube_channel_id),
   )
 
+  // True number of distinct channels the Apify dataset contained, computed
+  // from the raw items BEFORE dedup and existing-id exclusion. Reported as
+  // channels_found so an operator sees the real scrape coverage, not the
+  // post-exclusion remainder.
+  const distinctChannelsScraped = new Set(
+    items.map(it => it.channelId).filter(id => !!id),
+  ).size
+
   // c. Dedup the flat item list into one candidate per new channel.
   const candidates = dedupCandidates(items, existingSet)
 
-  // d. Build a term -> category map. A channel inherits the category of the
-  //    seed keyword whose search query found it (same as discover/index.ts
-  //    inheriting seed.category).
+  // d. Build a term -> category map. Category is deliberately inherited from
+  //    the originating seed keyword (the search query that found the channel),
+  //    consistent with discover/index.ts using seed.category. It is NOT
+  //    classified per-channel via an LLM: seed inheritance is free,
+  //    deterministic, and needs no channel descriptions.
   const terms = [...new Set(candidates.map(c => c.searchQuery))]
   const termToCategory = new Map<string, string>()
   if (terms.length > 0) {
@@ -258,7 +278,9 @@ async function ingestRun(
 
     const { error: insertErr } = await supabase.from('channels_watchlist').insert({
       youtube_channel_id: candidate.channelId,
-      channel_name: candidate.channelName,
+      // Authoritative channel name from the YouTube API stats, not the
+      // Apify-derived candidate.channelName.
+      channel_name: channel.channelName,
       niche_label: nicheLabel,
       content_type: contentType,
       language: DISCOVERED_CHANNEL_LANGUAGE,
@@ -284,7 +306,7 @@ async function ingestRun(
       status: 'ingested',
       apify_status: 'SUCCEEDED',
       cost_usd: usageTotalUsd,
-      channels_found: candidates.length,
+      channels_found: distinctChannelsScraped,
       channels_added: channelsAdded,
       ingested_at: new Date().toISOString(),
     })

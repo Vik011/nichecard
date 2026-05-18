@@ -48,6 +48,29 @@ Deno.test('dedupCandidates: best-hit is max viewCount; title + searchQuery from 
   assertEquals(cand.searchQuery, 'q-top')
 })
 
+Deno.test('dedupCandidates: viewCount tie - first-seen item wins (strict > rule)', () => {
+  const items = [
+    item({ channelId: 'C1', viewCount: 500, title: 'first', searchQuery: 'q-first' }),
+    item({ channelId: 'C1', viewCount: 500, title: 'second', searchQuery: 'q-second' }),
+  ]
+  const [cand] = dedupCandidates(items, new Set())
+  assertEquals(cand.bestHitViews, 500)
+  assertEquals(cand.bestHitTitle, 'first')
+  assertEquals(cand.searchQuery, 'q-first')
+})
+
+Deno.test('dedupCandidates: existingChannelIds excludes a channel with multiple items', () => {
+  const items = [
+    item({ channelId: 'C1', viewCount: 100, title: 'c1-a' }),
+    item({ channelId: 'C1', viewCount: 200, title: 'c1-b' }),
+    item({ channelId: 'C1', viewCount: 300, title: 'c1-c' }),
+    item({ channelId: 'C2', viewCount: 50, title: 'c2-a' }),
+  ]
+  const result = dedupCandidates(items, new Set(['C1']))
+  assertEquals(result.length, 1)
+  assertEquals(result[0].channelId, 'C2')
+})
+
 Deno.test('dedupCandidates: channelName prefers the best-hit item', () => {
   const items = [
     item({ channelId: 'C1', viewCount: 10, channelName: 'Old Name' }),
