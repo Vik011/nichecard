@@ -250,13 +250,29 @@ async function ingestRun(
   const statsByChannel = new Map(stats.map(s => [s.channelId, s]))
 
   // f. Gate and insert each candidate. Gate sequencing + comparison style
-  //    mirror discover/index.ts.
+  //    mirror discover/index.ts. Every gate increments a rejection counter so
+  //    the end-of-ingest summary log shows exactly where candidates are lost -
+  //    discovery yield tuning needs this breakdown, not a silent drop.
+  const rejected = {
+    noStats: 0,
+    subsTooLow: 0,
+    subsTooHigh: 0,
+    tooOld: 0,
+    tooManyVideos: 0,
+    viewsTooLow: 0,
+    vpsTooLow: 0,
+    face: 0,
+  }
+  let duplicates = 0
   let channelsAdded = 0
   for (const candidate of candidates) {
     const channel = statsByChannel.get(candidate.channelId)
     // No stats means the channel id was not resolvable (deleted/private) -
     // skip it, same as discover/index.ts only iterating resolved stats.
-    if (!channel) continue
+    if (!channel) {
+      rejected.noStats++
+      continue
+    }
 
     const contentType = inferContentType(candidate.shortsHitRatio)
     const minSubs = contentType === 'shorts' ? MIN_SUBS_SHORTS : MIN_SUBS_LONGFORM
@@ -268,16 +284,34 @@ async function ingestRun(
     const maxAgeMs = maxAgeMonths * 30 * 24 * 60 * 60 * 1000
     const ageMs = Date.now() - new Date(channel.channelCreatedAt).getTime()
 
-    if (channel.subscriberCount < minSubs) continue
-    if (channel.subscriberCount > maxSubs) continue
-    if (ageMs > maxAgeMs) continue
-    if (channel.videoCount > maxVideoCount) continue
+    if (channel.subscriberCount < minSubs) {
+      rejected.subsTooLow++
+      continue
+    }
+    if (channel.subscriberCount > maxSubs) {
+      rejected.subsTooHigh++
+      continue
+    }
+    if (ageMs > maxAgeMs) {
+      rejected.tooOld++
+      continue
+    }
+    if (channel.videoCount > maxVideoCount) {
+      rejected.tooManyVideos++
+      continue
+    }
 
     // Pre-screen: best Apify search-hit must clear both the absolute view
     // floor AND the VPS floor (same dual gate as discover/index.ts).
     const bestHitVps = candidate.bestHitViews / Math.max(channel.subscriberCount, 1)
-    if (candidate.bestHitViews < minViews) continue
-    if (bestHitVps < minVps) continue
+    if (candidate.bestHitViews < minViews) {
+      rejected.viewsTooLow++
+      continue
+    }
+    if (bestHitVps < minVps) {
+      rejected.vpsTooLow++
+      continue
+    }
 
     // Faceless gate. NicheSurage's audience is faceless-channel creators, so
     // a channel with an on-camera host/personality is hard-rejected here -
@@ -287,7 +321,10 @@ async function ingestRun(
     const facelessVerdict = anthropicKey
       ? await classifyFaceless(candidate.channelName, candidate.allTitles, anthropicKey)
       : 'uncertain'
-    if (facelessVerdict === 'face') continue
+    if (facelessVerdict === 'face') {
+      rejected.face++
+      continue
+    }
     const faceless = facelessVerdict === 'faceless'
 
     // Niche label from the titles already in the Apify dataset - no
@@ -323,12 +360,26 @@ async function ingestRun(
       // 23505 = unique violation - a concurrent insert won the race. Benign.
       if (insertErr.code !== '23505') {
         console.error('discover-ingest: watchlist insert failed for ' + candidate.channelId + ':', insertErr)
+      } else {
+        duplicates++
       }
     } else {
       channelsAdded++
       existingSet.add(candidate.channelId)
     }
   }
+
+  // f2. Structured ingest summary. One JSON line per run so discovery yield
+  //     can be diagnosed from edge logs: it shows how many candidates each
+  //     gate rejected, vs how many were inserted / hit a duplicate.
+  console.log('discover-ingest: ingest summary ' + JSON.stringify({
+    apifyRunId: run.apify_run_id,
+    distinctChannelsScraped,
+    candidates: candidates.length,
+    channelsAdded,
+    duplicates,
+    rejected,
+  }))
 
   // g. Mark the run ingested.
   const { error: updateErr } = await supabase
