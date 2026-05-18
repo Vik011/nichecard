@@ -32,9 +32,10 @@ export interface ApifyActorInput {
 // One real video row returned in the run's default dataset. All fields are
 // FLAT: channel info is `channelId` / `channelName` / `numberOfSubscribers`,
 // not nested. `viewCount` is a number; `duration` is a STRING "HH:MM:SS" (or
-// "MM:SS"); `input` is the search query that produced this item. The dataset
-// also contains non-video placeholder items (type != 'video', no channelId)
-// for queries that yielded nothing - getApifyDatasetItems filters those out.
+// "MM:SS"); `input` is the search query that produced this item. `type` is
+// 'video' for longform and 'shorts' for a Short - both are real results.
+// The dataset also contains placeholder items (no channelId) for queries that
+// yielded nothing - getApifyDatasetItems filters those out.
 export interface ApifyVideoItem {
   id: string
   title: string
@@ -198,8 +199,13 @@ export async function getApifyDatasetItems(
   if (!Array.isArray(data)) {
     throw new Error('getApifyDatasetItems: expected array response')
   }
-  // Keep only real video items: the dataset also contains placeholder items
-  // (e.g. `{ url, error: 'NO_VIDEOS', input }`) with no channelId and a type
-  // that is not 'video'. Drop anything that is not a video with a channelId.
-  return (data as ApifyVideoItem[]).filter(it => it.type === 'video' && !!it.channelId)
+  // Keep real results only. The official actor returns `type: 'video'` for
+  // longform and `type: 'shorts'` for a Short - KEEP BOTH (the discovery
+  // pipeline targets faceless Shorts channels heavily). The dataset also
+  // contains placeholder items (e.g. `{ url, error: 'NO_VIDEOS', input }`)
+  // with no channelId, and may include `type: 'channel'` results - drop
+  // anything that is not a video/short carrying a channelId.
+  return (data as ApifyVideoItem[]).filter(
+    it => (it.type === 'video' || it.type === 'shorts') && !!it.channelId,
+  )
 }

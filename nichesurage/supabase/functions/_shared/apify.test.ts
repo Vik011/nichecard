@@ -250,13 +250,13 @@ const SAMPLE_ITEMS: ApifyVideoItem[] = [
   {
     id: 'bbb',
     title: 'Claude vs GPT-5 showdown',
-    url: 'https://www.youtube.com/watch?v=bbb',
+    url: 'https://www.youtube.com/shorts/bbb',
     duration: '00:45',
     viewCount: 88000,
     channelId: 'UC_def',
     channelName: 'Claude Power Users',
     numberOfSubscribers: 90000,
-    type: 'video',
+    type: 'shorts',
     input: 'chatgpt tips',
   },
 ]
@@ -282,9 +282,19 @@ Deno.test('getApifyDatasetItems: returns the parsed item array', async () => {
   assertEquals(result, SAMPLE_ITEMS)
 })
 
+Deno.test('getApifyDatasetItems: keeps both video and shorts items', async () => {
+  // SAMPLE_ITEMS[0] is type 'video', SAMPLE_ITEMS[1] is type 'shorts'.
+  // Both are real results - the pipeline targets faceless Shorts channels,
+  // so a Short must never be dropped here.
+  const { fetch } = makeFetch({ body: SAMPLE_ITEMS })
+  const result = await getApifyDatasetItems(TOKEN, 'ds456', fetch)
+  assertEquals(result.length, 2)
+  assertEquals(result.map(it => it.type).sort(), ['shorts', 'video'])
+})
+
 Deno.test('getApifyDatasetItems: filters out NO_VIDEOS placeholder items', async () => {
   // The official actor emits `{ url, error: 'NO_VIDEOS', input }` (no
-  // channelId, type not 'video') for queries that yielded nothing.
+  // channelId) for queries that yielded nothing.
   // getApifyDatasetItems must drop those.
   const body = [
     SAMPLE_ITEMS[0],
@@ -296,8 +306,9 @@ Deno.test('getApifyDatasetItems: filters out NO_VIDEOS placeholder items', async
   assertEquals(result, SAMPLE_ITEMS)
 })
 
-Deno.test('getApifyDatasetItems: drops a non-video item even when it has a channelId', async () => {
-  // type must be exactly 'video'; a channelId alone is not enough.
+Deno.test('getApifyDatasetItems: drops a channel-type item even when it has a channelId', async () => {
+  // type must be 'video' or 'shorts'; a channelId alone is not enough -
+  // search results can include `type: 'channel'` entries.
   const body = [
     SAMPLE_ITEMS[0],
     { ...SAMPLE_ITEMS[1], type: 'channel' },
