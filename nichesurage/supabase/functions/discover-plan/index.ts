@@ -128,7 +128,7 @@ Deno.serve(async (_req: Request) => {
       keywords: plan.keywords,
       sort: 'r',
       maxItems: QUERIES_PER_RUN * APIFY_MAX_ITEMS_PER_QUERY,
-      uploadDate: 'month',
+      uploadDate: 'm',
     }
     const { runId, datasetId } = await startApifyRun(
       apifyToken,

@@ -17,7 +17,8 @@ const API_BASE = 'https://api.apify.com/v2'
 // Actor input for the apidojo/youtube-scraper search mode. Field names match
 // the actor's live input schema: keyword search via `keywords`, `sort` ('r' is
 // relevance, the actor default), `maxItems` caps total results for the run.
-// `uploadDate`/`duration` accept 'all' plus the documented filter values.
+// `uploadDate` accepts single-letter codes: 'all', 'l' (last hour), 't'
+// (today), 'w' (this week), 'm' (this month), 'y' (this year).
 export interface ApifyActorInput {
   keywords: string[]
   sort?: string
