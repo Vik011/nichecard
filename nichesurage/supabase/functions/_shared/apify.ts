@@ -11,29 +11,41 @@ import type { FetchLike } from './categories.ts'
 
 export type { FetchLike }
 
-const ACTOR_ID = 'apidojo~youtube-scraper'
+const ACTOR_ID = 'streamers~youtube-scraper'
 const API_BASE = 'https://api.apify.com/v2'
 
-// Actor input for the apidojo/youtube-scraper search mode. A live proof run
-// showed the actor rejects every filter field: sending `uploadDate` (and any
-// `sort`/`duration` field) made the actor return nothing. The only reliable
-// input is minimal - `keywords` for the keyword search and `maxItems` to cap
-// total results for the run. Filters are deliberately omitted.
+// Actor input for the official streamers/youtube-scraper search mode. A live
+// proof run verified the minimal working input: `searchQueries` for the
+// keyword searches plus the three `maxResults*` caps (each defaults to 0, so
+// they MUST be set or the run returns nothing). `sortingOrder` is one of
+// relevance|rating|date|views. `dateFilter` (hour|today|week|month|year)
+// exists but is deliberately unused for now.
 export interface ApifyActorInput {
-  keywords: string[]
-  maxItems?: number
+  searchQueries: string[]
+  maxResults?: number
+  maxResultsShorts?: number
+  maxResultStreams?: number
+  sortingOrder?: string
+  dateFilter?: string
 }
 
-// One real video row returned in the run's default dataset. Channel info is
-// nested under `channel`; `views` and `duration` (seconds) are numbers. The
-// actor emits no subscriberCount / isShortsEligible / searchQuery fields.
+// One real video row returned in the run's default dataset. All fields are
+// FLAT: channel info is `channelId` / `channelName` / `numberOfSubscribers`,
+// not nested. `viewCount` is a number; `duration` is a STRING "HH:MM:SS" (or
+// "MM:SS"); `input` is the search query that produced this item. The dataset
+// also contains non-video placeholder items (type != 'video', no channelId)
+// for queries that yielded nothing - getApifyDatasetItems filters those out.
 export interface ApifyVideoItem {
   id: string
   title: string
   url: string
-  duration: number          // video length in seconds
-  views: number
-  channel: { id: string; name: string; url: string }
+  duration: string          // video length as "HH:MM:SS" or "MM:SS"
+  viewCount: number
+  channelId: string
+  channelName: string
+  numberOfSubscribers: number
+  type: string
+  input: string             // the search query that produced this item
 }
 
 // Run-trigger options forwarded to Apify as URL query params. Used to cap
@@ -169,7 +181,10 @@ export async function getApifyDatasetItems(
 ): Promise<ApifyVideoItem[]> {
   const url = new URL(`${API_BASE}/datasets/${encodeURIComponent(datasetId)}/items`)
   url.searchParams.set('format', 'json')
-  url.searchParams.set('fields', 'id,title,url,duration,views,channel')
+  url.searchParams.set(
+    'fields',
+    'id,title,url,duration,viewCount,channelId,channelName,numberOfSubscribers,type,input',
+  )
 
   const res = await apifyFetch(
     'getApifyDatasetItems',
@@ -183,8 +198,8 @@ export async function getApifyDatasetItems(
   if (!Array.isArray(data)) {
     throw new Error('getApifyDatasetItems: expected array response')
   }
-  // Keep only real video items: drop any item without a truthy channel.id,
-  // which discards the `{ noResults: true }` placeholder objects the actor
-  // emits for keywords that yielded nothing.
-  return (data as ApifyVideoItem[]).filter(it => !!it.channel?.id)
+  // Keep only real video items: the dataset also contains placeholder items
+  // (e.g. `{ url, error: 'NO_VIDEOS', input }`) with no channelId and a type
+  // that is not 'video'. Drop anything that is not a video with a channelId.
+  return (data as ApifyVideoItem[]).filter(it => it.type === 'video' && !!it.channelId)
 }

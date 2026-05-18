@@ -18,7 +18,7 @@ import {
 } from '../_shared/apify.ts'
 import { getChannelStats, getYoutubeKeys } from '../_shared/youtube.ts'
 import { buildNicheLabel } from '../_shared/labeling.ts'
-import { classifyChannelCategory } from '../_shared/categories.ts'
+import { classifyFaceless } from '../_shared/faceless.ts'
 import { DISCOVERED_CHANNEL_LANGUAGE } from '../_shared/constants.ts'
 import { dedupCandidates, inferContentType } from '../_shared/discoveryIngest.ts'
 
@@ -210,17 +210,32 @@ async function ingestRun(
   // channels_found so an operator sees the real scrape coverage, not the
   // post-exclusion remainder.
   const distinctChannelsScraped = new Set(
-    items.map(it => it.channel?.id).filter((id): id is string => !!id),
+    items.map(it => it.channelId).filter((id): id is string => !!id),
   ).size
 
   // c. Dedup the flat item list into one candidate per new channel.
   const candidates = dedupCandidates(items, existingSet)
 
-  // d. (Category derivation has moved per-channel - see the gate loop below.)
-  //    The Apify actor output no longer carries a searchQuery, so category can
-  //    no longer be inherited from the originating seed keyword. It is now
-  //    classified per channel via classifyChannelCategory using the channel's
-  //    video titles, gated on ANTHROPIC_API_KEY.
+  // d. Build a term -> category map. Category is inherited from the seed
+  //    keyword that produced each candidate's best-hit search query, the
+  //    same way discover/index.ts inherits category from its seed. Collect
+  //    the distinct searchQuery values, look them up in seed_keywords, and
+  //    index by term. Candidates whose query is not a known seed get a null
+  //    category.
+  const distinctQueries = Array.from(
+    new Set(candidates.map(c => c.searchQuery).filter(q => !!q)),
+  )
+  const categoryByTerm = new Map<string, string | null>()
+  if (distinctQueries.length > 0) {
+    const { data: termRows, error: termErr } = await supabase
+      .from('seed_keywords')
+      .select('term, category')
+      .in('term', distinctQueries)
+    if (termErr) throw termErr
+    for (const row of (termRows ?? []) as { term: string; category: string | null }[]) {
+      categoryByTerm.set(row.term, row.category ?? null)
+    }
+  }
 
   // e. Hydrate channel stats from the YouTube API (helper batches by 50).
   //    The candidate count hydrated here is bounded indirectly by
@@ -264,29 +279,27 @@ async function ingestRun(
     if (candidate.bestHitViews < minViews) continue
     if (bestHitVps < minVps) continue
 
-    // Category, classified per channel from the Apify video titles. The actor
-    // output has no channel description, so '' is passed for that argument.
-    // Gated on ANTHROPIC_API_KEY: when absent, category stays null.
-    let category: string | null = null
-    if (anthropicKey) {
-      category = await classifyChannelCategory(
-        candidate.channelName,
-        '',
-        candidate.allTitles,
-        anthropicKey,
-      )
-    }
+    // Faceless gate. NicheSurage's audience is faceless-channel creators, so
+    // a channel with an on-camera host/personality is hard-rejected here -
+    // never inserted. Gated on ANTHROPIC_API_KEY: when absent, the verdict is
+    // treated as 'uncertain' (kept) without calling Claude. The stored
+    // `faceless` boolean is true only for a confirmed 'faceless' verdict.
+    const facelessVerdict = anthropicKey
+      ? await classifyFaceless(candidate.channelName, candidate.allTitles, anthropicKey)
+      : 'uncertain'
+    if (facelessVerdict === 'face') continue
+    const faceless = facelessVerdict === 'faceless'
 
     // Niche label from the titles already in the Apify dataset - no
-    // getRecentVideos call. Skipped (label = channelName) when there is no
+    // getRecentVideos call. Skipped (label = searchQuery) when there is no
     // ANTHROPIC_API_KEY, same key-gating as discover/index.ts.
-    let nicheLabel = candidate.channelName
+    let nicheLabel = candidate.searchQuery
     if (anthropicKey) {
       nicheLabel = await buildNicheLabel({
         apiKey: anthropicKey,
         channelName: candidate.channelName,
         recentTitles: candidate.allTitles,
-        fallback: candidate.channelName,
+        fallback: candidate.searchQuery,
       })
     }
 
@@ -298,11 +311,13 @@ async function ingestRun(
       niche_label: nicheLabel,
       content_type: contentType,
       language: DISCOVERED_CHANNEL_LANGUAGE,
-      // No seed keyword to attribute - the actor output carries no
-      // searchQuery. The column is nullable.
-      seed_keyword: null,
-      category,
+      // The search query that produced the best hit, attributed as the seed.
+      seed_keyword: candidate.searchQuery,
+      // Category inherited from the seed keyword behind the search query;
+      // null when the query is not a known seed (consistent with discover).
+      category: categoryByTerm.get(candidate.searchQuery) ?? null,
       discovered_via: 'apify_search',
+      faceless,
     })
     if (insertErr) {
       // 23505 = unique violation - a concurrent insert won the race. Benign.
