@@ -35,6 +35,15 @@ Deno.serve(async (_req: Request) => {
     const APIFY_MONTHLY_BUDGET_USD = parseFloat(Deno.env.get('APIFY_MONTHLY_BUDGET_USD') ?? '25')
     const APIFY_MAX_RESULTS = parseInt(Deno.env.get('APIFY_MAX_RESULTS') ?? '5', 10)
     const APIFY_MAX_RESULTS_SHORTS = parseInt(Deno.env.get('APIFY_MAX_RESULTS_SHORTS') ?? '5', 10)
+    // Search strategy. The proof run showed 'relevance' sorting returns mostly
+    // large, established channels (YouTube ranks search by channel authority),
+    // wasting ~87% of scraped results on channels the gates correctly reject.
+    // 'date' is the only sorting order neutral to channel size: it surfaces
+    // the newest uploads, where a small channel sits alongside a large one.
+    // 'month' bounds the scrape to the last 30 days of uploads. Both are env
+    // vars so the strategy can be retuned without a redeploy.
+    const APIFY_SORTING_ORDER = Deno.env.get('APIFY_SORTING_ORDER') ?? 'date'
+    const APIFY_DATE_FILTER = Deno.env.get('APIFY_DATE_FILTER') ?? 'month'
 
     // 2. Service-role client (bypasses RLS, same import as discover/index.ts).
     const supabase = createClient(supabaseUrl, serviceRoleKey)
@@ -124,6 +133,8 @@ Deno.serve(async (_req: Request) => {
 
     // 9. Trigger ONE Apify scraper run. The official actor caps results
     //    per-query via maxResults / maxResultsShorts; streams are disabled.
+    //    sortingOrder + dateFilter bias the scrape toward recent uploads from
+    //    small channels (see APIFY_SORTING_ORDER comment above).
     //    No run options are sent - the proven-working manual run used none.
     //    APIFY_MAX_CHARGE_USD still feeds the monthly-budget guard above.
     const input: ApifyActorInput = {
@@ -131,7 +142,8 @@ Deno.serve(async (_req: Request) => {
       maxResults: APIFY_MAX_RESULTS,
       maxResultsShorts: APIFY_MAX_RESULTS_SHORTS,
       maxResultStreams: 0,
-      sortingOrder: 'relevance',
+      sortingOrder: APIFY_SORTING_ORDER,
+      dateFilter: APIFY_DATE_FILTER,
     }
     const { runId, datasetId } = await startApifyRun(apifyToken, input, {})
 
