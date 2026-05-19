@@ -35,14 +35,14 @@ Deno.serve(async (_req: Request) => {
     const APIFY_MONTHLY_BUDGET_USD = parseFloat(Deno.env.get('APIFY_MONTHLY_BUDGET_USD') ?? '25')
     const APIFY_MAX_RESULTS = parseInt(Deno.env.get('APIFY_MAX_RESULTS') ?? '5', 10)
     const APIFY_MAX_RESULTS_SHORTS = parseInt(Deno.env.get('APIFY_MAX_RESULTS_SHORTS') ?? '5', 10)
-    // Search strategy. The proof run showed 'relevance' sorting returns mostly
-    // large, established channels (YouTube ranks search by channel authority),
-    // wasting ~87% of scraped results on channels the gates correctly reject.
-    // 'date' is the only sorting order neutral to channel size: it surfaces
-    // the newest uploads, where a small channel sits alongside a large one.
-    // 'month' bounds the scrape to the last 30 days of uploads. Both are env
-    // vars so the strategy can be retuned without a redeploy.
-    const APIFY_SORTING_ORDER = Deno.env.get('APIFY_SORTING_ORDER') ?? 'date'
+    // Search strategy. Tuning measured 'relevance' yielding 2 outliers/run
+    // versus 0 for 'date': 'date' surfaces the newest uploads, but those are
+    // too fresh to have accumulated views, so they fail the views-per-second
+    // gate downstream. 'relevance' returns videos that already have traction,
+    // which is what the outlier gates need. 'month' bounds the scrape to the
+    // last 30 days of uploads. Both are env vars so the strategy can be
+    // retuned without a redeploy.
+    const APIFY_SORTING_ORDER = Deno.env.get('APIFY_SORTING_ORDER') ?? 'relevance'
     const APIFY_DATE_FILTER = Deno.env.get('APIFY_DATE_FILTER') ?? 'month'
 
     // 2. Service-role client (bypasses RLS, same import as discover/index.ts).
