@@ -22,23 +22,21 @@ import { classifyFaceless } from '../_shared/faceless.ts'
 import { DISCOVERED_CHANNEL_LANGUAGE } from '../_shared/constants.ts'
 import { dedupCandidates, inferContentType } from '../_shared/discoveryIngest.ts'
 
-// Discover gates - mostly copied verbatim from discover/index.ts (lines
-// ~32-69) so Apify-discovered channels clear the same promotion bar as
-// seed-search discovered channels.
+// Discover gates - the subscriber and per-video outlier thresholds an
+// Apify-discovered channel must clear to enter channels_watchlist.
 //
-// EXCEPTION - MAX_AGE: the proof run showed Apify keyword search returns a
-// large share of established channels, and 22 of 68 candidates were rejected
-// as `tooOld` despite already being inside the small-channel subscriber band
-// (5K-400K). A small channel with a recent outlier video is exactly the
-// target regardless of channel age, so the Apify path uses a relaxed age
-// ceiling. MAX_SUBS is deliberately NOT relaxed - rejecting large channels is
-// the gate working as intended.
+// NO AGE GATE (unlike discover/index.ts): discovery targets small channels
+// whose video outperforms their subscriber count - a high views-per-
+// subscriber outlier. Channel age is irrelevant to that signal: a long-lived
+// small channel with a breakout video is just as valid a niche signal as a
+// brand-new one. Two proof runs rejected ~25% of candidates as `tooOld`
+// purely on age, before the VPS outlier gate could even see them, so the age
+// gate was removed. MAX_SUBS stays low on purpose: large channels get views
+// on anything they post, proving nothing about a niche.
 const MIN_SUBS_SHORTS = 5_000
 const MIN_SUBS_LONGFORM = 2_000
 const MAX_SUBS_SHORTS = 400_000
 const MAX_SUBS_LONGFORM = 400_000
-const MAX_AGE_MONTHS_SHORTS = 36
-const MAX_AGE_MONTHS_LONGFORM = 48
 const DISCOVER_MIN_VIEWS_SHORTS = 15_000
 const DISCOVER_MIN_VIEWS_LONGFORM = 3_000
 const DISCOVER_MIN_VPS_SHORTS = 200
@@ -265,7 +263,6 @@ async function ingestRun(
     noStats: 0,
     subsTooLow: 0,
     subsTooHigh: 0,
-    tooOld: 0,
     tooManyVideos: 0,
     viewsTooLow: 0,
     vpsTooLow: 0,
@@ -285,12 +282,9 @@ async function ingestRun(
     const contentType = inferContentType(candidate.shortsHitRatio)
     const minSubs = contentType === 'shorts' ? MIN_SUBS_SHORTS : MIN_SUBS_LONGFORM
     const maxSubs = contentType === 'shorts' ? MAX_SUBS_SHORTS : MAX_SUBS_LONGFORM
-    const maxAgeMonths = contentType === 'shorts' ? MAX_AGE_MONTHS_SHORTS : MAX_AGE_MONTHS_LONGFORM
     const minViews = contentType === 'shorts' ? DISCOVER_MIN_VIEWS_SHORTS : DISCOVER_MIN_VIEWS_LONGFORM
     const minVps = contentType === 'shorts' ? DISCOVER_MIN_VPS_SHORTS : DISCOVER_MIN_VPS_LONGFORM
     const maxVideoCount = contentType === 'shorts' ? MAX_VIDEO_COUNT_SHORTS : MAX_VIDEO_COUNT_LONGFORM
-    const maxAgeMs = maxAgeMonths * 30 * 24 * 60 * 60 * 1000
-    const ageMs = Date.now() - new Date(channel.channelCreatedAt).getTime()
 
     if (channel.subscriberCount < minSubs) {
       rejected.subsTooLow++
@@ -298,10 +292,6 @@ async function ingestRun(
     }
     if (channel.subscriberCount > maxSubs) {
       rejected.subsTooHigh++
-      continue
-    }
-    if (ageMs > maxAgeMs) {
-      rejected.tooOld++
       continue
     }
     if (channel.videoCount > maxVideoCount) {
