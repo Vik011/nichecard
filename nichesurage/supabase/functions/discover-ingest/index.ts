@@ -42,10 +42,14 @@ const MIN_SUBS_SHORTS = 5_000
 const MIN_SUBS_LONGFORM = 2_000
 const MAX_SUBS_SHORTS = 400_000
 const MAX_SUBS_LONGFORM = 400_000
-const DISCOVER_MIN_VIEWS_SHORTS = 15_000
-const DISCOVER_MIN_VIEWS_LONGFORM = 3_000
-const DISCOVER_MIN_VPS_SHORTS = 200
-const DISCOVER_MIN_VPS_LONGFORM = 2
+// Outlier thresholds. VPS = best-hit views / channel subscribers (how far a
+// video outperformed the channel's own audience). All four are env vars so
+// they can be retuned from real ingest data without a redeploy - the proof
+// run showed the inherited VPS=200 shorts floor rejects clear outliers.
+const DISCOVER_MIN_VIEWS_SHORTS = parseInt(Deno.env.get('DISCOVER_MIN_VIEWS_SHORTS') ?? '15000', 10)
+const DISCOVER_MIN_VIEWS_LONGFORM = parseInt(Deno.env.get('DISCOVER_MIN_VIEWS_LONGFORM') ?? '3000', 10)
+const DISCOVER_MIN_VPS_SHORTS = parseFloat(Deno.env.get('DISCOVER_MIN_VPS_SHORTS') ?? '200')
+const DISCOVER_MIN_VPS_LONGFORM = parseFloat(Deno.env.get('DISCOVER_MIN_VPS_LONGFORM') ?? '2')
 
 // Apify run states that mean the run is still in progress - leave the row
 // untouched and re-poll on the next cron tick.
@@ -270,6 +274,17 @@ async function ingestRun(
     vpsTooLow: 0,
     face: 0,
   }
+  // Per-candidate detail for every channel that clears the subscriber band,
+  // tagged with its gate verdict. Lets the VPS / view thresholds be tuned
+  // from the real distribution instead of guessed.
+  const inBand: Array<{
+    name: string
+    subs: number
+    type: string
+    views: number
+    vps: number
+    verdict: string
+  }> = []
   let duplicates = 0
   let channelsAdded = 0
   for (const candidate of candidates) {
@@ -299,11 +314,22 @@ async function ingestRun(
     // Pre-screen: best Apify search-hit must clear both the absolute view
     // floor AND the VPS floor (same dual gate as discover/index.ts).
     const bestHitVps = candidate.bestHitViews / Math.max(channel.subscriberCount, 1)
+    const recordInBand = (verdict: string) =>
+      inBand.push({
+        name: candidate.channelName,
+        subs: channel.subscriberCount,
+        type: contentType,
+        views: candidate.bestHitViews,
+        vps: Math.round(bestHitVps * 10) / 10,
+        verdict,
+      })
     if (candidate.bestHitViews < minViews) {
+      recordInBand('viewsTooLow')
       rejected.viewsTooLow++
       continue
     }
     if (bestHitVps < minVps) {
+      recordInBand('vpsTooLow')
       rejected.vpsTooLow++
       continue
     }
@@ -317,6 +343,7 @@ async function ingestRun(
       ? await classifyFaceless(candidate.channelName, candidate.allTitles, anthropicKey)
       : 'uncertain'
     if (facelessVerdict === 'face') {
+      recordInBand('face')
       rejected.face++
       continue
     }
@@ -356,9 +383,11 @@ async function ingestRun(
       if (insertErr.code !== '23505') {
         console.error('discover-ingest: watchlist insert failed for ' + candidate.channelId + ':', insertErr)
       } else {
+        recordInBand('duplicate')
         duplicates++
       }
     } else {
+      recordInBand('added')
       channelsAdded++
       existingSet.add(candidate.channelId)
     }
@@ -374,6 +403,7 @@ async function ingestRun(
     channelsAdded,
     duplicates,
     rejected,
+    inBand,
   }))
 
   // g. Mark the run ingested.
