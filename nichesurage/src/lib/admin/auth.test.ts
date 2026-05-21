@@ -60,3 +60,46 @@ describe('isAdminEmail', () => {
     expect(isAdminEmail('')).toBe(false)
   })
 })
+
+// ─── assertAdminIsActive — DB-side admin flag check ──────────────────────
+
+const supabaseQueryMock = jest.fn()
+jest.mock('@/lib/supabase/service', () => ({
+  createServiceClient: () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          single: () => supabaseQueryMock(),
+        }),
+      }),
+    }),
+  }),
+}))
+
+import { assertAdminIsActive } from './auth'
+
+beforeEach(() => {
+  supabaseQueryMock.mockReset()
+})
+
+describe('assertAdminIsActive', () => {
+  it('returns true when users.is_admin = true', async () => {
+    supabaseQueryMock.mockResolvedValue({ data: { is_admin: true }, error: null })
+    expect(await assertAdminIsActive('user-id-1')).toBe(true)
+  })
+
+  it('returns false when users.is_admin = false', async () => {
+    supabaseQueryMock.mockResolvedValue({ data: { is_admin: false }, error: null })
+    expect(await assertAdminIsActive('user-id-2')).toBe(false)
+  })
+
+  it('returns false when no row exists', async () => {
+    supabaseQueryMock.mockResolvedValue({ data: null, error: null })
+    expect(await assertAdminIsActive('user-id-3')).toBe(false)
+  })
+
+  it('returns false on DB error (fail closed)', async () => {
+    supabaseQueryMock.mockResolvedValue({ data: null, error: { message: 'connection lost' } })
+    expect(await assertAdminIsActive('user-id-4')).toBe(false)
+  })
+})
