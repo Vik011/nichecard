@@ -58,7 +58,7 @@ Sva mesta moraju imati key dostupan u runtime-u.
 - End-to-end UI screenshot pre claim-a "live"
 
 ### Migration numbering
-Najnoviji: `0023_stripe_webhook_idempotency.sql`. Numerisi sledeću kao `0024_*.sql`. Migration se primenjuje **manuelno** preko Supabase SQL editora — `db push` se NE koristi u ovom projektu (CI nije setup).
+Najnoviji: `0054_admin_rls.sql` (Phase 0a admin foundation). Numerisi sledeću kao `0055_*.sql`. Migration se primenjuje **manuelno** preko Supabase SQL editora — `db push` se NE koristi u ovom projektu (CI nije setup). Note: 0052 is intentionally skipped (rate limit moved to Upstash Redis in Phase 0a review).
 
 ---
 

@@ -1,18 +1,18 @@
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { notFound } from 'next/navigation'
 
 /**
- * Admin gate.
+ * Admin gate. Dual control:
+ *   1. Email present in ADMIN_EMAILS env (isAdminEmail) — operator-controlled
+ *      via Vercel.
+ *   2. users.is_admin = true in the DB (assertAdminIsActive) — survives an
+ *      env leak / config mistake and is what the RLS policies in 0054 key on.
  *
- * Auth is regular Google OAuth — admins are normal users whose email appears
- * in the `ADMIN_EMAILS` env var (comma-separated). Everything else is the
- * same auth flow normal users go through.
- *
- * On non-admin access we throw `notFound()` (404) rather than redirect, so
- * the existence of /admin isn't leaked to logged-in non-admins or scanners.
+ * Both must pass. We notFound() on either failure — never redirect or 401,
+ * to keep /admin invisible to scanners.
  */
 
-/** Returns true if the email is in the admin allow-list. Case-insensitive. */
 export function isAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false
   const allow = (process.env.ADMIN_EMAILS ?? '')
@@ -23,17 +23,30 @@ export function isAdminEmail(email: string | null | undefined): boolean {
 }
 
 /**
- * Server-side guard for admin pages. Call at the top of any RSC under
- * /admin. Returns the authenticated admin user. On non-admin access this
- * throws via Next's `notFound()` — page renders the standard 404, never
- * "you are not authorized" (which would confirm /admin exists).
+ * DB-side admin flag check. Fail-closed: returns false on any error (including
+ * missing row) so a transient DB hiccup locks admin out rather than letting
+ * a non-admin through.
  */
+export async function assertAdminIsActive(userId: string): Promise<boolean> {
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from('users')
+    .select('is_admin')
+    .eq('id', userId)
+    .single()
+  if (error || !data) return false
+  return Boolean((data as { is_admin: boolean }).is_admin)
+}
+
 export async function requireAdmin() {
   const supabase = createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user || !isAdminEmail(user.email)) {
+    notFound()
+  }
+  if (!(await assertAdminIsActive(user.id))) {
     notFound()
   }
   return user

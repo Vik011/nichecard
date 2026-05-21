@@ -46,6 +46,8 @@ async function processEvent(event: Stripe.Event, supabase: SupabaseLike): Promis
       const periodEnd = item?.current_period_end
       const { error } = await supabase.from('users').update({
         tier: mapped.tier,
+        tier_source: 'stripe',
+        tier_expires_at: null,
         billing_interval: mapped.interval,
         subscription_status: normalizeStatus(sub.status) ?? 'active',
         stripe_subscription_id: sub.id,
@@ -71,6 +73,8 @@ async function processEvent(event: Stripe.Event, supabase: SupabaseLike): Promis
       if (!userId) return
       const { error } = await supabase.from('users').update({
         tier: 'free',
+        tier_source: null,
+        tier_expires_at: null,
         billing_interval: null,
         subscription_status: 'canceled',
         stripe_subscription_id: null,
