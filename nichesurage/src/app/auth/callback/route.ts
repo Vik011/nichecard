@@ -155,7 +155,9 @@ async function maybeFireAdminLoginAlert(
   if (!(await assertAdminIsActive(user.id))) return
 
   const xff = req.headers.get('x-forwarded-for')
-  const ip = xff ? xff.split(',')[0].trim() : null
+  const ip = xff
+    ? (xff.split(',').map((s) => s.trim()).find((s) => s.length > 0) ?? null)
+    : null
   const userAgent = req.headers.get('user-agent')
 
   await fireAdminLoginAlert({

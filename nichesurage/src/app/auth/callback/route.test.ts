@@ -87,11 +87,39 @@ describe('GET /auth/callback admin login alert', () => {
     await GET(buildRequest('https://app.x/auth/callback?code=c', { 'x-forwarded-for': '1.2.3.4, 5.6.7.8', 'user-agent': 'TestUA' }) as unknown as Parameters<typeof GET>[0])
 
     expect(fireLoginAlertMock).toHaveBeenCalledTimes(1)
-    expect(fireLoginAlertMock).toHaveBeenCalledWith(expect.objectContaining({
+    expect(fireLoginAlertMock).toHaveBeenCalledWith({
       adminEmail: 'admin@x.com',
       ip: '1.2.3.4',
       userAgent: 'TestUA',
-    }))
+    })
+  })
+
+  it('passes ip=null when x-forwarded-for is absent', async () => {
+    getUserMock.mockResolvedValue({ data: { user: { id: 'u-admin', email: 'admin@x.com' } }, error: null })
+    isAdminEmailMock.mockReturnValue(true)
+    assertAdminIsActiveMock.mockResolvedValue(true)
+
+    await GET(buildRequest('https://app.x/auth/callback?code=c', { 'user-agent': 'TestUA' }) as unknown as Parameters<typeof GET>[0])
+
+    expect(fireLoginAlertMock).toHaveBeenCalledWith({
+      adminEmail: 'admin@x.com',
+      ip: null,
+      userAgent: 'TestUA',
+    })
+  })
+
+  it('passes ip=null when x-forwarded-for is an empty/whitespace-only string', async () => {
+    getUserMock.mockResolvedValue({ data: { user: { id: 'u-admin', email: 'admin@x.com' } }, error: null })
+    isAdminEmailMock.mockReturnValue(true)
+    assertAdminIsActiveMock.mockResolvedValue(true)
+
+    await GET(buildRequest('https://app.x/auth/callback?code=c', { 'x-forwarded-for': ' , ', 'user-agent': 'TestUA' }) as unknown as Parameters<typeof GET>[0])
+
+    expect(fireLoginAlertMock).toHaveBeenCalledWith({
+      adminEmail: 'admin@x.com',
+      ip: null,
+      userAgent: 'TestUA',
+    })
   })
 
   it('does NOT fire the alert when env gate passes but DB gate fails', async () => {
@@ -113,12 +141,21 @@ describe('GET /auth/callback admin login alert', () => {
   })
 
   it('does NOT crash the callback when fireAdminLoginAlert rejects', async () => {
-    getUserMock.mockResolvedValue({ data: { user: { id: 'u-admin', email: 'admin@x.com' } }, error: null })
-    isAdminEmailMock.mockReturnValue(true)
-    assertAdminIsActiveMock.mockResolvedValue(true)
-    fireLoginAlertMock.mockRejectedValueOnce(new Error('alert path crashed'))
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      getUserMock.mockResolvedValue({ data: { user: { id: 'u-admin', email: 'admin@x.com' } }, error: null })
+      isAdminEmailMock.mockReturnValue(true)
+      assertAdminIsActiveMock.mockResolvedValue(true)
+      fireLoginAlertMock.mockRejectedValueOnce(new Error('alert path crashed'))
 
-    const resp = await GET(buildRequest('https://app.x/auth/callback?code=c') as unknown as Parameters<typeof GET>[0])
-    expect(resp.status).toBe(307) // NextResponse.redirect default
+      const resp = await GET(buildRequest('https://app.x/auth/callback?code=c') as unknown as Parameters<typeof GET>[0])
+      expect(resp.status).toBe(307) // NextResponse.redirect default
+      expect(errorSpy).toHaveBeenCalledWith(
+        '[auth/callback] admin login alert threw',
+        expect.any(Error),
+      )
+    } finally {
+      errorSpy.mockRestore()
+    }
   })
 })
