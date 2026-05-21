@@ -9,7 +9,7 @@
 CREATE TABLE public.admin_sessions (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   admin_email   text NOT NULL,
-  sudo_until    timestamptz,
+  sudo_until    timestamptz,   -- NULL = no active grant (or grant was expired and cleaned); set to issue_time+5min at insertion by issueSudo() in src/lib/admin/sudo.ts. App treats NULL as "not authorized" so a row with NULL is harmless.
   created_at    timestamptz NOT NULL DEFAULT now()
 );
 
