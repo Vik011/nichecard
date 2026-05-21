@@ -46,3 +46,10 @@ GRANT INSERT, SELECT ON public.admin_audit_log TO service_role;
 -- re-grant. service_role can write new rows and read existing ones,
 -- nothing else.
 REVOKE UPDATE, DELETE ON public.admin_audit_log FROM service_role;
+
+-- NOTE: The REVOKE above applies to service_role only. The postgres (superuser)
+-- role used during migrations retains full access as table owner. If a future
+-- threat model needs a hardware-enforced append-only constraint, add a
+-- BEFORE UPDATE/DELETE trigger that raises an exception. For v1 solo-admin
+-- the service_role boundary is the only path the application uses, so this
+-- is sufficient.
