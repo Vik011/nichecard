@@ -128,10 +128,19 @@ describe('enrollTotp', () => {
   })
 
   it('returns persist_failed if the secret insert errors', async () => {
-    verifyTokenMock.mockReturnValue(true)
-    nextInsertError = { message: 'unique violation' }
-    const result = await enrollTotp({ status: 'idle' }, fd('JBSWY3DPEHPK3PXP', '123456'))
-    expect(result).toEqual({ status: 'error', error: 'persist_failed' })
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      verifyTokenMock.mockReturnValue(true)
+      nextInsertError = { message: 'unique violation' }
+      const result = await enrollTotp({ status: 'idle' }, fd('JBSWY3DPEHPK3PXP', '123456'))
+      expect(result).toEqual({ status: 'error', error: 'persist_failed' })
+      expect(errorSpy).toHaveBeenCalledWith(
+        '[setup-totp] secret insert failed',
+        expect.objectContaining({ message: 'unique violation' }),
+      )
+    } finally {
+      errorSpy.mockRestore()
+    }
   })
 
   it('returns not_admin if requireAdmin throws (defense)', async () => {
