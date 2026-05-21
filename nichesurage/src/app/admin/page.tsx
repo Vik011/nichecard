@@ -10,6 +10,8 @@ import {
   findUsersByEmail,
   getStripeMode,
 } from '@/lib/admin/queries'
+import { requireAdmin } from '@/lib/admin/auth'
+import { requireEnrollment } from '@/lib/admin/enrollmentGate'
 import { StatCard } from '@/components/admin/StatCard'
 
 // SSR fresh on every visit. Admin metrics need to be live, not cached.
@@ -21,6 +23,8 @@ interface AdminPageProps {
 }
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
+  const user = await requireAdmin()
+  await requireEnrollment(user.email!)
   const params = await searchParams
   const lookupQuery = params.q?.trim() ?? ''
 

@@ -1,15 +1,18 @@
 import Link from 'next/link'
 import { requireAdmin } from '@/lib/admin/auth'
 import { AdminSignOut } from '@/components/admin/AdminSignOut'
+import { AdminNav } from '@/components/admin/AdminNav'
 
 // Server-side guard. requireAdmin() throws notFound() for non-admins, so the
 // /admin tree is invisible to anyone whose email isn't whitelisted. The
 // layout runs on every nested route, so child pages don't need to repeat
 // the gate.
 //
-// We intentionally do NOT render the regular TopNav here — admin shouldn't
-// see the shorts/longform/saved tabs while looking at metrics. Stripped
-// header keeps the page chrome out of the way.
+// Enrollment gate (TOTP not yet set up) is NOT in this layout — Next 14
+// layouts don't have reliable pathname access, and putting the redirect
+// here would loop on /admin/setup-totp. Each child page calls
+// requireEnrollment() instead (see /admin/page.tsx). /admin/setup-totp
+// intentionally skips it because it IS the destination.
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireAdmin()
 
@@ -34,6 +37,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
         </div>
       </header>
+      <AdminNav />
       <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
     </div>
   )

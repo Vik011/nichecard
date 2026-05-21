@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { sendWelcomeEmail } from '@/lib/email/resend'
+import { fireAdminLoginAlert } from '@/lib/admin/loginAlert'
+import { isAdminEmail, assertAdminIsActive } from '@/lib/admin/auth'
 import { getDailyDemoNiche } from '@/lib/tier/freeDemo'
 import { preWarmDemoNiche } from '@/lib/demo/preWarm'
 
@@ -41,6 +43,13 @@ export async function GET(req: NextRequest) {
   // function once the response is returned, killing in-flight requests.
   await maybeSendWelcome(supabase).catch((err) => {
     console.error('[auth/callback] welcome email handler threw', err)
+  })
+
+  // Admin self-monitoring alert. Fire-and-forget per spec — Vercel may
+  // freeze us once the response returns, hence await + .catch (matches
+  // the welcome-email handling above).
+  await maybeFireAdminLoginAlert(supabase, req).catch((err) => {
+    console.error('[auth/callback] admin login alert threw', err)
   })
 
   const plan = rawPlan && VALID_PLANS.has(rawPlan) ? rawPlan : null
@@ -125,6 +134,37 @@ async function maybeSendWelcome(supabase: SupabaseServerClient): Promise<void> {
     // Email was delivered but flag write failed; user may get a duplicate next login. Acceptable.
     console.error('[auth/callback] failed to set welcome flag after send', updErr)
   }
+}
+
+/**
+ * Admin self-alert: when the just-signed-in user passes the dual admin gate
+ * (env allowlist AND users.is_admin=true), fire a Sentry breadcrumb + Resend
+ * email to the admin's own inbox. Self-monitoring per design spec.
+ *
+ * IP is parsed from the leftmost x-forwarded-for entry (Vercel sets this).
+ * Never throws — fireAdminLoginAlert already swallows both branches.
+ */
+async function maybeFireAdminLoginAlert(
+  supabase: SupabaseServerClient,
+  req: NextRequest,
+): Promise<void> {
+  const { data: userData } = await supabase.auth.getUser()
+  const user = userData?.user
+  if (!user?.email) return
+  if (!isAdminEmail(user.email)) return
+  if (!(await assertAdminIsActive(user.id))) return
+
+  const xff = req.headers.get('x-forwarded-for')
+  const ip = xff
+    ? (xff.split(',').map((s) => s.trim()).find((s) => s.length > 0) ?? null)
+    : null
+  const userAgent = req.headers.get('user-agent')
+
+  await fireAdminLoginAlert({
+    adminEmail: user.email,
+    ip,
+    userAgent,
+  })
 }
 
 /** Pulls "Vik" out of "Vik Martin" / "Viktor Martin Petrović"; null when blank. */

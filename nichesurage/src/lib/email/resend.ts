@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 
 import { renderWelcomeEmail, WELCOME_SUBJECT } from './templates/welcome'
+import { renderAdminLoginAlertEmail, ADMIN_LOGIN_ALERT_SUBJECT } from './templates/adminLoginAlert'
 
 // ─── Resend client ───────────────────────────────────────────────────────
 //
@@ -58,6 +59,44 @@ export async function sendWelcomeEmail({ to, firstName }: WelcomeEmailInput): Pr
       replyTo: REPLY_TO,
       subject: WELCOME_SUBJECT,
       html: renderWelcomeEmail({ firstName }),
+    })
+
+    if (error) {
+      return { ok: false, error: error.message ?? 'resend_unknown_error' }
+    }
+    return { ok: true, id: data?.id }
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'resend_throw' }
+  }
+}
+
+export interface AdminLoginAlertInput {
+  to: string
+  ts: string
+  ip: string | null
+  userAgent: string | null
+}
+
+/**
+ * Sends the admin sign-in self-alert. Same fail-soft pattern as
+ * sendWelcomeEmail — returns SendResult instead of throwing so the caller
+ * (fireAdminLoginAlert -> /auth/callback) can fire-and-forget.
+ *
+ * No-op when RESEND_API_KEY is unset (local dev); returns { ok: false,
+ * error: 'no_api_key' } so the caller can log + move on.
+ */
+export async function sendAdminLoginAlert({ to, ts, ip, userAgent }: AdminLoginAlertInput): Promise<SendResult> {
+  if (!client) {
+    return { ok: false, error: 'no_api_key' }
+  }
+
+  try {
+    const { data, error } = await client.emails.send({
+      from: FROM,
+      to,
+      replyTo: REPLY_TO,
+      subject: ADMIN_LOGIN_ALERT_SUBJECT,
+      html: renderAdminLoginAlertEmail({ ts, ip, userAgent }),
     })
 
     if (error) {
