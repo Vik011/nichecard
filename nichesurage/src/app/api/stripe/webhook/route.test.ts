@@ -198,4 +198,49 @@ describe('Stripe webhook idempotency', () => {
     expect(constructEventMock).not.toHaveBeenCalled()
     expect(ops).toHaveLength(0)
   })
+
+  it('sets tier_source=stripe and tier_expires_at=null on subscription.updated', async () => {
+    constructEventMock.mockReturnValue({
+      id: 'evt_tier_source_updated',
+      type: 'customer.subscription.updated',
+      data: {
+        object: {
+          id: 'sub_x',
+          status: 'active',
+          metadata: { supabase_user_id: 'usr_x' },
+          items: { data: [{ price: { id: 'price_basic_month' }, current_period_end: 1735689600 }] },
+        },
+      },
+    })
+    const req = new Request('http://x', { method: 'POST', headers: { 'stripe-signature': 'sig' } })
+    await POST(req as unknown as Parameters<typeof POST>[0])
+
+    const usersUpdate = ops.find((o) => o.table === 'users' && o.method === 'update')
+    expect(usersUpdate).toBeDefined()
+    const payload = usersUpdate!.payload as Record<string, unknown>
+    expect(payload.tier_source).toBe('stripe')
+    expect(payload.tier_expires_at).toBeNull()
+  })
+
+  it('clears tier_source and tier_expires_at on subscription.deleted', async () => {
+    constructEventMock.mockReturnValue({
+      id: 'evt_tier_source_deleted',
+      type: 'customer.subscription.deleted',
+      data: {
+        object: {
+          id: 'sub_y',
+          status: 'canceled',
+          metadata: { supabase_user_id: 'usr_y' },
+        },
+      },
+    })
+    const req = new Request('http://x', { method: 'POST', headers: { 'stripe-signature': 'sig' } })
+    await POST(req as unknown as Parameters<typeof POST>[0])
+
+    const usersUpdate = ops.find((o) => o.table === 'users' && o.method === 'update')
+    expect(usersUpdate).toBeDefined()
+    const payload = usersUpdate!.payload as Record<string, unknown>
+    expect(payload.tier_source).toBeNull()
+    expect(payload.tier_expires_at).toBeNull()
+  })
 })
