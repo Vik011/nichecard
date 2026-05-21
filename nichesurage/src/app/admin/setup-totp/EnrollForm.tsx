@@ -1,6 +1,6 @@
 'use client'
 
-import { useFormState } from 'react-dom'
+import { useFormState, useFormStatus } from 'react-dom'
 import { enrollTotp, type EnrollState } from './actions'
 
 interface EnrollFormProps {
@@ -16,6 +16,47 @@ const ERROR_TEXT: Record<Exclude<EnrollState, { status: 'idle' } | { status: 'su
   already_enrolled: 'You are already enrolled. Use the break-glass procedure to re-enroll.',
   not_admin: 'Admin gate refused. Sign in again.',
   persist_failed: 'Could not persist enrollment. Check Supabase logs.',
+}
+
+// useFormStatus() must be called from a CHILD of <form>; calling it inside the
+// component that renders <form> returns the layout's pending state (always false).
+// Extracted SubmitButton + TokenInput to read the real form pending state and
+// prevent the double-submit footgun that overwrote the success state with
+// already_enrolled on first prod enrollment (2026-05-22).
+
+function SubmitButton() {
+  const { pending } = useFormStatus()
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className={
+        pending
+          ? 'ml-3 cursor-not-allowed rounded-md bg-accent-emerald-bright/50 px-4 py-2 text-sm font-medium text-canvas'
+          : 'ml-3 rounded-md bg-accent-emerald-bright px-4 py-2 text-sm font-medium text-canvas hover:opacity-90'
+      }
+    >
+      {pending ? 'Enrolling...' : 'Enroll'}
+    </button>
+  )
+}
+
+function TokenInput() {
+  const { pending } = useFormStatus()
+  return (
+    <input
+      name="token"
+      type="text"
+      inputMode="numeric"
+      pattern="\d{6}"
+      maxLength={6}
+      autoComplete="one-time-code"
+      required
+      disabled={pending}
+      placeholder="123456"
+      className="w-40 rounded-md border border-hairline-edge bg-canvas px-3 py-2 font-mono text-lg text-ink focus:border-accent-emerald-bright focus:outline-none disabled:opacity-50"
+    />
+  )
 }
 
 export function EnrollForm({ secret, qrDataUrl, otpAuthUrl }: EnrollFormProps) {
@@ -72,23 +113,8 @@ export function EnrollForm({ secret, qrDataUrl, otpAuthUrl }: EnrollFormProps) {
       <h2 className="text-lg font-semibold text-ink">Step 2: confirm with the 6-digit code</h2>
       <form action={formAction} className="space-y-3">
         <input type="hidden" name="secret" value={secret} />
-        <input
-          name="token"
-          type="text"
-          inputMode="numeric"
-          pattern="\d{6}"
-          maxLength={6}
-          autoComplete="one-time-code"
-          required
-          placeholder="123456"
-          className="w-40 rounded-md border border-hairline-edge bg-canvas px-3 py-2 font-mono text-lg text-ink focus:border-accent-emerald-bright focus:outline-none"
-        />
-        <button
-          type="submit"
-          className="ml-3 rounded-md bg-accent-emerald-bright px-4 py-2 text-sm font-medium text-canvas hover:opacity-90"
-        >
-          Enroll
-        </button>
+        <TokenInput />
+        <SubmitButton />
       </form>
 
       {state.status === 'error' && (
