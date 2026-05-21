@@ -58,6 +58,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // otplib and its dependencies ship as pure ESM; transpile them so Jest
+  // (which runs in CJS mode under next/jest) can process them.
+  transpilePackages: ['otplib', '@otplib/core', '@otplib/hotp', '@otplib/totp', '@otplib/uri', '@otplib/plugin-base32-scure', '@otplib/plugin-crypto-noble', '@scure/base', '@noble/hashes'],
   // image-hash + file-type ship `.wasm` assets that Next's webpack can't
   // bundle. Mark them external so the API route requires them from
   // node_modules at runtime (Node serverless runtime, not Edge).
