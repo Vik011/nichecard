@@ -12,6 +12,9 @@ interface HealthCheckInlineProps {
   scanResultId: string
   userTier: UserTier
   copy: CopyKeys
+  /** When true, appends ?demo=1 to the fetch URL so the server can
+   *  require all three demo validations (param + cookie + scan match). */
+  isLegitimateDemo?: boolean
 }
 
 interface HealthCheckResponse {
@@ -52,7 +55,7 @@ function scoreTier(score: number, copy: CopyKeys): ScoreTierStyle {
 
 const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-accent-emerald-bright'
 
-export function HealthCheckInline({ scanResultId, userTier, copy }: HealthCheckInlineProps) {
+export function HealthCheckInline({ scanResultId, userTier, copy, isLegitimateDemo }: HealthCheckInlineProps) {
   const allowed = canUseAIFeatures(userTier)
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
 
@@ -63,7 +66,8 @@ export function HealthCheckInline({ scanResultId, userTier, copy }: HealthCheckI
     async function run() {
       setState({ kind: 'loading' })
       try {
-        const res = await fetch(`/api/health-check/${encodeURIComponent(scanResultId)}`)
+        const qs = isLegitimateDemo ? '?demo=1' : ''
+        const res = await fetch(`/api/health-check/${encodeURIComponent(scanResultId)}${qs}`)
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))
           if (cancelled) return

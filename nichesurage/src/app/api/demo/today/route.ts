@@ -1,46 +1,37 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { utcDateKey } from '@/lib/tier/freeDemo'
+import { getDailyDemoNiche } from '@/lib/tier/freeDemo'
 
 export const runtime = 'nodejs'
-// Always evaluated at request time. createServiceClient() reads runtime env
-// vars; trying to prerender at build time crashes on `supabaseUrl is required`.
 export const dynamic = 'force-dynamic'
 
-// Returns the scan_result_id pinned as today's WOW demo niche.
+// Returns today's globally-pinned demo niche scan_result_id.
 //
-// Read-only public endpoint. The detail page calls this to validate that
-// a `?freeDemo=true` URL points to today's actual demo niche and not
-// some hand-crafted URL — without that check, anyone could share a
-// stylized welcome banner on any niche page.
+// Read-mostly: getDailyDemoNiche SELECTs first; only INSERTs on the cold
+// path of the day (first caller wins). All callers (anon /discover loads,
+// useFreeDemoState validation, useDailyFreeModal returning-user trigger)
+// see the same answer the auth callback's WOW redirect uses.
 //
-// Cache 5 minutes at the CDN edge: the pinned row is immutable for the
-// duration of a UTC day, so refreshing more often is wasted DB queries.
+// CDN cache 5 min — the pin is immutable for the rest of the UTC day, so
+// refreshing more often is wasted load.
 
 export async function GET(): Promise<Response> {
-  const dateKey = utcDateKey(new Date())
-  const supabase = createServiceClient()
-
-  const { data, error } = await supabase
-    .from('daily_demo_niche')
-    .select('scan_result_id')
-    .eq('date', dateKey)
-    .maybeSingle()
-
-  if (error) {
-    return NextResponse.json({ scanResultId: null }, {
-      status: 200,
-      headers: { 'Cache-Control': 'no-store' },
-    })
-  }
-
-  return NextResponse.json(
-    { scanResultId: data?.scan_result_id ?? null },
-    {
-      status: 200,
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60',
+  try {
+    const supabase = createServiceClient()
+    const pin = await getDailyDemoNiche(supabase)
+    return NextResponse.json(
+      { scanResultId: pin?.scanResultId ?? null },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60',
+        },
       },
-    },
-  )
+    )
+  } catch {
+    return NextResponse.json(
+      { scanResultId: null },
+      { status: 200, headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
 }

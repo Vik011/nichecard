@@ -21,6 +21,8 @@ import { StaggerList } from '@/components/ui/StaggerList'
 import { SonarEmptyState } from '@/components/ui/SonarEmptyState'
 import { getRevealedIds } from '@/lib/tier/reveal'
 import { computeVisibleResults } from '@/lib/tier/visibleResults'
+import { useDailyFreeModal } from '@/lib/demo/useDailyFreeModal'
+import { DailyFreeModal } from '@/components/niche/DailyFreeModal'
 import type { NicheCardData, SpikePoint } from '@/lib/types'
 
 // Pagination step. Initial render shows the first STEP cards; each
@@ -49,7 +51,7 @@ function DiscoverFallback() {
 function DiscoverPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { tier: userTier, userId, loading: userLoading } = useUser()
+  const { tier: userTier, userId, loading: userLoading, isLoggedIn } = useUser()
   const [lang] = useLang()
   const copy = COPY[lang]
 
@@ -61,6 +63,21 @@ function DiscoverPageInner() {
   const [savedCount, setSavedCount] = useState(0)
   const [visibleCount, setVisibleCount] = useState(VISIBLE_STEP)
   const [upsellOpen, setUpsellOpen] = useState(false)
+  const [todayPinId, setTodayPinId] = useState<string | null>(null)
+  const [dailyModalDismissed, setDailyModalDismissed] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/demo/today', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : Promise.resolve({ scanResultId: null }))
+      .then((body) => {
+        if (cancelled) return
+        const id = typeof body?.scanResultId === 'string' ? body.scanResultId : null
+        setTodayPinId(id)
+      })
+      .catch(() => { if (!cancelled) setTodayPinId(null) })
+    return () => { cancelled = true }
+  }, [])
 
   // Sprint Y (PR #58): surface tab + category bucket. Driven by URL state
   // so back-button + share works. surface=all is the implicit default.
@@ -137,9 +154,9 @@ function DiscoverPageInner() {
   // Reveal set for free tier is recomputed when results change.
   const revealedIds = useMemo(() => {
     const ids = results.map((n) => n.id)
-    return getRevealedIds(userTier, ids, userId ?? '', new Date())
+    return getRevealedIds(userTier, ids, userId ?? '', new Date(), todayPinId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [results, userTier, userId])
+  }, [results, userTier, userId, todayPinId])
 
   // Fix B (memo `2026-05-05-launch-debug.md` Issue #3): for free tier, the
   // visible grid must always include the rotating reveal at position 5,
@@ -152,8 +169,9 @@ function DiscoverPageInner() {
       results,
       visibleCount,
       now: new Date(),
+      todayPinId,
     })
-  }, [results, userTier, userId, visibleCount])
+  }, [results, userTier, userId, visibleCount, todayPinId])
 
   const showShowMore = userTier !== 'free' && visibleCount < results.length
 
@@ -223,6 +241,19 @@ function DiscoverPageInner() {
     const qs = params.toString()
     router.replace(qs ? `/discover?${qs}` : '/discover')
   }, [router, searchParams])
+
+  // Daily-modal trigger for returning FREE users. Must be evaluated AFTER
+  // nicheParam so the suppression guard below can read it. If the user
+  // already has a niche-detail modal opening (?niche=… or first-login
+  // ?freeDemo=true&niche=…), suppress the daily modal — only one modal
+  // at a time.
+  const { shouldOpen: dailyModalOpen, markSeen } = useDailyFreeModal({
+    tier: userTier,
+    userLoading,
+    isLoggedIn,
+    todayPinId,
+  })
+  const showDailyModal = dailyModalOpen && !dailyModalDismissed && !nicheParam
 
   return (
     <main className="min-h-screen bg-canvas text-ink px-4 py-8 max-w-6xl mx-auto overflow-x-hidden">
@@ -318,6 +349,18 @@ function DiscoverPageInner() {
 
       {upsellOpen && (
         <UpsellModal tier={userTier} copy={copy} onClose={() => setUpsellOpen(false)} />
+      )}
+
+      {showDailyModal && todayPinId && (
+        <DailyFreeModal
+          open
+          todayPinId={todayPinId}
+          copy={copy}
+          onClose={() => {
+            markSeen()
+            setDailyModalDismissed(true)
+          }}
+        />
       )}
 
       <NicheDetailModal

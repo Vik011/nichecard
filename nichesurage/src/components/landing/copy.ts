@@ -51,8 +51,8 @@ export const COPY = {
     tierMatrixTitle: 'What you get at each tier',
     tierMatrixCol: { feature: 'Feature', free: 'Free', basic: 'Basic', premium: 'Premium' },
     tierMatrixRows: [
-      { label: 'Unlocked niche cards', free: '1 (rotates /6h)', basic: '5 per format (top 1–5)', premium: 'All (top 50)' },
-      { label: 'Reveal cadence', free: 'Every 6 hours', basic: 'Refreshed daily', premium: 'Live, no rotation' },
+      { label: 'Unlocked niche cards', free: '1 (rotates daily)', basic: '5 per format (top 1–5)', premium: 'All (top 50)' },
+      { label: 'Reveal cadence', free: 'Every day at midnight UTC', basic: 'Refreshed daily', premium: 'Live, no rotation' },
       { label: 'AI deep-dive (Health + Angles bundled)', free: '—', basic: '1 / day', premium: 'Unlimited' },
       { label: 'Saved niches', free: '0', basic: '10', premium: 'Unlimited' },
       { label: 'Channel name + URL', free: 'Only on the unlocked niche', basic: 'All visible', premium: 'All visible' },
@@ -64,8 +64,8 @@ export const COPY = {
     faqTitle: 'Frequently asked questions',
     faqItems: [
       {
-        q: 'How does the 6-hour reveal work for Free?',
-        a: 'Every 6 hours your account unlocks one niche from positions 5–15 of the day\'s sorted list (the band right below Basic\'s top 5). Same window — same niche, even across reloads. Different users see different reveals in the same window. The top 4 stay paywalled forever (those are Basic territory).',
+        q: 'How does the daily reveal work for Free?',
+        a: 'Every day at midnight UTC your account unlocks one niche from positions 5–15 of the day\'s sorted list (the band right below Basic\'s top 5). Same window — same niche, even across reloads. Different users see different reveals in the same window. The top 4 stay paywalled forever (those are Basic territory).',
       },
       {
         q: 'What does Basic actually unlock?',
@@ -93,7 +93,7 @@ export const COPY = {
       },
       {
         q: 'Why Google sign-in only?',
-        a: 'Real accounts. The Free tier (1 reveal / 6h) is only meaningful if creating extra accounts is expensive — disposable-email signups would let one person register four addresses and get four reveals. Google enforces the cost we don\'t want to operate ourselves.',
+        a: 'Real accounts. The Free tier (1 reveal / day) is only meaningful if creating extra accounts is expensive — disposable-email signups would let one person register four addresses and get four reveals. Google enforces the cost we don\'t want to operate ourselves.',
       },
     ],
     discoverSearchingBtn: 'Searching…',
@@ -305,10 +305,10 @@ export const COPY = {
     pricingCtaPremium: 'Go Premium',
     pricingPremiumTrust: 'Cancel anytime · Secure checkout via Stripe',
     // Sprint A.7 — feature lists rewritten to match the actual three-tier
-    // funnel: 1 reveal /6h for free, top 5 per format /24h + 1 AI deep-dive
+    // funnel: 1 reveal /day for free, top 5 per format /24h + 1 AI deep-dive
     // for basic, unlimited everything for premium.
     pricingFreeFeatures: [
-      '1 unlocked niche, rotates every 6h',
+      '1 unlocked niche, rotates daily at midnight UTC',
       'Channel name + URL on the unlocked one',
       'Top 4 niches blurred (Basic territory)',
       'No AI deep-dives',
@@ -408,8 +408,8 @@ export const COPY = {
     tierMatrixTitle: 'Was du in jedem Tier bekommst',
     tierMatrixCol: { feature: 'Feature', free: 'Free', basic: 'Basic', premium: 'Premium' },
     tierMatrixRows: [
-      { label: 'Freigeschaltete Nischen-Karten', free: '1 (rotiert /6h)', basic: '5 pro Format (Top 1–5)', premium: 'Alle (Top 50)' },
-      { label: 'Freischaltungsrhythmus', free: 'Alle 6 Stunden', basic: 'Täglich erneuert', premium: 'Live, keine Rotation' },
+      { label: 'Freigeschaltete Nischen-Karten', free: '1 (rotiert täglich)', basic: '5 pro Format (Top 1–5)', premium: 'Alle (Top 50)' },
+      { label: 'Freischaltungsrhythmus', free: 'Täglich um Mitternacht UTC', basic: 'Täglich erneuert', premium: 'Live, keine Rotation' },
       { label: 'KI-Analyse (Health + Angles gebündelt)', free: '—', basic: '1 / Tag', premium: 'Unbegrenzt' },
       { label: 'Gespeicherte Nischen', free: '0', basic: '10', premium: 'Unbegrenzt' },
       { label: 'Kanalname + URL', free: 'Nur bei der freigeschalteten', basic: 'Alle sichtbar', premium: 'Alle sichtbar' },
@@ -421,8 +421,8 @@ export const COPY = {
     faqTitle: 'Häufige Fragen',
     faqItems: [
       {
-        q: 'Wie funktioniert die 6-Stunden-Freischaltung für Free?',
-        a: 'Alle 6 Stunden schaltet dein Account eine Nische aus den Positionen 5–15 der Tagesliste frei (das Band direkt unter Basics Top 5). Gleiches 6h-Fenster — gleiche Nische, auch nach Reload. Verschiedene Nutzer sehen im selben Fenster verschiedene Freischaltungen. Die Top 4 bleiben dauerhaft hinter der Paywall (das ist Basic-Gebiet).',
+        q: 'Wie funktioniert die tägliche Freischaltung für Free?',
+        a: 'Täglich um Mitternacht UTC schaltet dein Account eine Nische aus den Positionen 5–15 der Tagesliste frei (das Band direkt unter Basics Top 5). Gleiches Fenster — gleiche Nische, auch nach Reload. Verschiedene Nutzer sehen im selben Fenster verschiedene Freischaltungen. Die Top 4 bleiben dauerhaft hinter der Paywall (das ist Basic-Gebiet).',
       },
       {
         q: 'Was schaltet Basic eigentlich frei?',
@@ -450,7 +450,7 @@ export const COPY = {
       },
       {
         q: 'Warum nur Google Sign-in?',
-        a: 'Echte Accounts. Das Free-Tier (1 Freischaltung / 6h) funktioniert nur, wenn das Erstellen zusätzlicher Accounts teuer ist — Wegwerf-Mails würden eine Person dazu bringen, vier Adressen zu registrieren und vier Freischaltungen zu bekommen. Google erzwingt die Kosten, die wir nicht selbst betreiben wollen.',
+        a: 'Echte Accounts. Das Free-Tier (1 Freischaltung / Tag) funktioniert nur, wenn das Erstellen zusätzlicher Accounts teuer ist — Wegwerf-Mails würden eine Person dazu bringen, vier Adressen zu registrieren und vier Freischaltungen zu bekommen. Google erzwingt die Kosten, die wir nicht selbst betreiben wollen.',
       },
     ],
     discoverSearchingBtn: 'Suche…',
@@ -643,7 +643,7 @@ export const COPY = {
     pricingPremiumTrust: 'Jederzeit kündbar · Sichere Zahlung über Stripe',
     // Sprint A.7 — Feature-Listen entsprechen jetzt der Drei-Tier-Logik.
     pricingFreeFeatures: [
-      '1 freigeschaltete Nische, rotiert alle 6h',
+      '1 freigeschaltete Nische, rotiert täglich um Mitternacht UTC',
       'Kanalname + URL der freigeschalteten',
       'Top 4 Nischen verschwommen (Basic-Gebiet)',
       'Keine KI-Analysen',
