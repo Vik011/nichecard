@@ -68,6 +68,10 @@ export function NicheDetailContent({
   // pinned scan_id; everywhere else it resolves to 'not-demo' and
   // nothing changes.
   const aiTier: UserTier = demoState === 'legitimate' && tier === 'free' ? 'premium' : tier
+  // Signal for AI children to append ?demo=1 to their fetch URLs so the
+  // server (Tasks 10–11) can require all three validations (param + cookie
+  // + scan match) before bypassing the quota gate.
+  const isLegitimateDemo = demoState === 'legitimate' && tier === 'free'
 
   return (
     <div className="animate-fade-in">
@@ -86,10 +90,10 @@ export function NicheDetailContent({
       <div className="lg:grid lg:grid-cols-2 lg:gap-6">
         <div className="flex flex-col">
           <PerformanceChart history={history} copy={copy} tier={tierFromScore(niche.opportunityScore)} />
-          <HealthCheckInline scanResultId={niche.id} userTier={aiTier} copy={copy} />
+          <HealthCheckInline scanResultId={niche.id} userTier={aiTier} copy={copy} isLegitimateDemo={isLegitimateDemo} />
         </div>
         <div className="flex flex-col">
-          <AIContentAngles scanResultId={niche.id} userTier={aiTier} copy={copy} />
+          <AIContentAngles scanResultId={niche.id} userTier={aiTier} copy={copy} isLegitimateDemo={isLegitimateDemo} />
           <ChannelVideoGrid channelId={niche.youtubeChannelId} copy={copy} />
         </div>
       </div>

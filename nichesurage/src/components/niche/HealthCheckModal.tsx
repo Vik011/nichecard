@@ -8,6 +8,9 @@ interface HealthCheckModalProps {
   scanResultId: string
   nicheLabel: string
   onClose: () => void
+  /** When true, appends ?demo=1 to the fetch URL so the server can
+   *  require all three demo validations (param + cookie + scan match). */
+  isLegitimateDemo?: boolean
 }
 
 interface HealthCheckResponse {
@@ -57,7 +60,7 @@ function scoreTier(score: number): ScoreTier {
   return { textClass: 'text-red-400', label: 'WEAK' }
 }
 
-export function HealthCheckModal({ scanResultId, nicheLabel, onClose }: HealthCheckModalProps) {
+export function HealthCheckModal({ scanResultId, nicheLabel, onClose, isLegitimateDemo }: HealthCheckModalProps) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
@@ -66,7 +69,8 @@ export function HealthCheckModal({ scanResultId, nicheLabel, onClose }: HealthCh
     let cancelled = false
     async function run() {
       try {
-        const resp = await fetch(`/api/health-check/${scanResultId}`)
+        const qs = isLegitimateDemo ? '?demo=1' : ''
+        const resp = await fetch(`/api/health-check/${scanResultId}${qs}`)
         if (!resp.ok) {
           const body = await resp.json().catch(() => ({}))
           if (!cancelled) setState({ kind: 'error', message: body?.error ?? `Request failed (${resp.status})` })

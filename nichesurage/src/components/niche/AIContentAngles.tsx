@@ -15,6 +15,9 @@ interface AIContentAnglesProps {
   scanResultId: string
   userTier: UserTier
   copy: CopyKeys
+  /** When true, appends ?demo=1 to the fetch URL so the server can
+   *  require all three demo validations (param + cookie + scan match). */
+  isLegitimateDemo?: boolean
 }
 
 type LoadState =
@@ -26,7 +29,7 @@ type LoadState =
 
 const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-accent-emerald-bright'
 
-export function AIContentAngles({ scanResultId, userTier, copy }: AIContentAnglesProps) {
+export function AIContentAngles({ scanResultId, userTier, copy, isLegitimateDemo }: AIContentAnglesProps) {
   const allowed = canUseAIFeatures(userTier)
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
 
@@ -37,7 +40,8 @@ export function AIContentAngles({ scanResultId, userTier, copy }: AIContentAngle
     async function run() {
       setState({ kind: 'loading' })
       try {
-        const res = await fetch(`/api/content-angles/${encodeURIComponent(scanResultId)}`)
+        const qs = isLegitimateDemo ? '?demo=1' : ''
+        const res = await fetch(`/api/content-angles/${encodeURIComponent(scanResultId)}${qs}`)
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))
           if (cancelled) return
