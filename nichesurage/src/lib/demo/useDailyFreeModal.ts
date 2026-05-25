@@ -14,10 +14,14 @@ import {
 // decides whether the modal should open *automatically* on /discover.
 //
 // Caller is responsible for fetching todayPinId from /api/demo/today.
+//
+// Anon visitors share `tier='free'` with logged-in free users in UserContext;
+// the `isLoggedIn` arg disambiguates so the modal never pops for anon.
 
 export interface UseDailyFreeModalArgs {
   tier: UserTier
   userLoading: boolean
+  isLoggedIn: boolean
   todayPinId: string | null
 }
 
@@ -29,13 +33,13 @@ export interface UseDailyFreeModalResult {
 export function useDailyFreeModal(
   args: UseDailyFreeModalArgs,
 ): UseDailyFreeModalResult {
-  const { tier, userLoading, todayPinId } = args
+  const { tier, userLoading, isLoggedIn, todayPinId } = args
   // Bump on markSeen so a re-read of document.cookie happens next render.
   const [seenTick, setSeenTick] = useState(0)
 
   const browser = typeof window !== 'undefined'
   let shouldOpen = false
-  if (browser && !userLoading && tier === 'free' && todayPinId) {
+  if (browser && !userLoading && isLoggedIn && tier === 'free' && todayPinId) {
     const now = new Date()
     shouldOpen = !hasSeenDailyModal(document.cookie, now)
   }

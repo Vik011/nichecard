@@ -51,7 +51,7 @@ function DiscoverFallback() {
 function DiscoverPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { tier: userTier, userId, loading: userLoading } = useUser()
+  const { tier: userTier, userId, loading: userLoading, isLoggedIn } = useUser()
   const [lang] = useLang()
   const copy = COPY[lang]
 
@@ -250,6 +250,7 @@ function DiscoverPageInner() {
   const { shouldOpen: dailyModalOpen, markSeen } = useDailyFreeModal({
     tier: userTier,
     userLoading,
+    isLoggedIn,
     todayPinId,
   })
   const showDailyModal = dailyModalOpen && !dailyModalDismissed && !nicheParam
