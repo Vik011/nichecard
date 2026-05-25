@@ -11,19 +11,27 @@ import type { UserTier } from '@/lib/types'
 export const runtime = 'nodejs'
 const CACHE_DAYS = 7
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: { id: string } }) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Sprint A.9 Phase B: free-demo-niche bypass. The first-login WOW flow
-  // pins one global niche per UTC day and pre-warms its Health Check
-  // cache (see lib/demo/preWarm.ts). When the API is asked about that
-  // pinned scan_id we serve the cache row regardless of tier and don't
-  // record AI usage. The check is server-side against daily_demo_niche
-  // so a hand-crafted ?id=<random> can't unlock paid content — only the
-  // actual pinned scan_id matches.
-  const isDemoNiche = await isTodaysDemoNiche(params.id)
+  // Sprint A.9 Phase B (Task 10 hardening): free-demo-niche bypass.
+  // The first-login WOW flow pins one global niche per UTC day and
+  // pre-warms its Health Check cache (see lib/demo/preWarm.ts).
+  //
+  // Three signals must ALL be true to activate the bypass:
+  //   1. URL has ?demo=1 (client signals intent)
+  //   2. Request carries surgeniche_demo_seen cookie (set by auth callback)
+  //   3. scan_id matches today's pinned daily_demo_niche row (server-authoritative)
+  //
+  // This prevents returning users and URL-forgers from bypassing the
+  // paywall: if either client signal is missing the tier check runs instead.
+  const url = new URL(req.url)
+  const demoParam = url.searchParams.get('demo')
+  const demoCookie = parseDemoSeenCookie(req.headers.get('cookie'))
+  const wantsDemoBypass = demoParam === '1' && demoCookie
+  const isDemoNiche = wantsDemoBypass && await isTodaysDemoNiche(params.id)
   if (isDemoNiche) {
     const nowIso = new Date().toISOString()
     let cached = await readHealthCache(supabase, params.id, nowIso)
@@ -178,6 +186,19 @@ async function readHealthCache(
     .gt('expires_at', nowIso)
     .maybeSingle()
   return data
+}
+
+/**
+ * Returns true when the incoming Cookie header contains the
+ * `surgeniche_demo_seen` cookie set by the auth callback.
+ * Uses a startsWith check on the trimmed segment to avoid false
+ * positives from cookies whose names share a common prefix.
+ */
+function parseDemoSeenCookie(cookieHeader: string | null): boolean {
+  if (!cookieHeader) return false
+  return cookieHeader
+    .split(';')
+    .some((c) => c.trim().startsWith('surgeniche_demo_seen='))
 }
 
 /**
