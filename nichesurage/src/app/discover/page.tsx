@@ -64,6 +64,7 @@ function DiscoverPageInner() {
   const [visibleCount, setVisibleCount] = useState(VISIBLE_STEP)
   const [upsellOpen, setUpsellOpen] = useState(false)
   const [todayPinId, setTodayPinId] = useState<string | null>(null)
+  const [pinNiche, setPinNiche] = useState<NicheCardData | null>(null)
   const [dailyModalDismissed, setDailyModalDismissed] = useState(false)
 
   useEffect(() => {
@@ -78,6 +79,41 @@ function DiscoverPageInner() {
       .catch(() => { if (!cancelled) setTodayPinId(null) })
     return () => { cancelled = true }
   }, [])
+
+  // Fetch the pin niche row separately so it can be injected into the feed
+  // when /discover's score-sorted top-N doesn't include it (e.g. pin came
+  // from the smaller is_spike pool with a lower opportunity_score than the
+  // 60th general niche). Without this, FREE users never see the pin in the
+  // grid; daily modal is their only entry to it.
+  useEffect(() => {
+    if (!todayPinId) {
+      setPinNiche(null)
+      return
+    }
+    let cancelled = false
+    fetchNicheById(todayPinId).then((pin) => {
+      if (cancelled || !pin) return
+      setPinNiche(pin)
+      fetchSpikeHistory(pin.youtubeChannelId).then((points) => {
+        if (cancelled) return
+        setHistories((prev) => {
+          const next = new Map(prev)
+          next.set(pin.id, points)
+          return next
+        })
+      })
+    }).catch(() => { if (!cancelled) setPinNiche(null) })
+    return () => { cancelled = true }
+  }, [todayPinId])
+
+  // Inject pin into results when missing. FREE-only — Basic/Premium see
+  // the full sorted feed and don't need the pin specifically.
+  const enrichedResults = useMemo(() => {
+    if (userTier !== 'free') return results
+    if (!pinNiche) return results
+    if (results.some((r) => r.id === pinNiche.id)) return results
+    return [...results, pinNiche]
+  }, [results, pinNiche, userTier])
 
   // Sprint Y (PR #58): surface tab + category bucket. Driven by URL state
   // so back-button + share works. surface=all is the implicit default.
@@ -153,10 +189,10 @@ function DiscoverPageInner() {
 
   // Reveal set for free tier is recomputed when results change.
   const revealedIds = useMemo(() => {
-    const ids = results.map((n) => n.id)
+    const ids = enrichedResults.map((n) => n.id)
     return getRevealedIds(userTier, ids, userId ?? '', new Date(), todayPinId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [results, userTier, userId, todayPinId])
+  }, [enrichedResults, userTier, userId, todayPinId])
 
   // Fix B (memo `2026-05-05-launch-debug.md` Issue #3): for free tier, the
   // visible grid must always include the rotating reveal at position 5,
@@ -166,14 +202,14 @@ function DiscoverPageInner() {
     return computeVisibleResults({
       tier: userTier,
       userId: userId ?? '',
-      results,
+      results: enrichedResults,
       visibleCount,
       now: new Date(),
       todayPinId,
     })
-  }, [results, userTier, userId, visibleCount, todayPinId])
+  }, [enrichedResults, userTier, userId, visibleCount, todayPinId])
 
-  const showShowMore = userTier !== 'free' && visibleCount < results.length
+  const showShowMore = userTier !== 'free' && visibleCount < enrichedResults.length
 
   // Niche-detail modal state — driven by ?niche=<id> on the URL so opening
   // a card creates a back-button-able history entry, refreshes preserve
@@ -292,17 +328,17 @@ function DiscoverPageInner() {
         </div>
       )}
 
-      {!userLoading && !loading && results.length === 0 && !error && (
+      {!userLoading && !loading && enrichedResults.length === 0 && !error && (
         <SonarEmptyState
           caption={copy.discoverScanningDeepWeb}
           hint={copy.discoverEmptyBody}
         />
       )}
 
-      {!userLoading && !loading && results.length > 0 && (
+      {!userLoading && !loading && enrichedResults.length > 0 && (
         <>
           <StaggerList
-            key={`grid-${visibleCount}-${results.length}-${userTier}`}
+            key={`grid-${visibleCount}-${enrichedResults.length}-${userTier}`}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
           >
             {visibleResults.map((niche, i) => (
@@ -333,14 +369,14 @@ function DiscoverPageInner() {
               </button>
             </div>
           )}
-          {userTier === 'free' && results.length > visibleResults.length && (
+          {userTier === 'free' && enrichedResults.length > visibleResults.length && (
             <div className="flex flex-col items-center mt-6 gap-2">
               <button
                 type="button"
                 onClick={() => setUpsellOpen(true)}
                 className="bg-surface-overlay hover:bg-surface-hover border border-hairline-edge hover:border-accent-emerald/30 text-ink-muted hover:text-ink text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
               >
-                {copy.discoverShowMoreFreeUpsell(results.length - visibleResults.length)}
+                {copy.discoverShowMoreFreeUpsell(enrichedResults.length - visibleResults.length)}
               </button>
             </div>
           )}
