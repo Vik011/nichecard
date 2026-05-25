@@ -12,10 +12,10 @@ interface RevealCountdownProps {
 }
 
 // Sprint A.7 — small inline countdown shown above the niche grid for FREE
-// users. It anchors the dopamine loop ("come back in 4h 22m for a fresh
+// users. It anchors the dopamine loop ("come back tomorrow for a fresh
 // reveal") and visually telegraphs that the rotation is real, not a static
 // blur. BASIC and PREMIUM see a static badge instead — they don't rotate
-// on a 6h schedule, their feed continuously reflects the latest scan.
+// on a daily schedule, their feed continuously reflects the latest scan.
 export function RevealCountdown({ tier, copy }: RevealCountdownProps) {
   // We init to null so the first render on the server matches the first
   // render on the client (useEffect populates the value after mount).

@@ -1,186 +1,82 @@
 import {
-  hashStringToInt,
-  getFreeWindowIndex,
-  getFreeRevealedIndex,
-  getRevealedIds,
+  BASIC_VISIBLE_COUNT,
   getNextRevealAt,
   getMsUntilNextReveal,
-  FREE_WINDOW_MS,
-  FREE_REVEAL_RANGE_START,
-  FREE_REVEAL_RANGE_END,
-  BASIC_VISIBLE_COUNT,
+  getRevealedIds,
 } from './reveal'
 
-const SOME_DAY = new Date('2026-05-03T10:30:00.000Z') // mid 6h window
-
-describe('hashStringToInt', () => {
-  it('is deterministic', () => {
-    expect(hashStringToInt('user-1:42')).toBe(hashStringToInt('user-1:42'))
-  })
-
-  it('differs across slightly different inputs', () => {
-    expect(hashStringToInt('user-1:42')).not.toBe(hashStringToInt('user-1:43'))
-    expect(hashStringToInt('user-1:42')).not.toBe(hashStringToInt('user-2:42'))
-  })
-
-  it('always returns a non-negative integer', () => {
-    for (const s of ['', 'x', 'a longer string', 'unicode: αβγ', '!!!']) {
-      const h = hashStringToInt(s)
-      expect(h).toBeGreaterThanOrEqual(0)
-      expect(Number.isInteger(h)).toBe(true)
-    }
-  })
-})
-
-describe('getFreeWindowIndex', () => {
-  it('is constant within a 6h window', () => {
-    const a = new Date('2026-05-03T00:00:01.000Z')
-    const b = new Date('2026-05-03T05:59:59.999Z')
-    expect(getFreeWindowIndex(a)).toBe(getFreeWindowIndex(b))
-  })
-
-  it('advances at the 6h boundary', () => {
-    const before = new Date('2026-05-03T05:59:59.999Z')
-    const after = new Date('2026-05-03T06:00:00.001Z')
-    expect(getFreeWindowIndex(after)).toBe(getFreeWindowIndex(before) + 1)
-  })
-})
-
-describe('getFreeRevealedIndex', () => {
-  it('returns null when the pool is too small to have a position past Basic', () => {
-    expect(getFreeRevealedIndex('u', SOME_DAY, FREE_REVEAL_RANGE_START)).toBeNull()
-    expect(getFreeRevealedIndex('u', SOME_DAY, 0)).toBeNull()
-    expect(getFreeRevealedIndex('u', SOME_DAY, 3)).toBeNull()
-  })
-
-  it('returns an index in [FREE_REVEAL_RANGE_START, FREE_REVEAL_RANGE_END] for a full-size pool', () => {
-    for (const userId of ['u1', 'u2', 'u3', 'u4', 'u5', 'u6']) {
-      const idx = getFreeRevealedIndex(userId, SOME_DAY, 30)
-      expect(idx).not.toBeNull()
-      expect(idx!).toBeGreaterThanOrEqual(FREE_REVEAL_RANGE_START)
-      expect(idx!).toBeLessThanOrEqual(FREE_REVEAL_RANGE_END)
-    }
-  })
-
-  it('clamps the upper bound when the pool is between FREE_REVEAL_RANGE_START+1 and FREE_REVEAL_RANGE_END', () => {
-    // With pool size 8, eligible range is [4, 7] (4 slots). All picks must
-    // land in that range regardless of user.
-    for (let i = 0; i < 30; i++) {
-      const idx = getFreeRevealedIndex(`u-${i}`, SOME_DAY, 8)
-      expect(idx).not.toBeNull()
-      expect(idx!).toBeGreaterThanOrEqual(FREE_REVEAL_RANGE_START)
-      expect(idx!).toBeLessThanOrEqual(7)
-    }
-  })
-
-  it('returns the same index for the same user within the same window', () => {
-    const t1 = new Date('2026-05-03T00:10:00.000Z')
-    const t2 = new Date('2026-05-03T05:55:00.000Z') // still same 6h window
-    expect(getFreeRevealedIndex('alice', t1, 30)).toBe(
-      getFreeRevealedIndex('alice', t2, 30),
-    )
-  })
-
-  it('rotates at the next 6h boundary (different users see fresh distributions too)', () => {
-    const before = new Date('2026-05-03T05:30:00.000Z')
-    const after = new Date('2026-05-03T06:30:00.000Z')
-
-    // We don't assert that EVERY user changes (a hash collision is allowed),
-    // only that the overall distribution shifts. Sample 50 users and check
-    // that at least some of them get a different index after the boundary.
-    let changed = 0
-    for (let i = 0; i < 50; i++) {
-      const a = getFreeRevealedIndex(`user-${i}`, before, 30)
-      const b = getFreeRevealedIndex(`user-${i}`, after, 30)
-      if (a !== b) changed++
-    }
-    expect(changed).toBeGreaterThan(30) // expect ~90% to change in practice
-  })
-
-  it('distributes across the full eligible range, not just one slot', () => {
-    // 200 random user ids → we should see meaningful variance across the
-    // eligible 11-slot range.
-    const seen = new Set<number>()
-    for (let i = 0; i < 200; i++) {
-      const idx = getFreeRevealedIndex(`u-${i}-extra-entropy`, SOME_DAY, 30)
-      if (idx !== null) seen.add(idx)
-    }
-    // Expect at least 7 of the 11 possible slots to be hit. Hash quality
-    // isn't perfect on tiny seeds; this is a generous lower bound.
-    expect(seen.size).toBeGreaterThanOrEqual(7)
-  })
-})
-
 describe('getRevealedIds', () => {
-  const ids = Array.from({ length: 30 }, (_, i) => `niche-${i}`)
+  const niches = ['n0', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6']
+  const userId = 'user-abc'
+  const now = new Date('2026-05-22T14:00:00Z')
 
-  it('reveals all ids for premium', () => {
-    const set = getRevealedIds('premium', ids, 'u', SOME_DAY)
-    expect(set.size).toBe(30)
+  it('premium returns the full set', () => {
+    const out = getRevealedIds('premium', niches, userId, now, 'n3')
+    expect(out).toEqual(new Set(niches))
   })
 
-  it('reveals top BASIC_VISIBLE_COUNT ids for basic, in input order', () => {
-    const set = getRevealedIds('basic', ids, 'u', SOME_DAY)
-    expect(set.size).toBe(BASIC_VISIBLE_COUNT)
-    for (let i = 0; i < BASIC_VISIBLE_COUNT; i++) {
-      expect(set.has(`niche-${i}`)).toBe(true)
-    }
-    expect(set.has(`niche-${BASIC_VISIBLE_COUNT}`)).toBe(false)
+  it('basic returns the top BASIC_VISIBLE_COUNT regardless of pin', () => {
+    const out = getRevealedIds('basic', niches, userId, now, 'n6')
+    expect(out).toEqual(new Set(niches.slice(0, BASIC_VISIBLE_COUNT)))
+    expect(out.size).toBe(BASIC_VISIBLE_COUNT)
   })
 
-  it('reveals exactly one id for free, picked from FREE_REVEAL_RANGE_START..END', () => {
-    const set = getRevealedIds('free', ids, 'u', SOME_DAY)
-    expect(set.size).toBe(1)
-    const onlyId = Array.from(set)[0]
-    const pos = ids.indexOf(onlyId)
-    expect(pos).toBeGreaterThanOrEqual(FREE_REVEAL_RANGE_START)
-    expect(pos).toBeLessThanOrEqual(FREE_REVEAL_RANGE_END)
+  it('free returns ONLY the pin when pin is provided', () => {
+    const out = getRevealedIds('free', niches, userId, now, 'n3')
+    expect(out).toEqual(new Set(['n3']))
   })
 
-  it('returns an empty set for free when pool is too small', () => {
-    const small = ids.slice(0, FREE_REVEAL_RANGE_START)
-    expect(getRevealedIds('free', small, 'u', SOME_DAY).size).toBe(0)
+  it('free returns empty set when pin is null (no pin yet today)', () => {
+    const out = getRevealedIds('free', niches, userId, now, null)
+    expect(out).toEqual(new Set())
   })
 
-  it('reveals all available for basic when pool is smaller than BASIC_VISIBLE_COUNT', () => {
-    const small = ids.slice(0, BASIC_VISIBLE_COUNT - 1)
-    const set = getRevealedIds('basic', small, 'u', SOME_DAY)
-    expect(set.size).toBe(BASIC_VISIBLE_COUNT - 1)
+  it('free returns empty set when pin id is not in the fetched results', () => {
+    const out = getRevealedIds('free', niches, userId, now, 'not-in-list')
+    expect(out).toEqual(new Set())
+  })
+
+  it('free for the same pin is identical across two different user IDs', () => {
+    const a = getRevealedIds('free', niches, 'user-a', now, 'n3')
+    const b = getRevealedIds('free', niches, 'user-b', now, 'n3')
+    expect(a).toEqual(b)
+  })
+
+  it('free for the same pin is identical across two different surfaces / sorts', () => {
+    const sortedA = ['n0', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6']
+    const sortedB = ['n6', 'n4', 'n3', 'n1', 'n2', 'n0', 'n5']
+    expect(getRevealedIds('free', sortedA, userId, now, 'n3')).toEqual(new Set(['n3']))
+    expect(getRevealedIds('free', sortedB, userId, now, 'n3')).toEqual(new Set(['n3']))
   })
 })
 
 describe('getNextRevealAt', () => {
-  it('returns null for non-free tiers', () => {
-    expect(getNextRevealAt('basic', SOME_DAY)).toBeNull()
-    expect(getNextRevealAt('premium', SOME_DAY)).toBeNull()
+  it('returns next UTC midnight for free tier', () => {
+    const now = new Date('2026-05-22T14:30:00Z')
+    const at = getNextRevealAt('free', now)
+    expect(at?.toISOString()).toBe('2026-05-23T00:00:00.000Z')
   })
 
-  it('returns a 6h-aligned timestamp in the future for free', () => {
-    const at = getNextRevealAt('free', SOME_DAY)
-    expect(at).not.toBeNull()
-    expect(at!.getTime() % FREE_WINDOW_MS).toBe(0)
-    expect(at!.getTime()).toBeGreaterThan(SOME_DAY.getTime())
-    // Must be within the next 6h
-    expect(at!.getTime() - SOME_DAY.getTime()).toBeLessThanOrEqual(FREE_WINDOW_MS)
+  it('returns null for basic', () => {
+    expect(getNextRevealAt('basic', new Date())).toBeNull()
   })
 
-  it('exactly matches the next window boundary (00:00, 06:00, 12:00, 18:00 UTC)', () => {
-    const t = new Date('2026-05-03T13:42:11.000Z') // mid 12:00–18:00 window
-    const at = getNextRevealAt('free', t)
-    expect(at!.toISOString()).toBe('2026-05-03T18:00:00.000Z')
+  it('returns null for premium', () => {
+    expect(getNextRevealAt('premium', new Date())).toBeNull()
   })
 })
 
 describe('getMsUntilNextReveal', () => {
-  it('returns null for non-free tiers', () => {
-    expect(getMsUntilNextReveal('basic', SOME_DAY)).toBeNull()
-    expect(getMsUntilNextReveal('premium', SOME_DAY)).toBeNull()
+  it('returns positive ms for free', () => {
+    const now = new Date('2026-05-22T23:30:00Z')
+    const ms = getMsUntilNextReveal('free', now)
+    expect(ms).not.toBeNull()
+    expect(ms).toBeGreaterThan(0)
+    expect(ms).toBeLessThanOrEqual(30 * 60 * 1000)
   })
 
-  it('returns a positive value for free, < FREE_WINDOW_MS', () => {
-    const ms = getMsUntilNextReveal('free', SOME_DAY)
-    expect(ms).not.toBeNull()
-    expect(ms!).toBeGreaterThan(0)
-    expect(ms!).toBeLessThanOrEqual(FREE_WINDOW_MS)
+  it('returns null for basic / premium', () => {
+    expect(getMsUntilNextReveal('basic', new Date())).toBeNull()
+    expect(getMsUntilNextReveal('premium', new Date())).toBeNull()
   })
 })

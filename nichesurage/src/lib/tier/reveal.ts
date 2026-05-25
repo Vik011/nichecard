@@ -1,93 +1,37 @@
 import type { UserTier } from '@/lib/types/database'
+import { nextUtcMidnight } from '@/lib/demo/dailyModalCookie'
 
-// Reveal logic for the Sprint A.7 three-tier funnel.
+// Reveal logic post free-tier paywall fix.
 //
-// Strategic intent:
-// - PREMIUM sees everything, no rotation.
-// - BASIC sees the top 5 niches per content_type (positions 0–4 of the
-//   sorted feed for the current shorts/longform view). With both formats
-//   browsed they get 10 total. They rotate naturally as new scans land in
-//   scan_results_latest; we don't manage a separate "BASIC window" — the
-//   underlying feed is already the rotation.
-// - FREE sees exactly ONE niche unlocked at a time, picked deterministically
-//   from positions 4 to 14 of the sorted feed for the current 6h window
-//   (i.e. the band right below Basic's top 5). The picked niche persists
-//   across reloads in the same window so the user has a stable "today's
-//   reveal" experience; it advances at the next 6h boundary.
+// - PREMIUM: every fetched niche is unlocked.
+// - BASIC: top BASIC_VISIBLE_COUNT by input order.
+// - FREE: exactly ONE niche unlocked — the globally-pinned daily demo
+//   from `daily_demo_niche`. Caller fetches the pin id and passes it in.
+//   Identical for every free user and across every /discover surface tab,
+//   so a user can never see more than 1 unlocked niche per UTC day.
 //
-// Why deterministic + window-based instead of a DB-tracked rotation:
-// - No new DB writes on every page view.
-// - Same user + same window → same niche → caching-friendly + shareable.
-// - Different users in the same window get different niches (uniform via
-//   hashing user_id + window_index), so two friends comparing screenshots
-//   see different "reveals", which is itself a marketing surface ("I got
-//   X today, what did you get?").
-//
-// The "always-locked top 4" is the FOMO core: FREE users see 4 blurred
-// cards with visible scores RANKED HIGHER than their unlocked one. That's
-// the upgrade trigger — not "you don't see anything", but "you see that
-// better stuff exists, paywalled".
+// Rotation: next UTC midnight. The 6h hash-window scheme that produced
+// up to 4 reveals/day was removed — see the 2026-05-22 paywall plan.
 
-export const FREE_WINDOW_MS = 6 * 60 * 60 * 1000
 export const BASIC_VISIBLE_COUNT = 5
-export const FREE_REVEAL_RANGE_START = 4 // first index eligible for FREE reveal
-export const FREE_REVEAL_RANGE_END = 14 // last index eligible (inclusive)
 
 /**
- * Stable 32-bit hash. Not cryptographic — we just need a uniform,
- * dependency-free distribution over user_id + window index. Mirrors the
- * pattern used by deterministicChannelNum elsewhere in this codebase
- * (Java String.hashCode-style with Math.imul).
- */
-export function hashStringToInt(s: string): number {
-  let h = 0
-  for (let i = 0; i < s.length; i++) {
-    h = (Math.imul(31, h) + s.charCodeAt(i)) | 0
-  }
-  return Math.abs(h)
-}
-
-/** Current 6h window index (UTC), monotonically increasing. */
-export function getFreeWindowIndex(now: Date): number {
-  return Math.floor(now.getTime() / FREE_WINDOW_MS)
-}
-
-/**
- * Pick the index of the FREE-revealed niche for this user in the current
- * 6h window. Picks from [4, 14] inclusive, clamped to the actual pool size.
- * Returns null when the pool has fewer than FREE_REVEAL_RANGE_START + 1
- * items — i.e. there isn't a "position 5+" to reveal, the entire pool is
- * Basic territory.
- */
-export function getFreeRevealedIndex(
-  userId: string,
-  now: Date,
-  poolSize: number,
-): number | null {
-  if (poolSize <= FREE_REVEAL_RANGE_START) return null
-
-  const window = getFreeWindowIndex(now)
-  const seed = hashStringToInt(`${userId}:${window}`)
-
-  // Effective range: [FREE_REVEAL_RANGE_START, min(FREE_REVEAL_RANGE_END, poolSize - 1)]
-  const lastIndex = Math.min(FREE_REVEAL_RANGE_END, poolSize - 1)
-  const span = lastIndex - FREE_REVEAL_RANGE_START + 1 // inclusive count
-  return FREE_REVEAL_RANGE_START + (seed % span)
-}
-
-/**
- * Returns the set of niche IDs currently unlocked for this user/tier in
- * the current window. Premium gets everything, Basic gets the top 5 by
- * input order, Free gets exactly one (or zero, if pool is too small).
+ * Returns the set of niche IDs currently unlocked for this user/tier.
  *
- * Caller is responsible for sorting `sortedNicheIds` by opportunity score
- * descending — this function does NOT re-sort, it just slices/picks.
+ * `todayPinId` is the `scan_results.id` returned by `getDailyDemoNiche`
+ * (or `/api/demo/today`). Pass `null` if the lookup failed or the pool
+ * is cold — FREE will see everything blurred, which is correct.
+ *
+ * `userId` and `now` are kept on the signature for symmetry but only
+ * Premium / Basic ignore them outright; FREE no longer reads either
+ * (the pin is global-deterministic, not per-user).
  */
 export function getRevealedIds(
   tier: UserTier,
   sortedNicheIds: readonly string[],
-  userId: string,
-  now: Date,
+  _userId: string,
+  _now: Date,
+  todayPinId: string | null,
 ): Set<string> {
   if (tier === 'premium') {
     return new Set(sortedNicheIds)
@@ -96,26 +40,22 @@ export function getRevealedIds(
     return new Set(sortedNicheIds.slice(0, BASIC_VISIBLE_COUNT))
   }
   // free
-  const idx = getFreeRevealedIndex(userId, now, sortedNicheIds.length)
-  if (idx === null) return new Set()
-  return new Set([sortedNicheIds[idx]])
+  if (!todayPinId) return new Set()
+  if (!sortedNicheIds.includes(todayPinId)) return new Set()
+  return new Set([todayPinId])
 }
 
 /**
- * Next reveal boundary for FREE users — the start of the next 6h window.
- * Returns null for tiers that don't rotate (Basic / Premium see their
- * full slot continuously and don't need a countdown).
+ * Next reveal boundary. FREE rotates at next UTC midnight (globally
+ * shared with `daily_demo_niche.date` rotation). Basic/Premium return
+ * null — no countdown.
  */
 export function getNextRevealAt(tier: UserTier, now: Date): Date | null {
   if (tier !== 'free') return null
-  const window = getFreeWindowIndex(now)
-  return new Date((window + 1) * FREE_WINDOW_MS)
+  return nextUtcMidnight(now)
 }
 
-/**
- * Convenience: milliseconds until the next FREE reveal. Returns null for
- * non-FREE tiers. Caller drives the UI countdown with this.
- */
+/** Convenience for the UI countdown. */
 export function getMsUntilNextReveal(tier: UserTier, now: Date): number | null {
   const at = getNextRevealAt(tier, now)
   if (!at) return null
