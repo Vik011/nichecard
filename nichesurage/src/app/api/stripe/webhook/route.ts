@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import * as Sentry from '@sentry/nextjs'
 import { stripe } from '@/lib/stripe/client'
 import { tierFromPriceId } from '@/lib/stripe/prices'
 import { createServiceClient } from '@/lib/supabase/service'
@@ -69,8 +70,31 @@ async function processEvent(event: Stripe.Event, supabase: SupabaseLike): Promis
     }
     case 'customer.subscription.deleted': {
       const sub = event.data.object as Stripe.Subscription
-      const userId = sub.metadata?.supabase_user_id
-      if (!userId) return
+      // Primary: subscription metadata. Falls back to stripe_customer_id
+      // lookup so a user with missing metadata still gets downgraded —
+      // otherwise a cancelled customer keeps premium forever.
+      let userId = sub.metadata?.supabase_user_id
+      if (!userId) {
+        const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id
+        const { data: row, error: lookupErr } = await supabase
+          .from('users')
+          .select('id')
+          .eq('stripe_customer_id', customerId)
+          .maybeSingle()
+        if (lookupErr) {
+          console.error('[stripe/webhook] customer lookup failed:', lookupErr)
+          throw new Error(`customer lookup failed: ${lookupErr.message}`)
+        }
+        if (!row) {
+          Sentry.captureMessage(
+            `Stripe subscription.deleted orphan: no user for customer ${customerId} (sub ${sub.id})`,
+            'error',
+          )
+          console.error('[stripe/webhook] orphan deletion, no matching user for customer', customerId)
+          return
+        }
+        userId = row.id
+      }
       const { error } = await supabase.from('users').update({
         tier: 'free',
         tier_source: null,

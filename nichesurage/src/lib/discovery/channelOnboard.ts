@@ -10,6 +10,9 @@
  * feed in.
  */
 
+import { timingSafeEqual } from 'node:crypto'
+import * as Sentry from '@sentry/nextjs'
+
 import { anthropic } from '@/lib/anthropic/client'
 import type { CategoryEnum } from '@/lib/types/database'
 
@@ -278,12 +281,22 @@ export function inferContentType(durationsSeconds: number[]): 'shorts' | 'longfo
 
 export function checkCronSecret(request: Request): boolean {
   const secret = process.env.CRON_SECRET
-  if (!secret) return true
+  if (!secret) {
+    // Fail closed. Pre-this-commit we returned true here, which meant a
+    // missing env var quietly opened every cron route to the public web —
+    // worst-case anonymous attackers could drain YouTube/OpenAI quotas.
+    Sentry.captureMessage('CRON_SECRET missing — cron request refused', 'error')
+    return false
+  }
   const got =
     request.headers.get('x-cron-secret') ??
     request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ??
     null
-  return got === secret
+  if (!got) return false
+  const a = Buffer.from(got, 'utf8')
+  const b = Buffer.from(secret, 'utf8')
+  if (a.length !== b.length) return false
+  return timingSafeEqual(a, b)
 }
 
 export function getYouTubeApiKey(): string {

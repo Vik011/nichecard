@@ -13,6 +13,20 @@ updates:
       - dependencies
     commit-message:
       prefix: "chore(deps)"
+    # Block major-version bumps for the toolchain. Even with CI green, TS/Next
+    # major bumps need a manual upgrade plan (codemods, type churn, breaking
+    # API). Bot opens minor/patch PRs only; manually bump majors when ready.
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"

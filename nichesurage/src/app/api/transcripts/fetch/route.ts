@@ -15,6 +15,8 @@
 import { createServiceClient } from '@/lib/supabase/service'
 import { fetchTranscript } from '@/lib/transcripts/fetch'
 import { buildEmbedding } from '@/lib/embeddings/build'
+import { checkCronSecret } from '@/lib/discovery/channelOnboard'
+import * as Sentry from '@sentry/nextjs'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -22,20 +24,11 @@ export const maxDuration = 60
 
 const BATCH_SIZE = 20
 
-function checkCronSecret(request: Request): boolean {
-  const secret = process.env.CRON_SECRET
-  if (!secret) return true // not configured = allow (dev / first deploy)
-  const got =
-    request.headers.get('x-cron-secret') ??
-    request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ??
-    null
-  return got === secret
-}
-
 export async function GET(request: Request) {
   if (!checkCronSecret(request)) {
     return new Response('unauthorized', { status: 401 })
   }
+  try {
 
   const supabase = createServiceClient()
 
@@ -109,4 +102,9 @@ export async function GET(request: Request) {
   }
 
   return Response.json({ processed, embedded, skipped, batch: BATCH_SIZE })
+  } catch (err) {
+    Sentry.captureException(err, { tags: { cron: 'transcripts/fetch' } })
+    console.error('[transcripts/fetch] uncaught error', err)
+    return new Response('internal error', { status: 500 })
+  }
 }

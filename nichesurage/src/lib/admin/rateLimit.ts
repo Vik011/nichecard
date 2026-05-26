@@ -29,3 +29,24 @@ export async function incrementAndCheck(adminEmail: string): Promise<{ allowed: 
   if (count === 1) await redis.expire(key, WINDOW_SECONDS)
   return { allowed: count <= MAX_ACTIONS_PER_WINDOW, count }
 }
+
+/**
+ * Generic per-scope rate limiter. Use for any endpoint that needs a
+ * "max N hits per window" cap keyed by something other than admin email
+ * (e.g. user id on user-facing API routes).
+ *
+ * Key shape: `rl:{scope}:{identifier}:{windowBucket}`.
+ */
+export async function checkRateLimit(
+  scope: string,
+  identifier: string,
+  cap: number,
+  windowSeconds: number = WINDOW_SECONDS,
+): Promise<{ allowed: boolean; count: number }> {
+  const redis = getRedis()
+  const bucket = Math.floor(Date.now() / (windowSeconds * 1000))
+  const key = `rl:${scope}:${identifier.toLowerCase()}:${bucket}`
+  const count = await redis.incr(key)
+  if (count === 1) await redis.expire(key, windowSeconds)
+  return { allowed: count <= cap, count }
+}

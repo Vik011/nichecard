@@ -2,10 +2,15 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { fetchRecentVideos, YouTubeQuotaError } from '@/lib/youtube/recentVideos'
+import { checkRateLimit } from '@/lib/admin/rateLimit'
 import type { ChannelVideo } from '@/lib/types'
 
 export const runtime = 'nodejs'
 const CACHE_HOURS = 24
+// Cap uncached YouTube API calls per user. One channel costs ~100 quota
+// units; the daily quota is 10k, so 30 uncached fetches per 5-minute window
+// already burns ~3k. This bounds a single user to a small fraction of total.
+const UNCACHED_CAP_PER_5MIN = 30
 
 export async function GET(_req: Request, { params }: { params: { channelId: string } }) {
   const supabase = createClient()
@@ -27,6 +32,29 @@ export async function GET(_req: Request, { params }: { params: { channelId: stri
   const cacheCutoff = now - CACHE_HOURS * 60 * 60 * 1000
   if (cached && new Date(cached.fetched_at).getTime() > cacheCutoff) {
     return NextResponse.json({ videos: cached.videos as ChannelVideo[], cached: true })
+  }
+
+  // Beyond this point we're spending YouTube API quota (~100 units/channel).
+  // Gate on tier + per-user rate limit so a single account cannot drain it.
+  const { data: profile } = await supabase
+    .from('users')
+    .select('tier')
+    .eq('id', user.id)
+    .maybeSingle()
+  const tier = profile?.tier ?? 'free'
+  if (tier === 'free') {
+    if (cached) {
+      return NextResponse.json({ videos: cached.videos as ChannelVideo[], cached: true, stale: true })
+    }
+    return NextResponse.json({ error: 'Upgrade required', paywall: true }, { status: 403 })
+  }
+
+  const rate = await checkRateLimit('channel-videos', user.id, UNCACHED_CAP_PER_5MIN)
+  if (!rate.allowed) {
+    if (cached) {
+      return NextResponse.json({ videos: cached.videos as ChannelVideo[], cached: true, stale: true })
+    }
+    return NextResponse.json({ error: 'Rate limited' }, { status: 429 })
   }
 
   const apiKey = process.env.YOUTUBE_API_KEY

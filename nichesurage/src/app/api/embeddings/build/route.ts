@@ -20,6 +20,8 @@
 
 import { createServiceClient } from '@/lib/supabase/service'
 import { buildEmbeddingsBatch } from '@/lib/embeddings/build'
+import { checkCronSecret } from '@/lib/discovery/channelOnboard'
+import * as Sentry from '@sentry/nextjs'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -32,16 +34,6 @@ const TIME_BUDGET_MS = 50_000 // leave 10s headroom under maxDuration
 interface UnembeddedRow {
   video_id: string
   latest_title: string | null
-}
-
-function checkCronSecret(request: Request): boolean {
-  const secret = process.env.CRON_SECRET
-  if (!secret) return true
-  const got =
-    request.headers.get('x-cron-secret') ??
-    request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ??
-    null
-  return got === secret
 }
 
 interface BatchOutcome {
@@ -155,6 +147,7 @@ export async function GET(request: Request) {
   if (!checkCronSecret(request)) {
     return new Response('unauthorized', { status: 401 })
   }
+  try {
 
   const supabase = createServiceClient()
   const startedAt = Date.now()
@@ -224,4 +217,9 @@ export async function GET(request: Request) {
     elapsedMs,
     batchSize: BATCH_SIZE,
   })
+  } catch (err) {
+    Sentry.captureException(err, { tags: { cron: 'embeddings/build' } })
+    console.error('[embeddings/build] uncaught error', err)
+    return new Response('internal error', { status: 500 })
+  }
 }
