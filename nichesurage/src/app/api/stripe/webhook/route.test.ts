@@ -34,11 +34,14 @@ jest.mock('@/lib/analytics/posthog-server', () => ({
   captureServer: (...args: unknown[]) => captureServerMock(...args),
 }))
 
-// Supabase service client — records every operation; insert/update/delete
-// outcomes are configurable per test via the `nextResults` map.
-type Op = { table: string; method: 'insert' | 'update' | 'delete'; payload?: unknown }
+// Supabase service client — records every operation; insert/update/delete/
+// select outcomes are configurable per test via the `nextResults` map.
+type Op = { table: string; method: 'insert' | 'update' | 'delete' | 'select'; payload?: unknown }
 const ops: Op[] = []
-const nextResults: { [k: string]: { error: { code?: string; message: string } | null } } = {}
+type ResultRow =
+  | { error: { code?: string; message: string } | null }
+  | { data: unknown; error: { code?: string; message: string } | null }
+const nextResults: { [k: string]: ResultRow } = {}
 
 function buildMockClient() {
   return {
@@ -60,6 +63,16 @@ function buildMockClient() {
             return Promise.resolve(nextResults[`${table}.delete`] ?? { error: null })
           },
         }),
+        select: (_cols: string) => ({
+          eq: (_col: string, _val: unknown) => ({
+            maybeSingle: () => {
+              ops.push({ table, method: 'select' })
+              return Promise.resolve(
+                nextResults[`${table}.select`] ?? { data: null, error: null },
+              )
+            },
+          }),
+        }),
       }
     },
   }
@@ -67,6 +80,11 @@ function buildMockClient() {
 
 jest.mock('@/lib/supabase/service', () => ({
   createServiceClient: () => buildMockClient(),
+}))
+
+const sentryCaptureMessageMock = jest.fn()
+jest.mock('@sentry/nextjs', () => ({
+  captureMessage: (...args: unknown[]) => sentryCaptureMessageMock(...args),
 }))
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -78,6 +96,7 @@ beforeEach(() => {
   for (const k of Object.keys(nextResults)) delete nextResults[k]
   constructEventMock.mockReset()
   captureServerMock.mockClear()
+  sentryCaptureMessageMock.mockClear()
   process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test'
 })
 
@@ -242,5 +261,56 @@ describe('Stripe webhook idempotency', () => {
     const payload = usersUpdate!.payload as Record<string, unknown>
     expect(payload.tier_source).toBeNull()
     expect(payload.tier_expires_at).toBeNull()
+  })
+
+  it('subscription.deleted with missing metadata falls back to stripe_customer_id lookup', async () => {
+    nextResults['users.select'] = { data: { id: 'usr_z' }, error: null }
+    constructEventMock.mockReturnValue({
+      id: 'evt_orphan_recovered',
+      type: 'customer.subscription.deleted',
+      data: {
+        object: {
+          id: 'sub_z',
+          status: 'canceled',
+          customer: 'cus_z',
+          metadata: {},
+        },
+      },
+    })
+    const req = new Request('http://x', { method: 'POST', headers: { 'stripe-signature': 'sig' } })
+    const res = await POST(req as unknown as Parameters<typeof POST>[0])
+    expect(res.status).toBe(200)
+
+    expect(ops.find((o) => o.table === 'users' && o.method === 'select')).toBeDefined()
+    const usersUpdate = ops.find((o) => o.table === 'users' && o.method === 'update')
+    expect(usersUpdate).toBeDefined()
+    const payload = usersUpdate!.payload as Record<string, unknown>
+    expect(payload.tier).toBe('free')
+    expect(payload.subscription_status).toBe('canceled')
+    expect(sentryCaptureMessageMock).not.toHaveBeenCalled()
+  })
+
+  it('subscription.deleted with no metadata and no matching customer fires Sentry alert and does not update', async () => {
+    nextResults['users.select'] = { data: null, error: null }
+    constructEventMock.mockReturnValue({
+      id: 'evt_orphan_unrecovered',
+      type: 'customer.subscription.deleted',
+      data: {
+        object: {
+          id: 'sub_orphan',
+          status: 'canceled',
+          customer: 'cus_unknown',
+          metadata: {},
+        },
+      },
+    })
+    const req = new Request('http://x', { method: 'POST', headers: { 'stripe-signature': 'sig' } })
+    const res = await POST(req as unknown as Parameters<typeof POST>[0])
+    expect(res.status).toBe(200)
+
+    expect(sentryCaptureMessageMock).toHaveBeenCalledTimes(1)
+    expect(sentryCaptureMessageMock.mock.calls[0][0]).toMatch(/orphan/)
+    const usersUpdate = ops.find((o) => o.table === 'users' && o.method === 'update')
+    expect(usersUpdate).toBeUndefined()
   })
 })

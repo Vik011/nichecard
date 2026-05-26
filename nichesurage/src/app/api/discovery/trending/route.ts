@@ -38,13 +38,13 @@ import {
   checkCronSecret,
   getYouTubeApiKey,
 } from '@/lib/discovery/channelOnboard'
+import * as Sentry from '@sentry/nextjs'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
 const YT_BASE = 'https://www.googleapis.com/youtube/v3'
-const REGION_CODE = 'US'
 const MAX_RESULTS_PER_SEED = 50
 const PUBLISHED_AFTER_DAYS = 14
 const SEEDS_PER_RUN = 12
@@ -256,6 +256,7 @@ export async function GET(request: Request) {
   if (!checkCronSecret(request)) {
     return new Response('unauthorized', { status: 401 })
   }
+  try {
 
   let apiKey: string
   try {
@@ -424,4 +425,9 @@ export async function GET(request: Request) {
     outcomes,
     diagnostic: diagnosticBucket.rawSamples,
   })
+  } catch (err) {
+    Sentry.captureException(err, { tags: { cron: 'discovery/trending' } })
+    console.error('[discovery/trending] uncaught error', err)
+    return new Response('internal error', { status: 500 })
+  }
 }

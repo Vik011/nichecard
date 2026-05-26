@@ -9,6 +9,8 @@
 
 import { createServiceClient } from '@/lib/supabase/service'
 import { computePHash } from '@/lib/thumbnails/phash'
+import { checkCronSecret } from '@/lib/discovery/channelOnboard'
+import * as Sentry from '@sentry/nextjs'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -16,16 +18,6 @@ export const maxDuration = 60
 
 const BATCH_SIZE = 50
 const SLEEP_BETWEEN_MS = 100
-
-function checkCronSecret(request: Request): boolean {
-  const secret = process.env.CRON_SECRET
-  if (!secret) return true
-  const got =
-    request.headers.get('x-cron-secret') ??
-    request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ??
-    null
-  return got === secret
-}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms))
@@ -35,6 +27,7 @@ export async function GET(request: Request) {
   if (!checkCronSecret(request)) {
     return new Response('unauthorized', { status: 401 })
   }
+  try {
 
   const supabase = createServiceClient()
 
@@ -135,4 +128,9 @@ export async function GET(request: Request) {
   }
 
   return Response.json({ processed, hashed, skipped, batch: BATCH_SIZE })
+  } catch (err) {
+    Sentry.captureException(err, { tags: { cron: 'thumbnails/phash' } })
+    console.error('[thumbnails/phash] uncaught error', err)
+    return new Response('internal error', { status: 500 })
+  }
 }

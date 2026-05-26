@@ -1,5 +1,5 @@
 import crypto from 'crypto'
-import { generateSync, verifySync, generateSecret as otplibGenerateSecret, generateURI } from 'otplib'
+import { verifySync, generateSecret as otplibGenerateSecret, generateURI } from 'otplib'
 
 const ISSUER = 'SurgeNiche Admin'
 

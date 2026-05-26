@@ -34,6 +34,8 @@ import {
   upsertCandidateArchetype,
   type InsertedCluster,
 } from './_persistence'
+import { checkCronSecret } from '@/lib/discovery/channelOnboard'
+import * as Sentry from '@sentry/nextjs'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -57,16 +59,6 @@ const CATEGORIES: CategoryEnum[] = [
 const HOURS_WINDOW = 48
 const ARCHETYPE_CALL_LIMIT_PER_CATEGORY = 20
 const TITLES_PER_PROMPT = 10
-
-function checkCronSecret(request: Request): boolean {
-  const secret = process.env.CRON_SECRET
-  if (!secret) return true
-  const got =
-    request.headers.get('x-cron-secret') ??
-    request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ??
-    null
-  return got === secret
-}
 
 interface CategorySummary {
   category: CategoryEnum
@@ -206,6 +198,7 @@ export async function GET(request: Request) {
   if (!checkCronSecret(request)) {
     return new Response('unauthorized', { status: 401 })
   }
+  try {
 
   const supabase = createServiceClient()
   const apiKey = process.env.ANTHROPIC_API_KEY ?? null
@@ -253,4 +246,9 @@ export async function GET(request: Request) {
     categories: summaries,
     megaClusterRowsFlagged: megaFlagged,
   })
+  } catch (err) {
+    Sentry.captureException(err, { tags: { cron: 'clusters/detect' } })
+    console.error('[clusters/detect] uncaught error', err)
+    return new Response('internal error', { status: 500 })
+  }
 }

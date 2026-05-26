@@ -8,6 +8,11 @@
  * is mocked too — Phase 5B has its own tests; here we only verify orchestration.
  */
 
+jest.mock('@sentry/nextjs', () => ({
+  captureMessage: jest.fn(),
+  captureException: jest.fn(),
+}))
+
 jest.mock('@/lib/supabase/service', () => ({
   createServiceClient: jest.fn(),
 }))
@@ -139,12 +144,15 @@ function makeSupabaseMock(state: MockState) {
   return { from }
 }
 
-function makeRequest(headers: Record<string, string> = {}): Request {
+// Default request is authorized — since the route is fail-closed on missing
+// CRON_SECRET, non-auth tests must explicitly override (see "auth" describe).
+function makeRequest(headers: Record<string, string> = { authorization: 'Bearer sekret' }): Request {
   return new Request('https://example.test/api/clusters/detect', { headers })
 }
 
 beforeEach(() => {
   jest.resetAllMocks()
+  process.env.CRON_SECRET = 'sekret'
   // Stub global fetch (Anthropic) — overridden per-test where needed.
   ;(global as any).fetch = jest.fn(async () => ({
     ok: true,
@@ -164,12 +172,21 @@ afterEach(() => {
 
 describe('GET /api/clusters/detect — auth', () => {
   it('returns 401 when CRON_SECRET set and no auth header', async () => {
-    process.env.CRON_SECRET = 'sekret'
     const state: MockState = { calls: [], tableHandlers: {}, defaultSelect: [] }
     mockedCreateClient.mockReturnValue(makeSupabaseMock(state))
     mockedDetect.mockResolvedValue([])
 
-    const res = await GET(makeRequest())
+    const res = await GET(makeRequest({})) // empty headers — no auth
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 401 when CRON_SECRET env var is missing (fail-closed)', async () => {
+    delete process.env.CRON_SECRET
+    const state: MockState = { calls: [], tableHandlers: {}, defaultSelect: [] }
+    mockedCreateClient.mockReturnValue(makeSupabaseMock(state))
+    mockedDetect.mockResolvedValue([])
+
+    const res = await GET(makeRequest({ authorization: 'Bearer anything' }))
     expect(res.status).toBe(401)
   })
 

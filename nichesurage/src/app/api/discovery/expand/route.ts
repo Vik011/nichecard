@@ -42,6 +42,7 @@ import {
   checkCronSecret,
   getYouTubeApiKey,
 } from '@/lib/discovery/channelOnboard'
+import * as Sentry from '@sentry/nextjs'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -146,6 +147,7 @@ export async function GET(request: Request) {
   if (!checkCronSecret(request)) {
     return new Response('unauthorized', { status: 401 })
   }
+  try {
   let apiKey: string
   try {
     apiKey = getYouTubeApiKey()
@@ -285,4 +287,9 @@ export async function GET(request: Request) {
     elapsedMs,
     outcomes,
   })
+  } catch (err) {
+    Sentry.captureException(err, { tags: { cron: 'discovery/expand' } })
+    console.error('[discovery/expand] uncaught error', err)
+    return new Response('internal error', { status: 500 })
+  }
 }
