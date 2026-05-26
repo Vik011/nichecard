@@ -45,7 +45,6 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
 const YT_BASE = 'https://www.googleapis.com/youtube/v3'
-const REGION_CODE = 'US'
 const MAX_RESULTS_PER_SEED = 50
 const PUBLISHED_AFTER_DAYS = 14
 const SEEDS_PER_RUN = 12

@@ -1,5 +1,4 @@
 // src/components/dashboard/NicheCardLocked.tsx
-import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import type { NicheCardData } from '@/lib/types'
 

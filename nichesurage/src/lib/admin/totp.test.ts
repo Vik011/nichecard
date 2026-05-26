@@ -1,5 +1,5 @@
 /** @jest-environment node */
-import { generateSync, verifySync } from 'otplib'
+import { generateSync } from 'otplib'
 import { encryptSecret, decryptSecret, generateSecret, generateOtpAuthUrl, verifyToken } from './totp'
 
 const ORIGINAL_ENV = process.env
