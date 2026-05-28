@@ -377,6 +377,12 @@ async function ingestRun(
       category: categoryByTerm.get(candidate.searchQuery) ?? null,
       discovered_via: 'apify_search',
       faceless,
+      // Explicit tri-state verdict (migration 0056). The boolean `faceless`
+      // above stays for back-compat; this records the real classifier verdict
+      // ('faceless' | 'uncertain'; 'face' is hard-rejected above and never
+      // reaches this insert) so downstream policy can distinguish uncertain
+      // from confirmed-faceless.
+      faceless_verdict: facelessVerdict,
     })
     if (insertErr) {
       // 23505 = unique violation - a concurrent insert won the race. Benign.
