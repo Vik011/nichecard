@@ -140,6 +140,7 @@ async function fetchWatchlistWindow(
     .select('youtube_channel_id, tier_entered_at')
     .gte('tier_entered_at', cutoffIso)
     .eq('is_active', true)
+    .eq('faceless_verdict', 'faceless')
     .is('evicted_at', null)
     .order('tier_entered_at', { ascending: false, nullsFirst: false })
     .limit(limit * 2)
@@ -199,36 +200,39 @@ async function fetchAllMode(
   categories: string[] = [],
   spikingOnly = false,
 ): Promise<{ data: NicheCardData[]; error: string | null }> {
-  // Category filter: scan_results_latest doesn't carry the category column
-  // (it lives on channels_watchlist via 0024). Two-step query — get
-  // matching channel ids first, then filter scan_results by those ids.
-  // Cleaner than PostgREST's !inner embed which TS can't infer through.
-  let categoryChannelIds: string[] | null = null
+  // Faceless-only feed: gate every surfaced niche on a confirmed
+  // faceless_verdict. scan_results_latest doesn't carry the verdict (it
+  // lives on channels_watchlist via 0056) nor the category column (0024), so
+  // resolve the allowed channel ids first, then filter scan_results by them
+  // — the same two-step pattern the category filter already used. The
+  // category filter (if any) folds into the same query. Also drops
+  // evicted/inactive channels. Reversible: removing the .eq('faceless_verdict')
+  // predicate restores the unfiltered feed; no rows are ever deleted.
+  let cwQuery = supabase
+    .from('channels_watchlist')
+    .select('youtube_channel_id')
+    .eq('faceless_verdict', 'faceless')
+    .eq('is_active', true)
+    .is('evicted_at', null)
   if (categories.length > 0) {
-    const { data: cats, error: catErr } = await supabase
-      .from('channels_watchlist')
-      .select('youtube_channel_id')
-      .in('category', categories)
-      .eq('is_active', true)
-      .is('evicted_at', null)
-    if (catErr) return { data: [], error: 'Discover fetch failed' }
-    categoryChannelIds = (cats ?? []).map((r: { youtube_channel_id: string }) => r.youtube_channel_id)
-    if (categoryChannelIds.length === 0) return { data: [], error: null }
+    cwQuery = cwQuery.in('category', categories)
   }
+  const { data: allowed, error: allowedErr } = await cwQuery
+  if (allowedErr) return { data: [], error: 'Discover fetch failed' }
+  const allowedIds = (allowed ?? []).map(
+    (r: { youtube_channel_id: string }) => r.youtube_channel_id,
+  )
+  if (allowedIds.length === 0) return { data: [], error: null }
 
   // Sort by opportunity_score desc to match the visible big number on the
   // card. Users expect "Best first" to mean the score they see, not the
   // raw outlier_ratio (which is a smaller-text supporting metric).
-  let query = supabase
+  const { data, error } = await supabase
     .from('scan_results_latest')
     .select('*, niche_clusters(id, label)')
+    .in('youtube_channel_id', allowedIds)
     .order('opportunity_score', { ascending: false, nullsFirst: false })
     .limit(limit)
-  if (categoryChannelIds !== null) {
-    query = query.in('youtube_channel_id', categoryChannelIds)
-  }
-
-  const { data, error } = await query
   if (error) return { data: [], error: 'Discover fetch failed' }
   const rows = (data ?? []) as ScanResultWithCluster[]
   let mapped = rows.map((row) => mapRow(row))
