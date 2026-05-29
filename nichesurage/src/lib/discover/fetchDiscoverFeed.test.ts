@@ -18,14 +18,16 @@ interface Chain {
 
 function makeChain(resolved: Resolved): Chain {
   const chain: Partial<Chain> = {}
-  const passthrough = jest.fn(() => chain as Chain)
-  chain.select = passthrough
-  chain.gte = passthrough
-  chain.in = passthrough
-  chain.is = passthrough
-  chain.eq = passthrough
-  chain.order = passthrough
-  chain.limit = passthrough
+  const ret = () => chain as Chain
+  // Per-method jest.fns (not one shared passthrough) so tests can assert
+  // which query predicates were applied (e.g. the faceless_verdict filter).
+  chain.select = jest.fn(ret)
+  chain.gte = jest.fn(ret)
+  chain.in = jest.fn(ret)
+  chain.is = jest.fn(ret)
+  chain.eq = jest.fn(ret)
+  chain.order = jest.fn(ret)
+  chain.limit = jest.fn(ret)
   chain.then = (onFulfilled) => Promise.resolve(resolved).then(onFulfilled)
   return chain as Chain
 }
@@ -35,16 +37,26 @@ interface MockSetup {
   scanResults?: Resolved
 }
 
-function setupMock(setup: MockSetup) {
+// Returns the chains created per table so tests can assert query predicates.
+function setupMock(setup: MockSetup): { cwChains: Chain[]; scanChains: Chain[] } {
+  const cwChains: Chain[] = []
+  const scanChains: Chain[] = []
   ;(createClient as jest.Mock).mockReturnValue({
     from: jest.fn((table: string) => {
-      if (table === 'channels_watchlist')
-        return makeChain(setup.watchlist ?? { data: [], error: null })
-      if (table === 'scan_results_latest')
-        return makeChain(setup.scanResults ?? { data: [], error: null })
+      if (table === 'channels_watchlist') {
+        const c = makeChain(setup.watchlist ?? { data: [], error: null })
+        cwChains.push(c)
+        return c
+      }
+      if (table === 'scan_results_latest') {
+        const c = makeChain(setup.scanResults ?? { data: [], error: null })
+        scanChains.push(c)
+        return c
+      }
       return makeChain({ data: [], error: null })
     }),
   })
+  return { cwChains, scanChains }
 }
 
 // Minimal fixture matching DbScanResult shape that mapRow expects.
@@ -86,7 +98,11 @@ describe('fetchDiscoverFeed — all mode', () => {
   })
 
   it('returns [] on empty scan_results', async () => {
-    setupMock({ scanResults: { data: [], error: null } })
+    // Faceless channels exist (gate passes), but they have no scan rows yet.
+    setupMock({
+      watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+      scanResults: { data: [], error: null },
+    })
     const result = await fetchDiscoverFeed({ mode: 'all' })
     expect(result.error).toBeNull()
     expect(result.data).toEqual([])
@@ -94,6 +110,10 @@ describe('fetchDiscoverFeed — all mode', () => {
 
   it('returns mapped rows when scan_results has entries', async () => {
     setupMock({
+      watchlist: {
+        data: [{ youtube_channel_id: 'UCa' }, { youtube_channel_id: 'UCb' }],
+        error: null,
+      },
       scanResults: {
         data: [
           fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa', outlier_ratio: 9 }),
@@ -109,7 +129,11 @@ describe('fetchDiscoverFeed — all mode', () => {
   })
 
   it('surfaces a generic error message when supabase errors', async () => {
-    setupMock({ scanResults: { data: null, error: { message: 'boom' } } })
+    // Faceless gate passes so the flow reaches the scan_results query, which errors.
+    setupMock({
+      watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+      scanResults: { data: null, error: { message: 'boom' } },
+    })
     const result = await fetchDiscoverFeed({ mode: 'all' })
     expect(result.error).toBe('Discover fetch failed')
     expect(result.data).toEqual([])
@@ -202,5 +226,55 @@ describe('fetchDiscoverFeed — hot mode', () => {
     setupMock({ watchlist: { data: null, error: { message: 'boom' } } })
     const result = await fetchDiscoverFeed({ mode: 'hot' })
     expect(result.error).toBe('Discover fetch failed')
+  })
+})
+
+describe('fetchDiscoverFeed — faceless filter (faceless-only feed)', () => {
+  beforeEach(() => {
+    jest.resetAllMocks()
+  })
+
+  it('all mode returns [] when no channel has a faceless verdict (face/uncertain excluded)', async () => {
+    // No faceless channels in the watchlist gate, but scan_results has a row.
+    // The feed must NOT surface it — face/uncertain channels never appear.
+    setupMock({
+      watchlist: { data: [], error: null },
+      scanResults: {
+        data: [fixtureScanRow({ id: 'face-row', youtube_channel_id: 'UCface' })],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ mode: 'all' })
+    expect(result.error).toBeNull()
+    expect(result.data).toEqual([])
+  })
+
+  it('all mode gates scan_results on channels_watchlist faceless_verdict=faceless', async () => {
+    const { cwChains } = setupMock({
+      watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+      scanResults: {
+        data: [fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa' })],
+        error: null,
+      },
+    })
+    await fetchDiscoverFeed({ mode: 'all' })
+    expect(cwChains.length).toBeGreaterThan(0)
+    expect(cwChains[0].eq.mock.calls).toContainEqual(['faceless_verdict', 'faceless'])
+  })
+
+  it('hot mode filters watchlist step-1 on faceless_verdict=faceless', async () => {
+    const { cwChains } = setupMock({
+      watchlist: {
+        data: [{ youtube_channel_id: 'UCa', tier_entered_at: '2026-05-06T10:00:00Z' }],
+        error: null,
+      },
+      scanResults: {
+        data: [fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa' })],
+        error: null,
+      },
+    })
+    await fetchDiscoverFeed({ mode: 'hot' })
+    expect(cwChains.length).toBeGreaterThan(0)
+    expect(cwChains[0].eq.mock.calls).toContainEqual(['faceless_verdict', 'faceless'])
   })
 })

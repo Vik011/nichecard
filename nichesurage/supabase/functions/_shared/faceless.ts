@@ -89,7 +89,11 @@ No prose, no markdown, no backticks.`
       }),
     })
 
-    if (!res.ok) return DEFAULT_VERDICT
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      console.error(`classifyFaceless: Anthropic API ${res.status} — ${body.slice(0, 200)}`)
+      return DEFAULT_VERDICT
+    }
 
     const data = await res.json() as { content?: Array<{ text?: string }> }
     const text = data.content?.[0]?.text?.trim() ?? ''
@@ -109,8 +113,9 @@ No prose, no markdown, no backticks.`
     if (typeof parsed !== 'object' || parsed === null) return DEFAULT_VERDICT
     const candidate = (parsed as { verdict?: unknown }).verdict
     return isFacelessVerdict(candidate) ? candidate : DEFAULT_VERDICT
-  } catch {
+  } catch (err) {
     // Network error, timeout/abort, or anything else - never escape.
+    console.error('classifyFaceless: request failed (network/timeout/abort):', err)
     return DEFAULT_VERDICT
   } finally {
     clearTimeout(timeout)
