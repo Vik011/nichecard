@@ -66,7 +66,8 @@ Respond with ONLY the niche label, lowercase, no quotes, no preamble.`
     })
 
     if (!res.ok) {
-      console.warn(`buildNicheLabel: Anthropic ${res.status}, using fallback "${args.fallback}"`)
+      const body = await res.text().catch(() => '')
+      console.error(`buildNicheLabel: Anthropic API ${res.status} — ${body.slice(0, 200)} — using fallback "${args.fallback}"`)
       return args.fallback
     }
 
@@ -78,7 +79,7 @@ Respond with ONLY the niche label, lowercase, no quotes, no preamble.`
 
     return text.trim().toLowerCase().slice(0, MAX_LABEL_CHARS)
   } catch (err) {
-    console.warn(`buildNicheLabel: error, using fallback "${args.fallback}":`, err)
+    console.error(`buildNicheLabel: error, using fallback "${args.fallback}":`, err)
     return args.fallback
   } finally {
     clearTimeout(timeout)

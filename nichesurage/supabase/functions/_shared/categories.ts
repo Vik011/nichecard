@@ -109,7 +109,11 @@ If unsure, choose education_howto.`
       }),
     })
 
-    if (!res.ok) return DEFAULT_CATEGORY
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      console.error(`classifyChannelCategory: Anthropic API ${res.status} — ${body.slice(0, 200)}`)
+      return DEFAULT_CATEGORY
+    }
 
     const data = await res.json() as { content?: Array<{ text?: string }> }
     const text = data.content?.[0]?.text?.trim() ?? ''
@@ -129,8 +133,9 @@ If unsure, choose education_howto.`
     if (typeof parsed !== 'object' || parsed === null) return DEFAULT_CATEGORY
     const candidate = (parsed as { category?: unknown }).category
     return isCategoryEnum(candidate) ? candidate : DEFAULT_CATEGORY
-  } catch {
-    // Network error, abort, or anything else — never escape.
+  } catch (err) {
+    // Network error or anything else — never escape.
+    console.error('classifyChannelCategory: request failed:', err)
     return DEFAULT_CATEGORY
   }
 }
