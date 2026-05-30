@@ -53,8 +53,51 @@ const PREMIUM_LIMIT = 200
 const HOT_WINDOW_DAYS = 14
 const JUST_ADDED_WINDOW_DAYS = 7
 
+// Part A "Spiking Now" staleness hotfix: drop scan_results_latest rows whose
+// scanned_at is older than the channel's content-type window. A row only stops
+// being rewritten once the channel has no in-window outlier >= OUTLIER_DB_FLOOR,
+// so a stale scanned_at IS the staleness signal (e.g. NightRegistry's ~7d-old
+// shorts row). Shorts use 48h; longform 96h (a current in-window longform outlier
+// is rescanned every ~6h, so 96h only drops frozen/stale rows — not live ones).
+const SPIKE_FRESH_SHORTS_HOURS = 48
+const SPIKE_FRESH_LONGFORM_HOURS = 96
+
+// Read at call time (not module load) so tests can toggle it per-case. In the
+// browser bundle Next.js inlines this NEXT_PUBLIC_ access at build time; the
+// prefix is REQUIRED because fetchDiscoverFeed runs client-side. Default ON;
+// set NEXT_PUBLIC_SPIKE_FRESHNESS_GATE=off + REDEPLOY to revert.
+function spikeFreshnessGateOn(): boolean {
+  return process.env.NEXT_PUBLIC_SPIKE_FRESHNESS_GATE !== 'off'
+}
+
+// Widest window (longform) for the SQL pre-filter; the per-row content-type
+// refine below applies the tighter shorts window.
+function spikeFreshnessCutoffIso(): string {
+  return new Date(Date.now() - SPIKE_FRESH_LONGFORM_HOURS * 3_600_000).toISOString()
+}
+
 type ScanResultWithCluster = DbScanResult & {
   niche_clusters?: { id: string; label: string } | null
+}
+
+// Drop rows whose scanned_at exceeds their content-type freshness window.
+// No-op when the gate flag is off (legacy behavior). A missing/unparseable
+// scanned_at is treated as stale (cannot prove freshness).
+function applySpikeFreshnessGate(
+  rows: ScanResultWithCluster[],
+): ScanResultWithCluster[] {
+  if (!spikeFreshnessGateOn()) return rows
+  const now = Date.now()
+  return rows.filter((row) => {
+    if (!row.scanned_at) return false
+    const ageH = (now - new Date(row.scanned_at).getTime()) / 3_600_000
+    if (!Number.isFinite(ageH)) return false
+    const maxH =
+      row.content_type === 'shorts'
+        ? SPIKE_FRESH_SHORTS_HOURS
+        : SPIKE_FRESH_LONGFORM_HOURS
+    return ageH <= maxH
+  })
 }
 
 /**
@@ -162,15 +205,20 @@ async function fetchWatchlistWindow(
     enteredAtById.set(w.youtube_channel_id, w.tier_entered_at)
   }
 
-  // Step 2: scan_results_latest for those channels
-  const { data: scanRows, error: scanErr } = await supabase
+  // Step 2: scan_results_latest for those channels. Apply the freshness
+  // pre-filter (Part A) before order/limit so stale rows don't crowd out
+  // fresh ones; the SQL gate is the widest window, the JS refine tightens it.
+  let scanQuery = supabase
     .from('scan_results_latest')
     .select('*, niche_clusters(id, label)')
     .in('youtube_channel_id', channelIds)
-    .limit(limit * 2)
+  if (spikeFreshnessGateOn()) {
+    scanQuery = scanQuery.gte('scanned_at', spikeFreshnessCutoffIso())
+  }
+  const { data: scanRows, error: scanErr } = await scanQuery.limit(limit * 2)
 
   if (scanErr) return { data: [], error: 'Discover fetch failed' }
-  const scan = (scanRows ?? []) as ScanResultWithCluster[]
+  const scan = applySpikeFreshnessGate((scanRows ?? []) as ScanResultWithCluster[])
 
   // Step 3: re-sort by opportunity_score desc (primary), tier_entered_at
   // desc (secondary tiebreaker). Score is the big number on the card so
@@ -227,14 +275,25 @@ async function fetchAllMode(
   // Sort by opportunity_score desc to match the visible big number on the
   // card. Users expect "Best first" to mean the score they see, not the
   // raw outlier_ratio (which is a smaller-text supporting metric).
-  const { data, error } = await supabase
+  //
+  // Over-fetch when the freshness gate is ON (and we aren't already over-
+  // fetching for spiking-now): the SQL gate uses the wide 96h window, so the
+  // tighter per-content-type JS refine can drop stale Shorts rows (48-96h) the
+  // DB returned within `limit` — over-fetching keeps fresh lower-ranked rows
+  // from being crowded out. Trimmed back to `limit` after refinement.
+  const rawLimit = spikeFreshnessGateOn() && !spikingOnly ? limit * 3 : limit
+  let scanQuery = supabase
     .from('scan_results_latest')
     .select('*, niche_clusters(id, label)')
     .in('youtube_channel_id', allowedIds)
+  if (spikeFreshnessGateOn()) {
+    scanQuery = scanQuery.gte('scanned_at', spikeFreshnessCutoffIso())
+  }
+  const { data, error } = await scanQuery
     .order('opportunity_score', { ascending: false, nullsFirst: false })
-    .limit(limit)
+    .limit(rawLimit)
   if (error) return { data: [], error: 'Discover fetch failed' }
-  const rows = (data ?? []) as ScanResultWithCluster[]
+  const rows = applySpikeFreshnessGate((data ?? []) as ScanResultWithCluster[])
   let mapped = rows.map((row) => mapRow(row))
 
   // Spiking-now post-filter: applied client-side because the rule is
@@ -243,6 +302,9 @@ async function fetchAllMode(
   if (spikingOnly) {
     mapped = mapped.filter((n) => isSpikingNow(n))
   }
+
+  // Trim the freshness over-fetch back to the requested limit.
+  mapped = mapped.slice(0, limit)
 
   await attachCategories(supabase, mapped)
   return { data: mapped, error: null }
