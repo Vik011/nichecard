@@ -1,4 +1,5 @@
 import type { NicheCardData } from '@/lib/types'
+import type { LifecycleStatus } from '@/lib/types/database'
 
 /**
  * Content-type-aware SPIKING NOW classifier.
@@ -40,4 +41,42 @@ export function isSpikingNow(niche: Partial<Pick<NicheCardData,
 
   // Longform (or unknown content_type — fall back to longform rule)
   return (niche.outlierRatio ?? 0) >= SPIKING_LONGFORM_OUTLIER_MIN
+}
+
+// ─── Part B: momentum-based spiking classifier ───────────────────────────────
+//
+// Reads from the channel_current_momentum VIEW (migration 0058). The VIEW
+// already encodes all eligibility gates (snapshot freshness, video age,
+// lifecycle, snapshot_count >= 2, content_type known) in the current_eligible
+// boolean. isSpikingNowFromMomentum only adds the calibrated trend floor on top.
+//
+// One source of truth: the same current_eligible that drove DISTINCT ON
+// selection is what the badge checks — no drift between ranking and display.
+
+export interface ChannelMomentum {
+  youtube_channel_id: string
+  content_type: 'shorts' | 'longform' | null
+  best_video_id: string | null
+  best_video_age_hours: number | null
+  last_metric_age_hours: number | null
+  snapshot_count: number
+  trend_score: number | null
+  lifecycle_status: LifecycleStatus | null
+  velocity_delta: number | null
+  views_per_hour: number | null
+  current_eligible: boolean
+  last_snapshot_at: string | null
+}
+
+// Calibrated at p75 of eligible trend_score distribution (2026-05-31: n=121,
+// p75=68.57). Hard-minimum 50 per B.4 spec — never 0. Spiking Now tab is
+// allowed to be empty rather than show low-quality signals.
+export const MOMENTUM_TREND_FLOOR = 70
+
+export function isSpikingNowFromMomentum(
+  m: ChannelMomentum | null | undefined,
+  floor: number = MOMENTUM_TREND_FLOOR,
+): boolean {
+  if (!m) return false
+  return m.current_eligible === true && (m.trend_score ?? 0) >= floor
 }
