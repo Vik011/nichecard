@@ -88,8 +88,13 @@ function fixtureScanRow(overrides: Record<string, unknown> = {}) {
     avg_view_duration_pct: overrides.avg_view_duration_pct ?? null,
     search_volume: overrides.search_volume ?? null,
     competition_score: overrides.competition_score ?? null,
-    scanned_at: overrides.scanned_at ?? '2026-05-06T00:00:00Z',
+    scanned_at: overrides.scanned_at ?? new Date(Date.now() - 3_600_000).toISOString(),
   }
+}
+
+// ISO timestamp N hours before now — for the Part A freshness-gate tests.
+function hoursAgoIso(hours: number): string {
+  return new Date(Date.now() - hours * 3_600_000).toISOString()
 }
 
 describe('fetchDiscoverFeed — all mode', () => {
@@ -276,5 +281,113 @@ describe('fetchDiscoverFeed — faceless filter (faceless-only feed)', () => {
     await fetchDiscoverFeed({ mode: 'hot' })
     expect(cwChains.length).toBeGreaterThan(0)
     expect(cwChains[0].eq.mock.calls).toContainEqual(['faceless_verdict', 'faceless'])
+  })
+})
+
+describe('fetchDiscoverFeed — Part A freshness gate (scanned_at staleness)', () => {
+  beforeEach(() => {
+    jest.resetAllMocks()
+  })
+
+  // Helper: 'all' mode with a single channel + its scan row.
+  function withSingleRow(scanRow: Record<string, unknown>) {
+    setupMock({
+      watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+      scanResults: { data: [scanRow], error: null },
+    })
+  }
+
+  it('rejects a stale shorts row (scanned_at older than 48h)', async () => {
+    withSingleRow(
+      fixtureScanRow({
+        id: 'stale-short',
+        youtube_channel_id: 'UCa',
+        content_type: 'shorts',
+        scanned_at: hoursAgoIso(72), // ~3d > 48h shorts window
+      }),
+    )
+    const result = await fetchDiscoverFeed({ mode: 'all' })
+    expect(result.error).toBeNull()
+    expect(result.data).toEqual([])
+  })
+
+  it('keeps a fresh shorts row (scanned_at 30h, within 48h)', async () => {
+    withSingleRow(
+      fixtureScanRow({
+        id: 'fresh-short',
+        youtube_channel_id: 'UCa',
+        content_type: 'shorts',
+        scanned_at: hoursAgoIso(30),
+      }),
+    )
+    const result = await fetchDiscoverFeed({ mode: 'all' })
+    expect(result.data.map((d) => d.id)).toEqual(['fresh-short'])
+  })
+
+  it('keeps a longform row within the 96h window', async () => {
+    withSingleRow(
+      fixtureScanRow({
+        id: 'fresh-long',
+        youtube_channel_id: 'UCa',
+        content_type: 'longform',
+        scanned_at: hoursAgoIso(90), // < 96h longform window
+      }),
+    )
+    const result = await fetchDiscoverFeed({ mode: 'all' })
+    expect(result.data.map((d) => d.id)).toEqual(['fresh-long'])
+  })
+
+  it('rejects a longform row older than 96h', async () => {
+    withSingleRow(
+      fixtureScanRow({
+        id: 'stale-long',
+        youtube_channel_id: 'UCa',
+        content_type: 'longform',
+        scanned_at: hoursAgoIso(120), // ~5d > 96h longform window
+      }),
+    )
+    const result = await fetchDiscoverFeed({ mode: 'all' })
+    expect(result.error).toBeNull()
+    expect(result.data).toEqual([])
+  })
+
+  it('over-fetches (3x) on the all path so refined-out stale rows do not crowd out fresh ones', async () => {
+    const { scanChains } = setupMock({
+      watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+      scanResults: {
+        data: [
+          fixtureScanRow({
+            id: 'a',
+            youtube_channel_id: 'UCa',
+            content_type: 'shorts',
+            scanned_at: hoursAgoIso(10),
+          }),
+        ],
+        error: null,
+      },
+    })
+    await fetchDiscoverFeed({ mode: 'all', limit: 10 })
+    // Gate ON + not spiking-only → DB limit is 3x the requested limit.
+    expect(scanChains[0].limit.mock.calls).toContainEqual([30])
+  })
+
+  it('flag off (NEXT_PUBLIC_SPIKE_FRESHNESS_GATE=off) keeps a stale row (legacy behavior)', async () => {
+    const prev = process.env.NEXT_PUBLIC_SPIKE_FRESHNESS_GATE
+    process.env.NEXT_PUBLIC_SPIKE_FRESHNESS_GATE = 'off'
+    try {
+      withSingleRow(
+        fixtureScanRow({
+          id: 'stale-but-kept',
+          youtube_channel_id: 'UCa',
+          content_type: 'shorts',
+          scanned_at: hoursAgoIso(168), // 7d — would be rejected if gate were on
+        }),
+      )
+      const result = await fetchDiscoverFeed({ mode: 'all' })
+      expect(result.data.map((d) => d.id)).toEqual(['stale-but-kept'])
+    } finally {
+      if (prev === undefined) delete process.env.NEXT_PUBLIC_SPIKE_FRESHNESS_GATE
+      else process.env.NEXT_PUBLIC_SPIKE_FRESHNESS_GATE = prev
+    }
   })
 })
