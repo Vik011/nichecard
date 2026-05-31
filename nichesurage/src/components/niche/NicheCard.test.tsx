@@ -182,6 +182,31 @@ describe('trending badge', () => {
   })
 })
 
+describe('Spiking Now badge (Part B momentum)', () => {
+  const spikingQuery = { name: /spiking now/i } as const
+
+  it('renders the badge when data.spikingNow === true (even if legacy would not fire)', () => {
+    // longformBasic has no outlierRatio → legacy isSpikingNow would be false.
+    const data: NicheCardData = { ...longformBasic, spikingNow: true }
+    render(<NicheCard data={data} userTier="basic" rank={1} revealed />)
+    expect(screen.getByRole('status', spikingQuery)).toBeInTheDocument()
+  })
+
+  it('does NOT render the badge when data.spikingNow === false overrides a legacy spike', () => {
+    // outlierRatio 5 → legacy isSpikingNow(longform) WOULD fire, but the
+    // explicit momentum false must win on the momentum feed.
+    const data: NicheCardData = { ...longformBasic, outlierRatio: 5, spikingNow: false }
+    render(<NicheCard data={data} userTier="basic" rank={1} revealed />)
+    expect(screen.queryByRole('status', spikingQuery)).not.toBeInTheDocument()
+  })
+
+  it('falls back to legacy isSpikingNow when data.spikingNow is undefined (landing/dashboard)', () => {
+    const data: NicheCardData = { ...longformBasic, outlierRatio: 5 } // spikingNow undefined
+    render(<NicheCard data={data} userTier="basic" rank={1} revealed />)
+    expect(screen.getByRole('status', spikingQuery)).toBeInTheDocument()
+  })
+})
+
 // TrendBadge integration suite removed in 2026-05-07 trend-engine
 // deprecation. Sprint B trend_score / archetype overlay was never
 // bootstrapped in production and the badge component was deleted along

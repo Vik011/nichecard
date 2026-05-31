@@ -35,12 +35,18 @@ function makeChain(resolved: Resolved): Chain {
 interface MockSetup {
   watchlist?: Resolved
   scanResults?: Resolved
+  momentum?: Resolved
 }
 
 // Returns the chains created per table so tests can assert query predicates.
-function setupMock(setup: MockSetup): { cwChains: Chain[]; scanChains: Chain[] } {
+function setupMock(setup: MockSetup): {
+  cwChains: Chain[]
+  scanChains: Chain[]
+  momChains: Chain[]
+} {
   const cwChains: Chain[] = []
   const scanChains: Chain[] = []
+  const momChains: Chain[] = []
   ;(createClient as jest.Mock).mockReturnValue({
     from: jest.fn((table: string) => {
       if (table === 'channels_watchlist') {
@@ -53,10 +59,15 @@ function setupMock(setup: MockSetup): { cwChains: Chain[]; scanChains: Chain[] }
         scanChains.push(c)
         return c
       }
+      if (table === 'channel_current_momentum') {
+        const c = makeChain(setup.momentum ?? { data: [], error: null })
+        momChains.push(c)
+        return c
+      }
       return makeChain({ data: [], error: null })
     }),
   })
-  return { cwChains, scanChains }
+  return { cwChains, scanChains, momChains }
 }
 
 // Minimal fixture matching DbScanResult shape that mapRow expects.
@@ -95,6 +106,25 @@ function fixtureScanRow(overrides: Record<string, unknown> = {}) {
 // ISO timestamp N hours before now — for the Part A freshness-gate tests.
 function hoursAgoIso(hours: number): string {
   return new Date(Date.now() - hours * 3_600_000).toISOString()
+}
+
+// Minimal fixture matching a channel_current_momentum view row (ChannelMomentum
+// shape). Defaults describe an eligible, above-floor (trend 80) channel.
+function fixtureMomentumRow(overrides: Record<string, unknown> = {}) {
+  return {
+    youtube_channel_id: overrides.youtube_channel_id ?? 'UCa',
+    content_type: overrides.content_type ?? 'longform',
+    best_video_id: overrides.best_video_id ?? 'vid1',
+    best_video_age_hours: overrides.best_video_age_hours ?? 100,
+    last_metric_age_hours: overrides.last_metric_age_hours ?? 5,
+    snapshot_count: overrides.snapshot_count ?? 3,
+    trend_score: overrides.trend_score ?? 80,
+    lifecycle_status: overrides.lifecycle_status ?? 'exploding',
+    velocity_delta: overrides.velocity_delta ?? 1.5,
+    views_per_hour: overrides.views_per_hour ?? 200,
+    current_eligible: overrides.current_eligible ?? true,
+    last_snapshot_at: overrides.last_snapshot_at ?? new Date().toISOString(),
+  }
 }
 
 describe('fetchDiscoverFeed — all mode', () => {
@@ -389,5 +419,189 @@ describe('fetchDiscoverFeed — Part A freshness gate (scanned_at staleness)', (
       if (prev === undefined) delete process.env.NEXT_PUBLIC_SPIKE_FRESHNESS_GATE
       else process.env.NEXT_PUBLIC_SPIKE_FRESHNESS_GATE = prev
     }
+  })
+})
+
+describe('fetchDiscoverFeed — Part B spiking-now (momentum)', () => {
+  beforeEach(() => {
+    jest.resetAllMocks()
+  })
+
+  it('surfaces a channel whose momentum row is eligible and above floor', async () => {
+    setupMock({
+      watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+      scanResults: {
+        data: [fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa' })],
+        error: null,
+      },
+      momentum: {
+        data: [fixtureMomentumRow({ youtube_channel_id: 'UCa', current_eligible: true, trend_score: 80 })],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'spiking-now' })
+    expect(result.error).toBeNull()
+    expect(result.data.map((d) => d.id)).toEqual(['a'])
+    expect(result.data[0].spikingNow).toBe(true)
+  })
+
+  it('excludes a channel with NO momentum row (missing row → not spiking, no legacy fallback)', async () => {
+    setupMock({
+      watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+      scanResults: {
+        // A row legacy isSpikingNow WOULD fire on (longform outlier_ratio 9).
+        data: [fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa', outlier_ratio: 9 })],
+        error: null,
+      },
+      momentum: { data: [], error: null },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'spiking-now' })
+    expect(result.error).toBeNull()
+    expect(result.data).toEqual([])
+  })
+
+  it('excludes a channel whose momentum row is current_eligible=false', async () => {
+    setupMock({
+      watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+      scanResults: {
+        data: [fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa', outlier_ratio: 9 })],
+        error: null,
+      },
+      momentum: {
+        data: [fixtureMomentumRow({ youtube_channel_id: 'UCa', current_eligible: false, trend_score: 100 })],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'spiking-now' })
+    expect(result.data).toEqual([])
+  })
+
+  it('excludes a channel whose trend_score is below MOMENTUM_TREND_FLOOR (70)', async () => {
+    setupMock({
+      watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+      scanResults: {
+        data: [fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa' })],
+        error: null,
+      },
+      momentum: {
+        data: [fixtureMomentumRow({ youtube_channel_id: 'UCa', current_eligible: true, trend_score: 69 })],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'spiking-now' })
+    expect(result.data).toEqual([])
+  })
+
+  it('sorts by momentumTrendScore desc, then momentumViewsPerHour desc', async () => {
+    setupMock({
+      watchlist: {
+        data: [
+          { youtube_channel_id: 'UCa' },
+          { youtube_channel_id: 'UCb' },
+          { youtube_channel_id: 'UCc' },
+        ],
+        error: null,
+      },
+      scanResults: {
+        data: [
+          fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa' }),
+          fixtureScanRow({ id: 'b', youtube_channel_id: 'UCb' }),
+          fixtureScanRow({ id: 'c', youtube_channel_id: 'UCc' }),
+        ],
+        error: null,
+      },
+      momentum: {
+        data: [
+          // UCa & UCc tie on trend (75) → views/hour breaks it: UCc (300) > UCa (100).
+          fixtureMomentumRow({ youtube_channel_id: 'UCa', trend_score: 75, views_per_hour: 100 }),
+          fixtureMomentumRow({ youtube_channel_id: 'UCb', trend_score: 90, views_per_hour: 50 }),
+          fixtureMomentumRow({ youtube_channel_id: 'UCc', trend_score: 75, views_per_hour: 300 }),
+        ],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'spiking-now' })
+    expect(result.data.map((d) => d.id)).toEqual(['b', 'c', 'a'])
+  })
+
+  it('flag off (NEXT_PUBLIC_SPIKE_MOMENTUM_MODE=off) uses legacy isSpikingNow and never queries the view', async () => {
+    const prev = process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE
+    process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE = 'off'
+    try {
+      const { momChains } = setupMock({
+        watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+        scanResults: {
+          // Longform outlier_ratio 5 → legacy isSpikingNow fires; NO momentum row.
+          data: [fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa', outlier_ratio: 5 })],
+          error: null,
+        },
+        momentum: { data: [], error: null },
+      })
+      const result = await fetchDiscoverFeed({ surface: 'spiking-now' })
+      expect(result.data.map((d) => d.id)).toEqual(['a'])
+      // Revert mode must not consult the momentum view at all.
+      expect(momChains.length).toBe(0)
+    } finally {
+      if (prev === undefined) delete process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE
+      else process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE = prev
+    }
+  })
+})
+
+describe('fetchDiscoverFeed — Part B all tab (momentum pin)', () => {
+  beforeEach(() => {
+    jest.resetAllMocks()
+  })
+
+  it('pins a spiking card ahead of a higher-opportunity non-spiking card', async () => {
+    setupMock({
+      watchlist: {
+        data: [{ youtube_channel_id: 'UCb' }, { youtube_channel_id: 'UCa' }],
+        error: null,
+      },
+      scanResults: {
+        // Input order: UCb (opp 90, NOT spiking) first, UCa (opp 30, spiking) second.
+        data: [
+          fixtureScanRow({ id: 'b', youtube_channel_id: 'UCb', opportunity_score: 90 }),
+          fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa', opportunity_score: 30 }),
+        ],
+        error: null,
+      },
+      momentum: {
+        data: [fixtureMomentumRow({ youtube_channel_id: 'UCa', current_eligible: true, trend_score: 80 })],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'all' })
+    // Spiking UCa pinned first despite its lower opportunity_score.
+    expect(result.data.map((d) => d.id)).toEqual(['a', 'b'])
+    expect(result.data[0].spikingNow).toBe(true)
+    expect(result.data[1].spikingNow).toBe(false)
+  })
+
+  it('keeps non-spiking cards in opportunityScore order (NOT re-ranked by momentumTrendScore)', async () => {
+    setupMock({
+      watchlist: {
+        data: [{ youtube_channel_id: 'UCa' }, { youtube_channel_id: 'UCb' }],
+        error: null,
+      },
+      scanResults: {
+        data: [
+          fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa', opportunity_score: 40 }),
+          fixtureScanRow({ id: 'b', youtube_channel_id: 'UCb', opportunity_score: 80 }),
+        ],
+        error: null,
+      },
+      momentum: {
+        // UCa has a momentum row but is below floor → spikingNow=false yet
+        // momentumTrendScore=69 is attached. It must NOT pull UCa above the
+        // higher-opportunity UCb.
+        data: [fixtureMomentumRow({ youtube_channel_id: 'UCa', current_eligible: true, trend_score: 69 })],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'all' })
+    expect(result.data.map((d) => d.id)).toEqual(['b', 'a'])
+    expect(result.data.every((d) => d.spikingNow === false)).toBe(true)
   })
 })

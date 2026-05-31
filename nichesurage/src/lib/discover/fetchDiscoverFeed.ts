@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/client'
 import { mapRow } from '@/lib/supabase/queries'
 import type { DbScanResult } from '@/lib/types/database'
 import type { NicheCardData, UserTier } from '@/lib/types'
-import { isSpikingNow } from './spike'
+import { isSpikingNow, isSpikingNowFromMomentum, type ChannelMomentum } from './spike'
 
 export type DiscoverFeedMode = 'hot' | 'all'
 /**
@@ -69,6 +69,20 @@ const SPIKE_FRESH_LONGFORM_HOURS = 96
 function spikeFreshnessGateOn(): boolean {
   return process.env.NEXT_PUBLIC_SPIKE_FRESHNESS_GATE !== 'off'
 }
+
+// Part B: when ON (default), the Spiking Now badge + Spiking Now tab read the
+// channel_current_momentum view (current-momentum signal) instead of legacy
+// outlier logic. Read at call time so tests can toggle per-case. NEXT_PUBLIC_
+// prefix is REQUIRED — fetchDiscoverFeed runs client-side, so Next inlines this
+// at build time. Set NEXT_PUBLIC_SPIKE_MOMENTUM_MODE=off + REDEPLOY to revert
+// to legacy isSpikingNow everywhere (badge + tab).
+function momentumModeOn(): boolean {
+  return process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE !== 'off'
+}
+
+// PostgREST .in() is chunked so the momentum lookup never builds an over-long
+// URL on the wide surfaces (premium 'all'/'spiking-now' over-fetch to ~600 ids).
+const CHANNEL_MOMENTUM_BATCH = 150
 
 // Widest window (longform) for the SQL pre-filter; the per-row content-type
 // refine below applies the tighter shorts window.
@@ -235,6 +249,9 @@ async function fetchWatchlistWindow(
   })
 
   const mapped = scan.slice(0, limit).map((row) => mapRow(row))
+  // Just-added keeps its score+recency ordering; momentum is attached only so
+  // the Spiking Now badge can render on these cards (no re-sort here).
+  if (momentumModeOn()) await attachMomentum(supabase, mapped)
   await attachCategories(supabase, mapped)
   return {
     data: mapped,
@@ -296,15 +313,32 @@ async function fetchAllMode(
   const rows = applySpikeFreshnessGate((data ?? []) as ScanResultWithCluster[])
   let mapped = rows.map((row) => mapRow(row))
 
-  // Spiking-now post-filter: applied client-side because the rule is
-  // content-type-aware and PostgREST can't express the OR-with-different-
-  // columns succinctly. Caller over-fetches (3x) to compensate.
   if (spikingOnly) {
-    mapped = mapped.filter((n) => isSpikingNow(n))
+    // Spiking Now tab. The momentum gate must run BEFORE trimming so the tab
+    // isn't capped by opportunity_score ordering; the caller over-fetches (3x)
+    // to absorb the rows the gate drops.
+    if (momentumModeOn()) {
+      await attachMomentum(supabase, mapped)
+      mapped = mapped.filter((n) => n.spikingNow === true)
+      mapped.sort(compareSpikingTab)
+    } else {
+      // Legacy revert: content-type-aware outlier rule, no momentum query.
+      mapped = mapped.filter((n) => isSpikingNow(n))
+    }
+    mapped = mapped.slice(0, limit)
+  } else {
+    // All tab. Trim by opportunity_score first (SQL already ordered it), then
+    // attach momentum to the bounded set and pin spiking cards to the top.
+    // Attaching post-slice bounds the view lookup to ≤ limit on the highest-
+    // traffic surface; the trade-off is that a spiking channel ranked below
+    // `limit` by opportunity_score won't be pulled onto page 1 of All (the
+    // Spiking Now tab is where every spiking channel is guaranteed surfaced).
+    mapped = mapped.slice(0, limit)
+    if (momentumModeOn()) {
+      await attachMomentum(supabase, mapped)
+      mapped.sort(compareAllTab)
+    }
   }
-
-  // Trim the freshness over-fetch back to the requested limit.
-  mapped = mapped.slice(0, limit)
 
   await attachCategories(supabase, mapped)
   return { data: mapped, error: null }
@@ -338,5 +372,98 @@ export async function attachCategories(
   for (const niche of niches) {
     const cat = catByChannel.get(niche.youtubeChannelId)
     if (cat) niche.category = cat
+  }
+}
+
+// ─── Part B: momentum attach + ordering ──────────────────────────────────────
+
+/**
+ * Spiking Now tab order: momentumTrendScore DESC, then momentumViewsPerHour
+ * DESC, then opportunityScore DESC. Every row reaching this comparator already
+ * passed spikingNow === true, so the momentum fields are populated.
+ */
+function compareSpikingTab(a: NicheCardData, b: NicheCardData): number {
+  const t = (b.momentumTrendScore ?? 0) - (a.momentumTrendScore ?? 0)
+  if (t !== 0) return t
+  const v = (b.momentumViewsPerHour ?? 0) - (a.momentumViewsPerHour ?? 0)
+  if (v !== 0) return v
+  return (b.opportunityScore ?? 0) - (a.opportunityScore ?? 0)
+}
+
+/**
+ * All tab order:
+ *   1. spikingNow === true cards first
+ *   2. among spiking cards: momentumTrendScore → momentumViewsPerHour →
+ *      opportunityScore (same as compareSpikingTab)
+ *   3. among non-spiking cards: opportunityScore DESC only — non-spiking cards
+ *      keep their legacy score ordering and are NOT re-ranked by momentum, so
+ *      the All tab's overall ranking stays close to legacy.
+ */
+function compareAllTab(a: NicheCardData, b: NicheCardData): number {
+  const sa = a.spikingNow === true ? 0 : 1
+  const sb = b.spikingNow === true ? 0 : 1
+  if (sa !== sb) return sa - sb
+  if (sa === 0) return compareSpikingTab(a, b) // both spiking
+  return (b.opportunityScore ?? 0) - (a.opportunityScore ?? 0) // both non-spiking
+}
+
+/**
+ * Part B: batch-read the channel_current_momentum view for the given niches and
+ * attach the current-momentum signal in place.
+ *
+ * Sets `spikingNow` to an EXPLICIT boolean on EVERY niche (default false). The
+ * explicit-false default is load-bearing: it stops NicheCard's
+ * `data.spikingNow ?? isSpikingNow(data)` from falling back to legacy inside the
+ * momentum feed — a channel absent from the view is spikingNow=false, full stop.
+ *
+ * The view already encodes every eligibility gate (snapshot freshness, video
+ * age, lifecycle, snapshot_count >= 2, content_type known) in current_eligible;
+ * isSpikingNowFromMomentum only adds the calibrated trend floor on top. SQL
+ * gates are not re-derived here.
+ *
+ * Best-effort: on a view error every niche stays spikingNow=false (fail-safe —
+ * the Spiking Now tab goes empty rather than showing false positives, and we
+ * never fall back to legacy on the momentum surface). Mutates in place.
+ */
+export async function attachMomentum(
+  supabase: ReturnType<typeof createClient>,
+  niches: NicheCardData[],
+): Promise<void> {
+  if (niches.length === 0) return
+  for (const n of niches) n.spikingNow = false
+
+  const channelIds = niches
+    .map((n) => n.youtubeChannelId)
+    .filter(Boolean) as string[]
+  if (channelIds.length === 0) return
+
+  const byChannel = new Map<string, ChannelMomentum>()
+  for (let i = 0; i < channelIds.length; i += CHANNEL_MOMENTUM_BATCH) {
+    const batch = channelIds.slice(i, i + CHANNEL_MOMENTUM_BATCH)
+    const { data, error } = await supabase
+      .from('channel_current_momentum')
+      .select(
+        'youtube_channel_id, content_type, best_video_id, best_video_age_hours, ' +
+          'last_metric_age_hours, snapshot_count, trend_score, lifecycle_status, ' +
+          'velocity_delta, views_per_hour, current_eligible, last_snapshot_at',
+      )
+      .in('youtube_channel_id', batch)
+    if (error) return // best-effort: every card stays spikingNow=false
+    // channel_current_momentum is a view (not in the generated Database types),
+    // so PostgREST types `data` loosely — cast through unknown to ChannelMomentum.
+    for (const row of (data ?? []) as unknown as ChannelMomentum[]) {
+      byChannel.set(row.youtube_channel_id, row)
+    }
+  }
+
+  for (const niche of niches) {
+    const m = byChannel.get(niche.youtubeChannelId)
+    niche.spikingNow = isSpikingNowFromMomentum(m)
+    if (m) {
+      niche.momentumTrendScore = m.trend_score ?? undefined
+      niche.momentumViewsPerHour = m.views_per_hour ?? undefined
+      niche.momentumLifecycleStatus = m.lifecycle_status
+      niche.momentumVideoId = m.best_video_id
+    }
   }
 }
