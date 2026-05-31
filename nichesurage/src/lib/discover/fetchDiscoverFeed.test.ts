@@ -605,3 +605,132 @@ describe('fetchDiscoverFeed — Part B all tab (momentum pin)', () => {
     expect(result.data.every((d) => d.spikingNow === false)).toBe(true)
   })
 })
+
+describe('fetchDiscoverFeed — Part B.3.1 spiking-now (view-first momentum path)', () => {
+  beforeEach(() => {
+    jest.resetAllMocks()
+  })
+
+  it('returns a channel whose scan_results_latest.scanned_at is stale if the momentum view marks it eligible', async () => {
+    // The root bug: scan_results.scanned_at was stale (>96h) so the old
+    // attachMomentum-based path dropped it via the Part A freshness gate.
+    // The view-first path skips the freshness gate — the view already proves
+    // freshness via video_snapshots (last_metric_age_hours ≤ 26 in current_eligible).
+    setupMock({
+      watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+      scanResults: {
+        data: [
+          fixtureScanRow({
+            id: 'stale-but-momentum',
+            youtube_channel_id: 'UCa',
+            scanned_at: hoursAgoIso(168), // 7 days — well beyond the 96h Part A gate
+          }),
+        ],
+        error: null,
+      },
+      momentum: {
+        data: [fixtureMomentumRow({ youtube_channel_id: 'UCa', current_eligible: true, trend_score: 80 })],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'spiking-now' })
+    expect(result.error).toBeNull()
+    expect(result.data.map((d) => d.id)).toEqual(['stale-but-momentum'])
+    expect(result.data[0].spikingNow).toBe(true)
+  })
+
+  it('queries scan_results only for channels identified by the momentum view (view-first, not full scan pool)', async () => {
+    // UCa and UCb are both in allowedIds and scan_results. Only UCb is in the
+    // momentum view. The scan_results query must be driven by momentum candidates
+    // — the .in() call must contain UCb but not UCa.
+    const { scanChains } = setupMock({
+      watchlist: {
+        data: [{ youtube_channel_id: 'UCa' }, { youtube_channel_id: 'UCb' }],
+        error: null,
+      },
+      scanResults: {
+        data: [fixtureScanRow({ id: 'b', youtube_channel_id: 'UCb' })],
+        error: null,
+      },
+      momentum: {
+        data: [fixtureMomentumRow({ youtube_channel_id: 'UCb', current_eligible: true, trend_score: 80 })],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'spiking-now' })
+    expect(result.data.map((d) => d.id)).toEqual(['b'])
+    // scan_results_latest .in() must list only the momentum candidate (UCb), not UCa.
+    const inArgs = scanChains[0]?.in.mock.calls.find((c) => c[0] === 'youtube_channel_id')
+    expect(inArgs?.[1]).toContain('UCb')
+    expect(inArgs?.[1]).not.toContain('UCa')
+  })
+
+  it('excludes a channel that is in the momentum view but not in channels_watchlist allowedIds', async () => {
+    // UCb is spiking in the view but is NOT in allowedIds (face channel or evicted).
+    // The JS intersection must block it even though the DB view returned it.
+    setupMock({
+      watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+      scanResults: {
+        data: [fixtureScanRow({ id: 'b', youtube_channel_id: 'UCb' })],
+        error: null,
+      },
+      momentum: {
+        data: [fixtureMomentumRow({ youtube_channel_id: 'UCb', current_eligible: true, trend_score: 80 })],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'spiking-now' })
+    expect(result.error).toBeNull()
+    expect(result.data).toEqual([])
+  })
+
+  it('excludes a spiking channel that has no scan_results_latest row (cannot render a card)', async () => {
+    setupMock({
+      watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+      scanResults: { data: [], error: null },
+      momentum: {
+        data: [fixtureMomentumRow({ youtube_channel_id: 'UCa', current_eligible: true, trend_score: 80 })],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'spiking-now' })
+    expect(result.error).toBeNull()
+    expect(result.data).toEqual([])
+  })
+
+  it('flag off (NEXT_PUBLIC_SPIKE_MOMENTUM_MODE=off) does not use the view-first path and applies the Part A freshness gate', async () => {
+    // Contrast with test 1: with flag off, a stale scan_results row IS rejected
+    // by the Part A gate even if legacy isSpikingNow would fire. The view-first
+    // path must not activate.
+    const prev = process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE
+    process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE = 'off'
+    try {
+      const { momChains } = setupMock({
+        watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+        scanResults: {
+          data: [
+            fixtureScanRow({
+              id: 'a',
+              youtube_channel_id: 'UCa',
+              outlier_ratio: 5,
+              scanned_at: hoursAgoIso(168), // 7d stale — Part A rejects this
+            }),
+          ],
+          error: null,
+        },
+        momentum: {
+          data: [fixtureMomentumRow({ youtube_channel_id: 'UCa', current_eligible: true, trend_score: 80 })],
+          error: null,
+        },
+      })
+      const result = await fetchDiscoverFeed({ surface: 'spiking-now' })
+      // Legacy path: Part A freshness gate drops the stale row → empty tab.
+      expect(result.data).toEqual([])
+      // view-first path must not be invoked.
+      expect(momChains.length).toBe(0)
+    } finally {
+      if (prev === undefined) delete process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE
+      else process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE = prev
+    }
+  })
+})

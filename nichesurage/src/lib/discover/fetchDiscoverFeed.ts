@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/client'
 import { mapRow } from '@/lib/supabase/queries'
 import type { DbScanResult } from '@/lib/types/database'
 import type { NicheCardData, UserTier } from '@/lib/types'
-import { isSpikingNow, isSpikingNowFromMomentum, type ChannelMomentum } from './spike'
+import { isSpikingNow, isSpikingNowFromMomentum, MOMENTUM_TREND_FLOOR, type ChannelMomentum } from './spike'
 
 export type DiscoverFeedMode = 'hot' | 'all'
 /**
@@ -259,6 +259,71 @@ async function fetchWatchlistWindow(
   }
 }
 
+// B.3.1: View-first path for the Spiking Now tab when momentum mode is ON.
+// Queries channel_current_momentum for eligible spiking channels, intersects
+// with allowedIds to enforce the faceless/evicted/category gate, then fetches
+// scan_results_latest rows for card rendering WITHOUT the Part A freshness gate.
+// (The view already proves freshness via video_snapshots.scanned_at through the
+// last_metric_age_hours ≤ 26 condition inside current_eligible.)
+async function fetchSpikingNowMomentum(
+  supabase: ReturnType<typeof createClient>,
+  limit: number,
+  allowedIds: string[],
+): Promise<{ data: NicheCardData[]; error: string | null }> {
+  const allowedSet = new Set(allowedIds)
+
+  const { data: momData, error: momErr } = await supabase
+    .from('channel_current_momentum')
+    .select(
+      'youtube_channel_id, content_type, best_video_id, best_video_age_hours, ' +
+        'last_metric_age_hours, snapshot_count, trend_score, lifecycle_status, ' +
+        'velocity_delta, views_per_hour, current_eligible, last_snapshot_at',
+    )
+    .eq('current_eligible', true)
+    .gte('trend_score', MOMENTUM_TREND_FLOOR)
+
+  if (momErr) return { data: [], error: null } // best-effort: empty tab on view error
+
+  const allMomRows = (momData ?? []) as unknown as ChannelMomentum[]
+
+  // Intersect with allowedIds; JS filter also double-checks DB predicates
+  // (defense-in-depth, also makes unit-test mocks straightforward).
+  const eligible = allMomRows.filter(
+    (r) =>
+      allowedSet.has(r.youtube_channel_id) &&
+      r.current_eligible === true &&
+      (r.trend_score ?? 0) >= MOMENTUM_TREND_FLOOR,
+  )
+  if (eligible.length === 0) return { data: [], error: null }
+
+  const spikingIds = eligible.map((r) => r.youtube_channel_id)
+  const momentumByChannel = new Map<string, ChannelMomentum>()
+  for (const r of eligible) momentumByChannel.set(r.youtube_channel_id, r)
+
+  const { data: scanData, error: scanErr } = await supabase
+    .from('scan_results_latest')
+    .select('*, niche_clusters(id, label)')
+    .in('youtube_channel_id', spikingIds)
+
+  if (scanErr) return { data: [], error: 'Discover fetch failed' }
+
+  const mapped = ((scanData ?? []) as ScanResultWithCluster[]).map((row) => mapRow(row))
+
+  for (const niche of mapped) {
+    const m = momentumByChannel.get(niche.youtubeChannelId)
+    niche.spikingNow = true
+    if (m) {
+      niche.momentumTrendScore = m.trend_score ?? undefined
+      niche.momentumViewsPerHour = m.views_per_hour ?? undefined
+      niche.momentumLifecycleStatus = m.lifecycle_status
+      niche.momentumVideoId = m.best_video_id
+    }
+  }
+
+  mapped.sort(compareSpikingTab)
+  return { data: mapped.slice(0, limit), error: null }
+}
+
 async function fetchAllMode(
   supabase: ReturnType<typeof createClient>,
   limit: number,
@@ -289,6 +354,16 @@ async function fetchAllMode(
   )
   if (allowedIds.length === 0) return { data: [], error: null }
 
+  // B.3.1: Spiking Now + momentum ON → query the view first; skip scan_results
+  // entirely as the candidate source. Channels with a stale scan_results.scanned_at
+  // (rejected by Part A's freshness gate) but active video_snapshots (proving
+  // current freshness in the view) are correctly surfaced this way.
+  if (spikingOnly && momentumModeOn()) {
+    const res = await fetchSpikingNowMomentum(supabase, limit, allowedIds)
+    await attachCategories(supabase, res.data)
+    return res
+  }
+
   // Sort by opportunity_score desc to match the visible big number on the
   // card. Users expect "Best first" to mean the score they see, not the
   // raw outlier_ratio (which is a smaller-text supporting metric).
@@ -314,17 +389,9 @@ async function fetchAllMode(
   let mapped = rows.map((row) => mapRow(row))
 
   if (spikingOnly) {
-    // Spiking Now tab. The momentum gate must run BEFORE trimming so the tab
-    // isn't capped by opportunity_score ordering; the caller over-fetches (3x)
-    // to absorb the rows the gate drops.
-    if (momentumModeOn()) {
-      await attachMomentum(supabase, mapped)
-      mapped = mapped.filter((n) => n.spikingNow === true)
-      mapped.sort(compareSpikingTab)
-    } else {
-      // Legacy revert: content-type-aware outlier rule, no momentum query.
-      mapped = mapped.filter((n) => isSpikingNow(n))
-    }
+    // Legacy revert path only (NEXT_PUBLIC_SPIKE_MOMENTUM_MODE=off).
+    // momentumModeOn() = true short-circuits above via fetchSpikingNowMomentum.
+    mapped = mapped.filter((n) => isSpikingNow(n))
     mapped = mapped.slice(0, limit)
   } else {
     // All tab. Trim by opportunity_score first (SQL already ordered it), then
