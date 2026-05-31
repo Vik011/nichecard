@@ -1,5 +1,6 @@
 import { describe, it, expect } from '@jest/globals'
-import { isSpikingNow } from './spike'
+import { isSpikingNow, isSpikingNowFromMomentum, MOMENTUM_TREND_FLOOR } from './spike'
+import type { ChannelMomentum } from './spike'
 
 describe('isSpikingNow', () => {
   describe('longform', () => {
@@ -82,5 +83,50 @@ describe('isSpikingNow', () => {
         subscriberCount: 200,
       })).toBe(true)
     })
+  })
+})
+
+describe('isSpikingNowFromMomentum', () => {
+  const base: ChannelMomentum = {
+    youtube_channel_id: 'UCtest',
+    content_type: 'longform',
+    best_video_id: 'vid1',
+    best_video_age_hours: 100,
+    last_metric_age_hours: 10,
+    snapshot_count: 3,
+    trend_score: MOMENTUM_TREND_FLOOR,
+    lifecycle_status: 'exploding',
+    velocity_delta: 1.5,
+    views_per_hour: 200,
+    current_eligible: true,
+    last_snapshot_at: new Date().toISOString(),
+  }
+
+  it('returns true when current_eligible=true and trend_score >= floor', () => {
+    expect(isSpikingNowFromMomentum({ ...base, trend_score: MOMENTUM_TREND_FLOOR + 5 })).toBe(true)
+  })
+
+  it('returns false when current_eligible=true but trend_score < floor', () => {
+    expect(isSpikingNowFromMomentum({ ...base, trend_score: MOMENTUM_TREND_FLOOR - 1 })).toBe(false)
+  })
+
+  it('returns false when current_eligible=false regardless of trend_score', () => {
+    expect(isSpikingNowFromMomentum({ ...base, current_eligible: false, trend_score: 100 })).toBe(false)
+  })
+
+  it('returns false when m is null', () => {
+    expect(isSpikingNowFromMomentum(null)).toBe(false)
+  })
+
+  it('returns false when m is undefined', () => {
+    expect(isSpikingNowFromMomentum(undefined)).toBe(false)
+  })
+
+  it('returns false when trend_score is null (null ?? 0 falls below floor)', () => {
+    expect(isSpikingNowFromMomentum({ ...base, trend_score: null })).toBe(false)
+  })
+
+  it('returns true at exact floor boundary (>= not >)', () => {
+    expect(isSpikingNowFromMomentum({ ...base, trend_score: MOMENTUM_TREND_FLOOR })).toBe(true)
   })
 })

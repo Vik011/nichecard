@@ -9,7 +9,7 @@ export type {
   DbScanResult,
   DbNicheHealthCheck,
 } from './database'
-import type { ViralityRating, ContentLanguage, ContentType } from './database'
+import type { ViralityRating, ContentLanguage, ContentType, LifecycleStatus } from './database'
 // Sprint B trend types (TrendData, TrendLifecycle, TrendClusterCard,
 // TREND_BADGE_*, CLUSTER_FEED_*) removed 2026-05-07 with the trend-
 // engine deprecation. The corresponding `trend.ts` file is gone too.
@@ -78,6 +78,17 @@ interface BaseNicheCardData {
   // Use enumValueToBucket() from categoryBuckets.ts to translate to the
   // 7 user-facing bucket labels (Tech & AI, Finance, etc.) for display.
   category?: string
+  // Part B (momentum) — set by fetchDiscoverFeed.attachMomentum() from the
+  // channel_current_momentum view. Undefined on surfaces that don't attach
+  // momentum (landing/dashboard/related); inside the discover momentum feed
+  // spikingNow is ALWAYS an explicit boolean (missing view row → false), which
+  // is what stops NicheCard's `data.spikingNow ?? isSpikingNow(data)` fallback
+  // from firing on the momentum surface.
+  spikingNow?: boolean
+  momentumTrendScore?: number
+  momentumViewsPerHour?: number
+  momentumLifecycleStatus?: LifecycleStatus | null
+  momentumVideoId?: string | null
 }
 
 export interface TrendingCluster {

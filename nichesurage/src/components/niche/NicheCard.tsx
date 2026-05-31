@@ -210,7 +210,12 @@ export function NicheCard({
             Niche #{rank}
           </div>
           <ContentTypeBadge type={data.contentType} />
-          {isSpikingNow(data) && <SpikingBadge />}
+          {/* Part B: prefer the momentum signal attached by fetchDiscoverFeed
+              (always an explicit boolean on the momentum feed). Fall back to
+              legacy isSpikingNow only when spikingNow is undefined — i.e. on
+              surfaces that don't attach momentum (landing/dashboard/related)
+              or when momentum mode is reverted. */}
+          {(data.spikingNow ?? isSpikingNow(data)) && <SpikingBadge />}
         </div>
         <div className="flex items-center gap-0.5 -mt-1 -mr-1">
           <HealthCheckButton
