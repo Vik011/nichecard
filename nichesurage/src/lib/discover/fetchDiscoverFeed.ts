@@ -249,9 +249,13 @@ async function fetchWatchlistWindow(
   })
 
   const mapped = scan.slice(0, limit).map((row) => mapRow(row))
-  // Just-added keeps its score+recency ordering; momentum is attached only so
-  // the Spiking Now badge can render on these cards (no re-sort here).
-  if (momentumModeOn()) await attachMomentum(supabase, mapped)
+  // Just-added keeps its score+recency ordering. We do NOT attach momentum here
+  // (the channel_current_momentum view query slowed initial load). In momentum
+  // mode set an explicit false so NicheCard does not fall back to the legacy
+  // isSpikingNow badge; flag OFF leaves it undefined → legacy badge (rollback).
+  if (momentumModeOn()) {
+    for (const n of mapped) n.spikingNow = false
+  }
   await attachCategories(supabase, mapped)
   return {
     data: mapped,
@@ -394,16 +398,16 @@ async function fetchAllMode(
     mapped = mapped.filter((n) => isSpikingNow(n))
     mapped = mapped.slice(0, limit)
   } else {
-    // All tab. Trim by opportunity_score first (SQL already ordered it), then
-    // attach momentum to the bounded set and pin spiking cards to the top.
-    // Attaching post-slice bounds the view lookup to ≤ limit on the highest-
-    // traffic surface; the trade-off is that a spiking channel ranked below
-    // `limit` by opportunity_score won't be pulled onto page 1 of All (the
-    // Spiking Now tab is where every spiking channel is guaranteed surfaced).
+    // All tab. Order is opportunity_score DESC (SQL already applied it). We do
+    // NOT query channel_current_momentum here — that view aggregates
+    // video_snapshots per request and was the initial-load bottleneck. Spiking
+    // badges + pinning live only on the dedicated Spiking Now tab.
     mapped = mapped.slice(0, limit)
     if (momentumModeOn()) {
-      await attachMomentum(supabase, mapped)
-      mapped.sort(compareAllTab)
+      // Explicit false (not undefined) so NicheCard does not fall back to the
+      // legacy isSpikingNow badge on this surface. Flag OFF leaves spikingNow
+      // undefined → legacy badge (rollback path).
+      for (const n of mapped) n.spikingNow = false
     }
   }
 
@@ -455,23 +459,6 @@ function compareSpikingTab(a: NicheCardData, b: NicheCardData): number {
   const v = (b.momentumViewsPerHour ?? 0) - (a.momentumViewsPerHour ?? 0)
   if (v !== 0) return v
   return (b.opportunityScore ?? 0) - (a.opportunityScore ?? 0)
-}
-
-/**
- * All tab order:
- *   1. spikingNow === true cards first
- *   2. among spiking cards: momentumTrendScore → momentumViewsPerHour →
- *      opportunityScore (same as compareSpikingTab)
- *   3. among non-spiking cards: opportunityScore DESC only — non-spiking cards
- *      keep their legacy score ordering and are NOT re-ranked by momentum, so
- *      the All tab's overall ranking stays close to legacy.
- */
-function compareAllTab(a: NicheCardData, b: NicheCardData): number {
-  const sa = a.spikingNow === true ? 0 : 1
-  const sb = b.spikingNow === true ? 0 : 1
-  if (sa !== sb) return sa - sb
-  if (sa === 0) return compareSpikingTab(a, b) // both spiking
-  return (b.opportunityScore ?? 0) - (a.opportunityScore ?? 0) // both non-spiking
 }
 
 /**

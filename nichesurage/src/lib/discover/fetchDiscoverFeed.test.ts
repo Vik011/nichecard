@@ -548,19 +548,23 @@ describe('fetchDiscoverFeed — Part B spiking-now (momentum)', () => {
   })
 })
 
-describe('fetchDiscoverFeed — Part B all tab (momentum pin)', () => {
+describe('fetchDiscoverFeed — Part B all tab (no momentum view query)', () => {
   beforeEach(() => {
     jest.resetAllMocks()
   })
 
-  it('pins a spiking card ahead of a higher-opportunity non-spiking card', async () => {
-    setupMock({
+  it('keeps cards in opportunityScore order and does NOT query channel_current_momentum', async () => {
+    // Hotfix: the All tab must not consult the momentum view (it aggregates
+    // video_snapshots per request and slowed initial load). Even though the
+    // view would mark UCa spiking, the All tab keeps pure opportunity_score
+    // order and never queries it.
+    const { momChains } = setupMock({
       watchlist: {
         data: [{ youtube_channel_id: 'UCb' }, { youtube_channel_id: 'UCa' }],
         error: null,
       },
       scanResults: {
-        // Input order: UCb (opp 90, NOT spiking) first, UCa (opp 30, spiking) second.
+        // UCb (opp 90) first, UCa (opp 30) second — SQL opportunity_score order.
         data: [
           fixtureScanRow({ id: 'b', youtube_channel_id: 'UCb', opportunity_score: 90 }),
           fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa', opportunity_score: 30 }),
@@ -573,36 +577,103 @@ describe('fetchDiscoverFeed — Part B all tab (momentum pin)', () => {
       },
     })
     const result = await fetchDiscoverFeed({ surface: 'all' })
-    // Spiking UCa pinned first despite its lower opportunity_score.
-    expect(result.data.map((d) => d.id)).toEqual(['a', 'b'])
-    expect(result.data[0].spikingNow).toBe(true)
-    expect(result.data[1].spikingNow).toBe(false)
+    // Pure opportunity_score order — UCa is NOT pinned above UCb.
+    expect(result.data.map((d) => d.id)).toEqual(['b', 'a'])
+    // The momentum view was never queried on the All tab.
+    expect(momChains.length).toBe(0)
   })
 
-  it('keeps non-spiking cards in opportunityScore order (NOT re-ranked by momentumTrendScore)', async () => {
+  it('sets spikingNow=false (explicit, not undefined) on every All-tab card in momentum mode', async () => {
     setupMock({
-      watchlist: {
-        data: [{ youtube_channel_id: 'UCa' }, { youtube_channel_id: 'UCb' }],
-        error: null,
-      },
+      watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
       scanResults: {
-        data: [
-          fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa', opportunity_score: 40 }),
-          fixtureScanRow({ id: 'b', youtube_channel_id: 'UCb', opportunity_score: 80 }),
-        ],
-        error: null,
-      },
-      momentum: {
-        // UCa has a momentum row but is below floor → spikingNow=false yet
-        // momentumTrendScore=69 is attached. It must NOT pull UCa above the
-        // higher-opportunity UCb.
-        data: [fixtureMomentumRow({ youtube_channel_id: 'UCa', current_eligible: true, trend_score: 69 })],
+        data: [fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa', opportunity_score: 50 })],
         error: null,
       },
     })
     const result = await fetchDiscoverFeed({ surface: 'all' })
-    expect(result.data.map((d) => d.id)).toEqual(['b', 'a'])
-    expect(result.data.every((d) => d.spikingNow === false)).toBe(true)
+    expect(result.data.length).toBe(1)
+    // Explicit false so NicheCard does not fall back to legacy isSpikingNow.
+    expect(result.data[0].spikingNow).toBe(false)
+  })
+})
+
+describe('fetchDiscoverFeed — Just Added (no momentum view query)', () => {
+  beforeEach(() => {
+    jest.resetAllMocks()
+  })
+
+  it('does NOT query channel_current_momentum and sets spikingNow=false in momentum mode', async () => {
+    const { momChains } = setupMock({
+      watchlist: {
+        data: [{ youtube_channel_id: 'UCa', tier_entered_at: hoursAgoIso(24) }],
+        error: null,
+      },
+      scanResults: {
+        data: [fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa', opportunity_score: 50 })],
+        error: null,
+      },
+      momentum: {
+        data: [fixtureMomentumRow({ youtube_channel_id: 'UCa', current_eligible: true, trend_score: 80 })],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'just-added' })
+    expect(result.data.map((d) => d.id)).toEqual(['a'])
+    expect(result.data[0].spikingNow).toBe(false)
+    expect(momChains.length).toBe(0)
+  })
+})
+
+describe('fetchDiscoverFeed — momentum flag OFF (legacy badge fallback path)', () => {
+  beforeEach(() => {
+    jest.resetAllMocks()
+  })
+
+  it('All tab leaves spikingNow undefined and does not query the momentum view when flag is off', async () => {
+    const prev = process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE
+    process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE = 'off'
+    try {
+      const { momChains } = setupMock({
+        watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+        scanResults: {
+          data: [fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa', opportunity_score: 50 })],
+          error: null,
+        },
+      })
+      const result = await fetchDiscoverFeed({ surface: 'all' })
+      expect(result.data.length).toBe(1)
+      // Flag off: spikingNow unset → undefined → NicheCard uses legacy isSpikingNow.
+      expect(result.data[0].spikingNow).toBeUndefined()
+      expect(momChains.length).toBe(0)
+    } finally {
+      if (prev === undefined) delete process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE
+      else process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE = prev
+    }
+  })
+
+  it('Just Added leaves spikingNow undefined and does not query the momentum view when flag is off', async () => {
+    const prev = process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE
+    process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE = 'off'
+    try {
+      const { momChains } = setupMock({
+        watchlist: {
+          data: [{ youtube_channel_id: 'UCa', tier_entered_at: hoursAgoIso(24) }],
+          error: null,
+        },
+        scanResults: {
+          data: [fixtureScanRow({ id: 'a', youtube_channel_id: 'UCa', opportunity_score: 50 })],
+          error: null,
+        },
+      })
+      const result = await fetchDiscoverFeed({ surface: 'just-added' })
+      expect(result.data.length).toBe(1)
+      expect(result.data[0].spikingNow).toBeUndefined()
+      expect(momChains.length).toBe(0)
+    } finally {
+      if (prev === undefined) delete process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE
+      else process.env.NEXT_PUBLIC_SPIKE_MOMENTUM_MODE = prev
+    }
   })
 })
 
