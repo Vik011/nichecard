@@ -314,7 +314,7 @@ describe('fetchDiscoverFeed — faceless filter (faceless-only feed)', () => {
   })
 })
 
-describe('fetchDiscoverFeed — Part A freshness gate (scanned_at staleness)', () => {
+describe('fetchDiscoverFeed — All tab inclusion freshness (PR 1 relax)', () => {
   beforeEach(() => {
     jest.resetAllMocks()
   })
@@ -327,61 +327,38 @@ describe('fetchDiscoverFeed — Part A freshness gate (scanned_at staleness)', (
     })
   }
 
-  it('rejects a stale shorts row (scanned_at older than 48h)', async () => {
+  // Default (NEXT_PUBLIC_ALL_TAB_FRESHNESS_GATE unset = off → relaxed): the All
+  // tab is a faceless opportunity CATALOG, so it surfaces every faceless scan
+  // row regardless of scanned_at age. Stale rows are NOT dropped here (only the
+  // Spiking Now surface enforces freshness).
+  it('keeps a stale shorts row by default (relaxed — no inclusion freshness gate on All)', async () => {
     withSingleRow(
       fixtureScanRow({
         id: 'stale-short',
         youtube_channel_id: 'UCa',
         content_type: 'shorts',
-        scanned_at: hoursAgoIso(72), // ~3d > 48h shorts window
+        scanned_at: hoursAgoIso(72), // ~3d > 48h shorts window — kept now
       }),
     )
     const result = await fetchDiscoverFeed({ mode: 'all' })
     expect(result.error).toBeNull()
-    expect(result.data).toEqual([])
+    expect(result.data.map((d) => d.id)).toEqual(['stale-short'])
   })
 
-  it('keeps a fresh shorts row (scanned_at 30h, within 48h)', async () => {
-    withSingleRow(
-      fixtureScanRow({
-        id: 'fresh-short',
-        youtube_channel_id: 'UCa',
-        content_type: 'shorts',
-        scanned_at: hoursAgoIso(30),
-      }),
-    )
-    const result = await fetchDiscoverFeed({ mode: 'all' })
-    expect(result.data.map((d) => d.id)).toEqual(['fresh-short'])
-  })
-
-  it('keeps a longform row within the 96h window', async () => {
-    withSingleRow(
-      fixtureScanRow({
-        id: 'fresh-long',
-        youtube_channel_id: 'UCa',
-        content_type: 'longform',
-        scanned_at: hoursAgoIso(90), // < 96h longform window
-      }),
-    )
-    const result = await fetchDiscoverFeed({ mode: 'all' })
-    expect(result.data.map((d) => d.id)).toEqual(['fresh-long'])
-  })
-
-  it('rejects a longform row older than 96h', async () => {
+  it('keeps a stale longform row by default (relaxed)', async () => {
     withSingleRow(
       fixtureScanRow({
         id: 'stale-long',
         youtube_channel_id: 'UCa',
         content_type: 'longform',
-        scanned_at: hoursAgoIso(120), // ~5d > 96h longform window
+        scanned_at: hoursAgoIso(120), // ~5d > 96h longform window — kept now
       }),
     )
     const result = await fetchDiscoverFeed({ mode: 'all' })
-    expect(result.error).toBeNull()
-    expect(result.data).toEqual([])
+    expect(result.data.map((d) => d.id)).toEqual(['stale-long'])
   })
 
-  it('over-fetches (3x) on the all path so refined-out stale rows do not crowd out fresh ones', async () => {
+  it('does NOT over-fetch on the All path when relaxed (DB limit == requested limit)', async () => {
     const { scanChains } = setupMock({
       watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
       scanResults: {
@@ -397,28 +374,81 @@ describe('fetchDiscoverFeed — Part A freshness gate (scanned_at staleness)', (
       },
     })
     await fetchDiscoverFeed({ mode: 'all', limit: 10 })
-    // Gate ON + not spiking-only → DB limit is 3x the requested limit.
-    expect(scanChains[0].limit.mock.calls).toContainEqual([30])
+    // Relaxed → no freshness refine → no 3x over-fetch.
+    expect(scanChains[0].limit.mock.calls).toContainEqual([10])
   })
 
-  it('flag off (NEXT_PUBLIC_SPIKE_FRESHNESS_GATE=off) keeps a stale row (legacy behavior)', async () => {
-    const prev = process.env.NEXT_PUBLIC_SPIKE_FRESHNESS_GATE
-    process.env.NEXT_PUBLIC_SPIKE_FRESHNESS_GATE = 'off'
-    try {
+  // Opt-in strict gate: NEXT_PUBLIC_ALL_TAB_FRESHNESS_GATE=on restores the
+  // legacy 96h/48h inclusion gate on the All tab (rollback path).
+  describe('with NEXT_PUBLIC_ALL_TAB_FRESHNESS_GATE=on (strict, rollback)', () => {
+    let prev: string | undefined
+    beforeEach(() => {
+      prev = process.env.NEXT_PUBLIC_ALL_TAB_FRESHNESS_GATE
+      process.env.NEXT_PUBLIC_ALL_TAB_FRESHNESS_GATE = 'on'
+    })
+    afterEach(() => {
+      if (prev === undefined) delete process.env.NEXT_PUBLIC_ALL_TAB_FRESHNESS_GATE
+      else process.env.NEXT_PUBLIC_ALL_TAB_FRESHNESS_GATE = prev
+    })
+
+    it('rejects a stale shorts row (scanned_at older than 48h)', async () => {
       withSingleRow(
         fixtureScanRow({
-          id: 'stale-but-kept',
+          id: 'stale-short',
           youtube_channel_id: 'UCa',
           content_type: 'shorts',
-          scanned_at: hoursAgoIso(168), // 7d — would be rejected if gate were on
+          scanned_at: hoursAgoIso(72),
         }),
       )
       const result = await fetchDiscoverFeed({ mode: 'all' })
-      expect(result.data.map((d) => d.id)).toEqual(['stale-but-kept'])
-    } finally {
-      if (prev === undefined) delete process.env.NEXT_PUBLIC_SPIKE_FRESHNESS_GATE
-      else process.env.NEXT_PUBLIC_SPIKE_FRESHNESS_GATE = prev
-    }
+      expect(result.error).toBeNull()
+      expect(result.data).toEqual([])
+    })
+
+    it('keeps a fresh shorts row (scanned_at 30h, within 48h)', async () => {
+      withSingleRow(
+        fixtureScanRow({
+          id: 'fresh-short',
+          youtube_channel_id: 'UCa',
+          content_type: 'shorts',
+          scanned_at: hoursAgoIso(30),
+        }),
+      )
+      const result = await fetchDiscoverFeed({ mode: 'all' })
+      expect(result.data.map((d) => d.id)).toEqual(['fresh-short'])
+    })
+
+    it('rejects a longform row older than 96h', async () => {
+      withSingleRow(
+        fixtureScanRow({
+          id: 'stale-long',
+          youtube_channel_id: 'UCa',
+          content_type: 'longform',
+          scanned_at: hoursAgoIso(120),
+        }),
+      )
+      const result = await fetchDiscoverFeed({ mode: 'all' })
+      expect(result.data).toEqual([])
+    })
+
+    it('over-fetches (3x) on the all path so refined-out stale rows do not crowd out fresh ones', async () => {
+      const { scanChains } = setupMock({
+        watchlist: { data: [{ youtube_channel_id: 'UCa' }], error: null },
+        scanResults: {
+          data: [
+            fixtureScanRow({
+              id: 'a',
+              youtube_channel_id: 'UCa',
+              content_type: 'shorts',
+              scanned_at: hoursAgoIso(10),
+            }),
+          ],
+          error: null,
+        },
+      })
+      await fetchDiscoverFeed({ mode: 'all', limit: 10 })
+      expect(scanChains[0].limit.mock.calls).toContainEqual([30])
+    })
   })
 })
 

@@ -3,6 +3,7 @@ import { mapRow } from '@/lib/supabase/queries'
 import type { DbScanResult } from '@/lib/types/database'
 import type { NicheCardData, UserTier } from '@/lib/types'
 import { isSpikingNow, isSpikingNowFromMomentum, MOMENTUM_TREND_FLOOR, type ChannelMomentum } from './spike'
+import { getAllowedChannelIds } from './channelGate'
 
 export type DiscoverFeedMode = 'hot' | 'all'
 /**
@@ -68,6 +69,16 @@ const SPIKE_FRESH_LONGFORM_HOURS = 96
 // set NEXT_PUBLIC_SPIKE_FRESHNESS_GATE=off + REDEPLOY to revert.
 function spikeFreshnessGateOn(): boolean {
   return process.env.NEXT_PUBLIC_SPIKE_FRESHNESS_GATE !== 'off'
+}
+
+// All-tab inclusion freshness. Default OFF = relaxed: the All tab shows every
+// faceless scan_results_latest row regardless of scanned_at age (All is a
+// catalog/browse surface, not a live-momentum one). Set
+// NEXT_PUBLIC_ALL_TAB_FRESHNESS_GATE=on + REDEPLOY to restore the strict
+// 96h/48h inclusion gate on All. The Spiking Now surface keeps the master
+// spikeFreshnessGateOn() gate either way, so relaxing All never affects it.
+function allTabFreshnessGateOn(): boolean {
+  return process.env.NEXT_PUBLIC_ALL_TAB_FRESHNESS_GATE === 'on'
 }
 
 // Part B: when ON (default), the Spiking Now badge + Spiking Now tab read the
@@ -334,28 +345,14 @@ async function fetchAllMode(
   categories: string[] = [],
   spikingOnly = false,
 ): Promise<{ data: NicheCardData[]; error: string | null }> {
-  // Faceless-only feed: gate every surfaced niche on a confirmed
-  // faceless_verdict. scan_results_latest doesn't carry the verdict (it
-  // lives on channels_watchlist via 0056) nor the category column (0024), so
-  // resolve the allowed channel ids first, then filter scan_results by them
-  // — the same two-step pattern the category filter already used. The
-  // category filter (if any) folds into the same query. Also drops
-  // evicted/inactive channels. Reversible: removing the .eq('faceless_verdict')
-  // predicate restores the unfiltered feed; no rows are ever deleted.
-  let cwQuery = supabase
-    .from('channels_watchlist')
-    .select('youtube_channel_id')
-    .eq('faceless_verdict', 'faceless')
-    .eq('is_active', true)
-    .is('evicted_at', null)
-  if (categories.length > 0) {
-    cwQuery = cwQuery.in('category', categories)
-  }
-  const { data: allowed, error: allowedErr } = await cwQuery
-  if (allowedErr) return { data: [], error: 'Discover fetch failed' }
-  const allowedIds = (allowed ?? []).map(
-    (r: { youtube_channel_id: string }) => r.youtube_channel_id,
-  )
+  // Faceless-only feed: resolve the allowed channel ids first (faceless_verdict
+  // = 'faceless', active, not evicted, plus optional category), then filter
+  // scan_results_latest by them — that table carries neither the verdict (it
+  // lives on channels_watchlist via 0056) nor the category column (0024). The
+  // shared getAllowedChannelIds() helper is the same gate every other internal
+  // surface uses, so a channel can't appear elsewhere but be absent here.
+  // Fail-closed: a gate-query error resolves to [] → empty feed, never a leak.
+  const allowedIds = await getAllowedChannelIds(supabase, categories)
   if (allowedIds.length === 0) return { data: [], error: null }
 
   // B.3.1: Spiking Now + momentum ON → query the view first; skip scan_results
@@ -377,19 +374,26 @@ async function fetchAllMode(
   // tighter per-content-type JS refine can drop stale Shorts rows (48-96h) the
   // DB returned within `limit` — over-fetching keeps fresh lower-ranked rows
   // from being crowded out. Trimmed back to `limit` after refinement.
-  const rawLimit = spikeFreshnessGateOn() && !spikingOnly ? limit * 3 : limit
+  // Freshness applies to the Spiking legacy path (spikingOnly, master gate) but
+  // NOT to the All tab unless its own opt-in flag is on (default off = relaxed).
+  // This is the PR 1 relax: All becomes a catalog of every faceless scan row,
+  // not just those scanned within 96h. Spiking Now is untouched.
+  const applyFreshness = spikingOnly ? spikeFreshnessGateOn() : allTabFreshnessGateOn()
+  const rawLimit = applyFreshness && !spikingOnly ? limit * 3 : limit
   let scanQuery = supabase
     .from('scan_results_latest')
     .select('*, niche_clusters(id, label)')
     .in('youtube_channel_id', allowedIds)
-  if (spikeFreshnessGateOn()) {
+  if (applyFreshness) {
     scanQuery = scanQuery.gte('scanned_at', spikeFreshnessCutoffIso())
   }
   const { data, error } = await scanQuery
     .order('opportunity_score', { ascending: false, nullsFirst: false })
     .limit(rawLimit)
   if (error) return { data: [], error: 'Discover fetch failed' }
-  const rows = applySpikeFreshnessGate((data ?? []) as ScanResultWithCluster[])
+  const rows = applyFreshness
+    ? applySpikeFreshnessGate((data ?? []) as ScanResultWithCluster[])
+    : ((data ?? []) as ScanResultWithCluster[])
   let mapped = rows.map((row) => mapRow(row))
 
   if (spikingOnly) {
