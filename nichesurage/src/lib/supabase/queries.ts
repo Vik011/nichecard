@@ -3,6 +3,7 @@ import type { SearchFilters, ChannelAge, SpikePoint, TrendingCluster } from '@/l
 import type { NicheCardData, ShortsNicheCardData, LongformNicheCardData } from '@/lib/types'
 import type { DbScanResult } from '@/lib/types/database'
 import { attachCategories } from '@/lib/discover/fetchDiscoverFeed'
+import { getAllowedChannelIds } from '@/lib/discover/channelGate'
 
 type ScanResultWithCluster = DbScanResult & {
   niche_clusters?: { id: string; label: string } | null
@@ -120,6 +121,11 @@ async function fetchQualityNiches(
 ): Promise<{ data: NicheCardData[]; error: string | null }> {
   const supabase = createClient()
 
+  // Faceless catalog gate: Sonar search is a faceless-only surface, so it must
+  // not return face/uncertain/evicted channels. Same gate as the All tab.
+  const allowedIds = await getAllowedChannelIds(supabase)
+  if (allowedIds.length === 0) return { data: [], error: null }
+
   // Sonar default sort: outlier_ratio desc. "newest" preserved for users who
   // want the freshest discoveries regardless of magnitude.
   const orderColumn = filters.sortBy === 'newest' ? 'scanned_at' : 'outlier_ratio'
@@ -136,6 +142,7 @@ async function fetchQualityNiches(
     .from('scan_results_latest')
     .select('*, niche_clusters(id, label)')
     .eq('content_type', filters.contentType)
+    .in('youtube_channel_id', allowedIds)
     .gte('subscriber_count', filters.subscriberMin)
     .lte('subscriber_count', filters.subscriberMax)
     .order(orderColumn, { ascending: false, nullsFirst: false })
@@ -176,6 +183,14 @@ async function fetchHotNiches(
   options: FetchNichesOptions,
 ): Promise<{ data: NicheCardData[]; error: string | null }> {
   const supabase = createClient()
+
+  // Faceless catalog gate: hot trending is faceless-only. We intersect the
+  // trend-ranked channel set with the allowed set in JS (rather than a second
+  // .in() on the same column) so a non-faceless channel can never surface here.
+  const allowedIds = await getAllowedChannelIds(supabase)
+  if (allowedIds.length === 0) return { data: [], error: null }
+  const allowedSet = new Set(allowedIds)
+
   const sevenDaysAgoIso = new Date(Date.now() - HOT_MODE_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
 
   // Step 1: top channels by max(trend_score) within the hot window. Supabase
@@ -202,12 +217,17 @@ async function fetchHotNiches(
   for (const m of metrics) {
     if (!includeDying && m.lifecycle_status === 'dying') continue
     const ch = String(m.channel_id)
+    // Apply the faceless catalog gate INSIDE the loop, before the cap, so
+    // HOT_MODE_CHANNEL_LIMIT counts faceless channels — not the top-N global
+    // (mostly non-faceless) trend-ranked channels, which would under-fill hot.
+    if (!allowedSet.has(ch)) continue
     if (scoreByChannel.has(ch)) continue
     scoreByChannel.set(ch, Number(m.trend_score ?? 0))
     if (scoreByChannel.size >= HOT_MODE_CHANNEL_LIMIT) break
   }
   if (scoreByChannel.size === 0) return { data: [], error: null }
 
+  // Every key is already faceless-gated (filtered in the loop above).
   const channelIds = Array.from(scoreByChannel.keys())
 
   // Step 2: surface scan_results_latest rows for those channels. We drop
@@ -268,6 +288,11 @@ export async function fetchTrendingClusters(
 ): Promise<TrendingCluster[]> {
   const supabase = createClient()
 
+  // Faceless catalog gate: cluster member counts must reflect only faceless
+  // channels, otherwise the carousel inflates counts with face/evicted members.
+  const allowedIds = await getAllowedChannelIds(supabase)
+  if (allowedIds.length === 0) return []
+
   // Step 1: pull all scan_results_latest rows with cluster_id for the given
   // content_type. Bounded by current universe size (~hundreds at MVP scale),
   // so pulling and aggregating client-side is cheaper than an RPC.
@@ -276,6 +301,7 @@ export async function fetchTrendingClusters(
     .select('cluster_id')
     .eq('content_type', contentType)
     .not('cluster_id', 'is', null)
+    .in('youtube_channel_id', allowedIds)
     .limit(50_000)
 
   if (membersErr || !members || members.length === 0) return []
@@ -329,6 +355,12 @@ export async function fetchTrendingClusters(
 
 export async function fetchRelatedNiches(source: NicheCardData, limit = 3): Promise<NicheCardData[]> {
   const supabase = createClient()
+  // Faceless catalog gate: related niches must come from the same
+  // faceless+active+not-evicted set as the All tab, never raw scan_results_latest
+  // (which still holds face/uncertain/evicted channels). No freshness gate —
+  // Similar is a related-catalog section, not a current-momentum one.
+  const allowedIds = await getAllowedChannelIds(supabase)
+  if (allowedIds.length === 0) return []
   const lower = Math.max(0, Math.floor(source.subscriberCount * 0.3))
   const upper = Math.max(lower + 1, Math.ceil(source.subscriberCount * 3))
   // Prefer same-cluster siblings when available; fall back to language+type+size band.
@@ -338,6 +370,7 @@ export async function fetchRelatedNiches(source: NicheCardData, limit = 3): Prom
       .select('*, niche_clusters(id, label)')
       .eq('cluster_id', source.clusterId)
       .neq('id', source.id)
+      .in('youtube_channel_id', allowedIds)
       .order('outlier_ratio', { ascending: false, nullsFirst: false })
       .limit(limit)
     if (data && data.length > 0) {
@@ -352,6 +385,7 @@ export async function fetchRelatedNiches(source: NicheCardData, limit = 3): Prom
     .eq('language', source.language)
     .eq('content_type', source.contentType)
     .neq('id', source.id)
+    .in('youtube_channel_id', allowedIds)
     .gte('subscriber_count', lower)
     .lte('subscriber_count', upper)
     .order('opportunity_score', { ascending: false })
@@ -364,10 +398,16 @@ export async function fetchRelatedNiches(source: NicheCardData, limit = 3): Prom
 
 export async function fetchNicheById(id: string): Promise<NicheCardData | null> {
   const supabase = createClient()
+  // Faceless catalog gate: a direct niche-detail lookup must not resolve a
+  // face/uncertain/evicted channel (a guessed or shared URL would otherwise
+  // leak one that never appears in the gated feeds).
+  const allowedIds = await getAllowedChannelIds(supabase)
+  if (allowedIds.length === 0) return null
   const { data, error } = await supabase
     .from('scan_results_latest')
     .select('*, niche_clusters(id, label)')
     .eq('id', id)
+    .in('youtube_channel_id', allowedIds)
     .maybeSingle()
   if (error || !data) return null
   const mapped = mapRow(data as ScanResultWithCluster)

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { getAllowedChannelIds } from '@/lib/discover/channelGate'
 
 // Daily-deterministic free demo niche.
 //
@@ -125,6 +126,12 @@ async function pickCandidate(
   supabase: Pick<SupabaseClient, 'from'>,
   poolSize: number,
 ): Promise<{ scanResultId: string; youtubeChannelId: string } | null> {
+  // Faceless catalog gate: the daily free-demo niche is a new user's first
+  // impression of the product, so it must be faceless+active+not-evicted. Drop
+  // any non-faceless rows before picking.
+  const allowedIds = await getAllowedChannelIds(supabase)
+  if (allowedIds.length === 0) return null
+
   // Top candidates by opportunity_score within the spike pool with a
   // labelled cluster (so the demo niche has a meaningful headline). We
   // pick the top one rather than rotating across the pool because the
@@ -133,6 +140,7 @@ async function pickCandidate(
     .from('scan_results_latest')
     .select('id, youtube_channel_id, niche_clusters!inner(id, label)')
     .eq('is_spike', true)
+    .in('youtube_channel_id', allowedIds)
     .order('opportunity_score', { ascending: false, nullsFirst: false })
     .limit(poolSize)
 

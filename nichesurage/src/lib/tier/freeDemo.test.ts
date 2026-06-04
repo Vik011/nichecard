@@ -35,11 +35,20 @@ function makeMockClient(state: {
   candidateError?: boolean
   /** When true, the pin SELECT fails. */
   pinReadError?: boolean
+  /**
+   * Faceless gate result. Defaults to every candidate's channel id (so the
+   * gate is a no-op for legacy tests). Set explicitly to test that the demo
+   * pick is restricted to faceless+active+not-evicted channels.
+   */
+  allowedChannelIds?: string[]
 }) {
   return {
     from(table: string) {
       if (table === 'daily_demo_niche') {
         return makeDailyDemoBuilder(state)
+      }
+      if (table === 'channels_watchlist') {
+        return makeWatchlistBuilder(state)
       }
       if (table === 'scan_results_latest') {
         return makeCandidateBuilder(state)
@@ -47,6 +56,36 @@ function makeMockClient(state: {
       throw new Error(`Unexpected table in mock: ${table}`)
     },
   }
+}
+
+// getAllowedChannelIds() reads channels_watchlist with the faceless gate.
+// Resolve to the configured allow-list (default: every candidate channel id).
+function makeWatchlistBuilder(state: {
+  candidates: CandidateRow[]
+  allowedChannelIds?: string[]
+}) {
+  const ids = state.allowedChannelIds ?? state.candidates.map((c) => c.youtube_channel_id)
+  const builder = {
+    select(_cols: string) {
+      return builder
+    },
+    eq(_col: string, _value: unknown) {
+      return builder
+    },
+    is(_col: string, _value: unknown) {
+      return builder
+    },
+    in(_col: string, _values: unknown) {
+      return builder
+    },
+    then(onFulfilled: (r: { data: unknown; error: unknown }) => unknown) {
+      return Promise.resolve({
+        data: ids.map((id) => ({ youtube_channel_id: id })),
+        error: null,
+      }).then(onFulfilled)
+    },
+  }
+  return builder
 }
 
 function makeDailyDemoBuilder(state: {
@@ -88,11 +127,18 @@ function makeDailyDemoBuilder(state: {
   }
 }
 
-function makeCandidateBuilder(state: { candidates: CandidateRow[]; candidateError?: boolean }) {
+function makeCandidateBuilder(state: {
+  candidates: CandidateRow[]
+  candidateError?: boolean
+  allowedChannelIds?: string[]
+}) {
   return {
     select(_cols: string) {
       const builder = {
         eq(_col: string, _value: unknown) {
+          return builder
+        },
+        in(_col: string, _values: unknown) {
           return builder
         },
         order(_col: string, _opts: unknown) {
@@ -102,7 +148,11 @@ function makeCandidateBuilder(state: { candidates: CandidateRow[]; candidateErro
           if (state.candidateError) {
             return { data: null, error: { message: 'candidate fetch failed' } }
           }
-          return { data: state.candidates.slice(0, n), error: null }
+          // Simulate the .in('youtube_channel_id', allowedIds) gate: only
+          // candidates whose channel is allowed survive.
+          const allowed = state.allowedChannelIds ?? state.candidates.map((c) => c.youtube_channel_id)
+          const pool = state.candidates.filter((c) => allowed.includes(c.youtube_channel_id))
+          return { data: pool.slice(0, n), error: null }
         },
       }
       return builder
@@ -249,5 +299,34 @@ describe('getDailyDemoNiche', () => {
     await getDailyDemoNiche(asSupabase(client), { now: new Date('2026-05-08T00:01:00.000Z') })
 
     expect(state.pins.map((p) => p.date).sort()).toEqual(['2026-05-07', '2026-05-08'])
+  })
+
+  it('restricts the daily pick to faceless+active+not-evicted channels (faceless gate)', async () => {
+    // The top candidate (UC_top) is NOT faceless-allowed, so the next allowed
+    // candidate must be chosen as the demo niche instead.
+    const state = {
+      pins: [] as PinRow[],
+      candidates: SAMPLE_CANDIDATES,
+      allowedChannelIds: ['UC_second', 'UC_third'], // UC_top excluded by the gate
+    }
+    const client = makeMockClient(state)
+
+    const result = await getDailyDemoNiche(asSupabase(client), { now: FIXED_DAY_UTC })
+
+    expect(result?.youtubeChannelId).toBe('UC_second')
+    expect(result?.scanResultId).toBe('niche-second')
+  })
+
+  it('returns null when no candidate passes the faceless gate', async () => {
+    const state = {
+      pins: [] as PinRow[],
+      candidates: SAMPLE_CANDIDATES,
+      allowedChannelIds: [], // gate resolves empty → no faceless channels
+    }
+    const client = makeMockClient(state)
+
+    const result = await getDailyDemoNiche(asSupabase(client), { now: FIXED_DAY_UTC })
+
+    expect(result).toBeNull()
   })
 })
