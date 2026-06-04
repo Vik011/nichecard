@@ -12,6 +12,15 @@ import { getAllowedChannelIds } from '@/lib/discover/channelGate'
 // We pin the day's pick in the `daily_demo_niche` table (migration 0034).
 // First call of the day INSERTs; subsequent calls SELECT the same row.
 //
+// Revalidation: the internal app is faceless-only and niche reads are
+// faceless-gated (PR #112). On read-back we re-validate the stored pin against
+// the same gate + scan_results_latest lookup the page uses; if it no longer
+// resolves (channel evicted/demoted, or scan_result_id superseded by a newer
+// scan) we re-pick a valid faceless candidate and REPLACE today's row. The
+// replacement is persisted-and-confirmed before being returned (fail closed) —
+// today's row may change, but only ever to another valid faceless pin; prior
+// days' rows are untouched.
+//
 // Race resilience: parallel inserts collide on the date PK; PostgreSQL
 // rejects all but one with `23505`. We catch and re-read.
 //
@@ -68,7 +77,32 @@ export async function getDailyDemoNiche(
   // 1) Try to read today's pinned pick first. Hot path on every login
   //    after the first of the day.
   const existing = await readPinned(supabaseService, dateKey)
-  if (existing) return { ...existing, justInserted: false }
+  if (existing) {
+    // PR #112 made every internal niche read faceless-gated. A pin written by
+    // the pre-#112 ungated picker — or whose channel has since been
+    // evicted/demoted, or whose scan_result_id has been superseded by a newer
+    // scan (scan_results_latest is DISTINCT ON channel, latest-wins) — no
+    // longer resolves via fetchNicheById, which left FREE users with an
+    // all-locked grid (the injected pin silently dropped out of the feed).
+    // Validate the stored pin exactly the way the surface resolves it.
+    if (await pinStillResolvable(supabaseService, existing.scanResultId)) {
+      return { ...existing, justInserted: false }
+    }
+    // Stored pin is invalid. Re-pick a faceless candidate (pickCandidate is
+    // already gated) and REPLACE today's row so every same-day caller — and
+    // the auth-callback / detail-page legitimacy checks that read
+    // daily_demo_niche back — converge on one valid pin.
+    //
+    // FAIL CLOSED: only return the replacement once we've CONFIRMED it
+    // persisted. A non-persisted pick would desync the redirect/modal
+    // legitimacy checks, so an unconfirmed write yields null (no pin today)
+    // rather than a phantom one.
+    const replacement = await pickCandidate(supabaseService, poolSize)
+    if (!replacement) return null
+    const persisted = await replacePin(supabaseService, dateKey, replacement)
+    if (!persisted) return null
+    return { ...replacement, justInserted: true }
+  }
 
   // 2) No pin yet today. Choose a candidate niche.
   const candidate = await pickCandidate(supabaseService, poolSize)
@@ -120,6 +154,56 @@ async function readPinned(
     scanResultId: String(data.scan_result_id),
     youtubeChannelId: String(data.youtube_channel_id),
   }
+}
+
+/**
+ * True when `scanResultId` still resolves under the same faceless gate +
+ * latest-view lookup the discover surface uses (see fetchNicheById). Mirrors
+ * that query exactly so "valid here" implies "renders on the page": the row
+ * must be the channel's current scan_results_latest entry AND the channel must
+ * be faceless+active+not-evicted. Fail closed (false) on any gate/read error.
+ */
+async function pinStillResolvable(
+  supabase: Pick<SupabaseClient, 'from'>,
+  scanResultId: string,
+): Promise<boolean> {
+  const allowedIds = await getAllowedChannelIds(supabase)
+  if (allowedIds.length === 0) return false
+  const { data, error } = await supabase
+    .from('scan_results_latest')
+    .select('id')
+    .eq('id', scanResultId)
+    .in('youtube_channel_id', allowedIds)
+    .maybeSingle()
+  return !error && Boolean(data)
+}
+
+/**
+ * Replaces today's pinned row with a freshly-picked valid candidate and
+ * CONFIRMS the write landed. Uses update().eq('date').select().maybeSingle()
+ * so a silently-rejected or no-op write (RLS, transient error, missing row) is
+ * detectable: callers MUST treat an unconfirmed row as a failed replacement and
+ * fail closed. Concurrent replacements converge — pickCandidate is
+ * deterministic top-1 — so last-write-wins writes the same value (idempotent,
+ * no thrash, no loop).
+ */
+async function replacePin(
+  supabase: Pick<SupabaseClient, 'from'>,
+  dateKey: string,
+  candidate: { scanResultId: string; youtubeChannelId: string },
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('daily_demo_niche')
+    .update({
+      scan_result_id: candidate.scanResultId,
+      youtube_channel_id: candidate.youtubeChannelId,
+      picked_at: new Date().toISOString(),
+    })
+    .eq('date', dateKey)
+    .select('scan_result_id')
+    .maybeSingle()
+  if (error || !data) return false
+  return String(data.scan_result_id) === candidate.scanResultId
 }
 
 async function pickCandidate(

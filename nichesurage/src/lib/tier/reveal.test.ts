@@ -21,9 +21,10 @@ describe('getRevealedIds', () => {
     expect(out.size).toBe(BASIC_VISIBLE_COUNT)
   })
 
-  it('free returns ONLY the pin when pin is provided', () => {
+  it('free returns ONLY the pin when pin is provided (exactly one unlocked card)', () => {
     const out = getRevealedIds('free', niches, userId, now, 'n3')
     expect(out).toEqual(new Set(['n3']))
+    expect(out.size).toBe(1)
   })
 
   it('free returns empty set when pin is null (no pin yet today)', () => {
