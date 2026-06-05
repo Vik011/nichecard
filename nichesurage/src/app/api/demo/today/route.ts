@@ -12,8 +12,12 @@ export const dynamic = 'force-dynamic'
 // useFreeDemoState validation, useDailyFreeModal returning-user trigger)
 // see the same answer the auth callback's WOW redirect uses.
 //
-// CDN cache 5 min — the pin is immutable for the rest of the UTC day, so
-// refreshing more often is wasted load.
+// CACHING: no-store for ALL responses. The pin is no longer immutable for the
+// day — getDailyDemoNiche revalidates and may REPLACE today's row (PR #113),
+// and it can momentarily resolve null. A shared/edge cache (the previous
+// s-maxage=300) froze a null or stale pin for ~5 min per edge, which made
+// different Free accounts see different reveal state at the same moment. The
+// query is small and read-mostly, so correctness wins over caching here.
 
 export async function GET(): Promise<Response> {
   try {
@@ -21,12 +25,7 @@ export async function GET(): Promise<Response> {
     const pin = await getDailyDemoNiche(supabase)
     return NextResponse.json(
       { scanResultId: pin?.scanResultId ?? null },
-      {
-        status: 200,
-        headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60',
-        },
-      },
+      { status: 200, headers: { 'Cache-Control': 'no-store' } },
     )
   } catch {
     return NextResponse.json(

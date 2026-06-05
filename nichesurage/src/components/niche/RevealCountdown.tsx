@@ -9,6 +9,21 @@ import { getMsUntilNextReveal, getNextRevealAt } from '@/lib/tier/reveal'
 interface RevealCountdownProps {
   tier: UserTier
   copy: CopyKeys
+  /**
+   * Actual number of unlocked niches for the FREE viewer (revealedIds.size).
+   * The badge must reflect this, never a static claim: when the daily pin is
+   * momentarily unavailable the reveal set is empty, and the banner must not
+   * claim "1 of 1 unlocked". Ignored for BASIC/PREMIUM. Defaults to 1 so any
+   * caller that has not yet been plumbed keeps the historical free copy.
+   */
+  revealedCount?: number
+  /**
+   * True while the daily pin is still being resolved (the /api/demo/today id
+   * fetch and, if present, the niche fetch). While pending, the badge shows a
+   * neutral "checking" message instead of flashing "0 of 1" before the pin
+   * lands. Ignored for BASIC/PREMIUM.
+   */
+  revealPending?: boolean
 }
 
 // Sprint A.7 — small inline countdown shown above the niche grid for FREE
@@ -16,7 +31,12 @@ interface RevealCountdownProps {
 // reveal") and visually telegraphs that the rotation is real, not a static
 // blur. BASIC and PREMIUM see a static badge instead — they don't rotate
 // on a daily schedule, their feed continuously reflects the latest scan.
-export function RevealCountdown({ tier, copy }: RevealCountdownProps) {
+export function RevealCountdown({
+  tier,
+  copy,
+  revealedCount = 1,
+  revealPending = false,
+}: RevealCountdownProps) {
   // We init to null so the first render on the server matches the first
   // render on the client (useEffect populates the value after mount).
   // Avoids a hydration mismatch from new Date() running at slightly
@@ -59,6 +79,15 @@ export function RevealCountdown({ tier, copy }: RevealCountdownProps) {
       ? `${h}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`
       : `${m}m ${s.toString().padStart(2, '0')}s`
 
+  // Honest badge: while the pin is still resolving show a neutral "checking"
+  // state (avoids a "0 of 1" flash that reads like a bug); once settled, claim
+  // the unlock only when the reveal set actually holds it, else "0 of 1".
+  const freeBadge = revealPending
+    ? copy.revealCheckingBadge
+    : revealedCount >= 1
+      ? copy.revealFreeBadge
+      : copy.revealFreeBadgeNone
+
   return (
     <div className="inline-flex items-center gap-2 bg-surface-raised/70 gborder rounded-full px-3 py-1.5 text-[12px] backdrop-blur-md">
       <Hourglass weight="duotone" size={13} className="text-accent-emerald-bright" aria-hidden />
@@ -67,7 +96,7 @@ export function RevealCountdown({ tier, copy }: RevealCountdownProps) {
       </span>
       <span className="text-ink font-semibold tabular-nums">{formatted}</span>
       <span className="text-ink-subtle">·</span>
-      <span className="text-ink-subtle text-[11px]">{copy.revealFreeBadge}</span>
+      <span className="text-ink-subtle text-[11px]">{freeBadge}</span>
     </div>
   )
 }
