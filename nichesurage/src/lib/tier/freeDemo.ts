@@ -216,26 +216,43 @@ async function pickCandidate(
   const allowedIds = await getAllowedChannelIds(supabase)
   if (allowedIds.length === 0) return null
 
-  // Top candidates by opportunity_score within the spike pool with a
-  // labelled cluster (so the demo niche has a meaningful headline). We
-  // pick the top one rather than rotating across the pool because the
-  // pin makes that choice global anyway.
-  const { data, error } = await supabase
+  // `is_spike` is a PREFERENCE, not a hard requirement. It is a volatile
+  // momentum flag — gating the pin on it meant that when no faceless channel
+  // was spiking at pick/replacement time, no pin existed and FREE users saw an
+  // all-locked grid. So: prefer the top faceless `is_spike` niche, then fall
+  // back to the top faceless niche by opportunity_score. A daily pin should
+  // exist whenever ANY valid faceless candidate does; we only return null when
+  // the allowed faceless catalog is truly empty.
+  return (
+    (await pickTopFacelessNiche(supabase, allowedIds, poolSize, true)) ??
+    (await pickTopFacelessNiche(supabase, allowedIds, poolSize, false))
+  )
+}
+
+/**
+ * Top faceless (already gated via `allowedIds`) niche by opportunity_score,
+ * with a labelled cluster for a meaningful headline. `requireSpike` adds the
+ * `is_spike=true` preference filter; the caller runs it true-then-false.
+ * Never returns a non-faceless row (the `.in(allowedIds)` gate is unconditional).
+ */
+async function pickTopFacelessNiche(
+  supabase: Pick<SupabaseClient, 'from'>,
+  allowedIds: string[],
+  poolSize: number,
+  requireSpike: boolean,
+): Promise<{ scanResultId: string; youtubeChannelId: string } | null> {
+  let query = supabase
     .from('scan_results_latest')
     .select('id, youtube_channel_id, niche_clusters!inner(id, label)')
-    .eq('is_spike', true)
     .in('youtube_channel_id', allowedIds)
+  if (requireSpike) query = query.eq('is_spike', true)
+  const { data, error } = await query
     .order('opportunity_score', { ascending: false, nullsFirst: false })
     .limit(poolSize)
 
   if (error || !data || data.length === 0) return null
 
-  // The candidate-pool size is exposed for tests; in production we always
-  // want the single top niche, so index 0 is the answer. Future: pick
-  // from positions [0, poolSize-1] using a day-derived hash if we want
-  // some daily visual variation while staying global-deterministic. For
-  // v1, top-1 keeps it simple and ensures the most impressive niche is
-  // the demo.
+  // Top-1 by opportunity_score (the pin makes the choice global anyway).
   const row = data[0]
   if (!row || typeof row.id !== 'string' || typeof row.youtube_channel_id !== 'string') {
     return null

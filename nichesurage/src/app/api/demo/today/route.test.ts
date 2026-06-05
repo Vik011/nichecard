@@ -34,15 +34,18 @@ describe('GET /api/demo/today', () => {
     expect(body).toEqual({ scanResultId: 'sr-123' })
   })
 
-  it('returns null scanResultId when getDailyDemoNiche resolves null', async () => {
+  it('returns null scanResultId and no-store when getDailyDemoNiche resolves null', async () => {
     mockedGetDailyDemoNiche.mockResolvedValue(null)
     const res = await GET()
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body).toEqual({ scanResultId: null })
+    // A null pin must NOT be cached at the edge — it would freeze the
+    // all-locked state across Free accounts for the cache TTL.
+    expect(res.headers.get('Cache-Control')).toBe('no-store')
   })
 
-  it('sets cache headers when pin resolves', async () => {
+  it('returns no-store (no edge caching) when a pin resolves', async () => {
     mockedGetDailyDemoNiche.mockResolvedValue({
       scanResultId: 'sr-123',
       youtubeChannelId: 'UC-xyz',
@@ -50,7 +53,9 @@ describe('GET /api/demo/today', () => {
     })
     const res = await GET()
     const cc = res.headers.get('Cache-Control')
-    expect(cc).toMatch(/s-maxage=\d+/)
+    expect(cc).toBe('no-store')
+    // The pin is mutable (revalidated/replaced) — it must not be edge-cached.
+    expect(cc).not.toMatch(/s-maxage/)
   })
 
   it('returns no-store when getDailyDemoNiche throws', async () => {

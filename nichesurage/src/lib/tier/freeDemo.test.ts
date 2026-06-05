@@ -18,6 +18,12 @@ interface CandidateRow {
   id: string
   youtube_channel_id: string
   niche_clusters: { id: string; label: string }
+  /**
+   * Models scan_results_latest.is_spike. Undefined is treated as spiking (so
+   * legacy fixtures that predate the fallback keep working). Set `false` to
+   * exercise the non-spike faceless fallback path.
+   */
+  is_spike?: boolean
 }
 
 /**
@@ -167,16 +173,19 @@ function makeCandidateBuilder(state: {
 }) {
   return {
     select(_cols: string) {
-      // pickCandidate uses .eq('is_spike', true); pinStillResolvable uses
-      // .eq('id', scanResultId). Track only the id filter — the gate is the
-      // .in('youtube_channel_id', allowedIds) clause below.
+      // pickTopFacelessNiche optionally adds .eq('is_spike', true) (preference
+      // pass); pinStillResolvable uses .eq('id', scanResultId). Track the id
+      // filter and whether the is_spike preference is applied — the faceless
+      // gate is the .in('youtube_channel_id', allowedIds) clause below.
       let idFilter: string | null = null
+      let spikeOnly = false
       let inAllowed: string[] | null = null
       const allowedFor = () =>
         inAllowed ?? state.allowedChannelIds ?? state.candidates.map((c) => c.youtube_channel_id)
       const builder = {
         eq(col: string, value: unknown) {
           if (col === 'id') idFilter = String(value)
+          if (col === 'is_spike') spikeOnly = true
           return builder
         },
         in(_col: string, values: unknown) {
@@ -191,9 +200,13 @@ function makeCandidateBuilder(state: {
             return { data: null, error: { message: 'candidate fetch failed' } }
           }
           // Simulate the .in('youtube_channel_id', allowedIds) gate: only
-          // candidates whose channel is allowed survive.
+          // candidates whose channel is allowed survive. When the is_spike
+          // preference filter is applied, drop non-spiking rows (undefined is
+          // treated as spiking — see CandidateRow.is_spike).
           const allowed = allowedFor()
-          const pool = state.candidates.filter((c) => allowed.includes(c.youtube_channel_id))
+          const pool = state.candidates.filter(
+            (c) => allowed.includes(c.youtube_channel_id) && (!spikeOnly || c.is_spike !== false),
+          )
           return { data: pool.slice(0, n), error: null }
         },
         // pinStillResolvable(): does scanResultId still exist in
@@ -521,5 +534,80 @@ describe('getDailyDemoNiche', () => {
 
     expect(result).toBeNull()
     expect(state.pins[0].scan_result_id).toBe('niche-INVALID') // no replacement attempted
+  })
+
+  // --- pickCandidate: is_spike is a PREFERENCE, not a hard requirement -------
+  // The daily pin must exist whenever ANY valid faceless candidate exists, not
+  // only when a faceless is_spike candidate does (the old behavior left FREE
+  // users all-locked whenever nothing was spiking at pick time).
+
+  it('prefers a faceless is_spike candidate over a higher-listed non-spike one when a spike exists', async () => {
+    const state = {
+      pins: [] as PinRow[],
+      // A non-spike candidate is listed FIRST; the spiking one must still win.
+      candidates: [
+        { id: 'niche-nonspike', youtube_channel_id: 'UC_ns', is_spike: false, niche_clusters: { id: 'c1', label: 'Quiet' } },
+        { id: 'niche-spike', youtube_channel_id: 'UC_sp', is_spike: true, niche_clusters: { id: 'c2', label: 'Hot' } },
+      ],
+    }
+    const client = makeMockClient(state)
+
+    const result = await getDailyDemoNiche(asSupabase(client), { now: FIXED_DAY_UTC })
+
+    expect(result?.scanResultId).toBe('niche-spike')
+    expect(result?.youtubeChannelId).toBe('UC_sp')
+    expect(result?.justInserted).toBe(true)
+  })
+
+  it('falls back to the top faceless candidate by opportunity_score when NO faceless is_spike candidate exists', async () => {
+    const state = {
+      pins: [] as PinRow[],
+      // Nothing is spiking right now — the fallback must still produce a pin.
+      candidates: [
+        { id: 'niche-a', youtube_channel_id: 'UC_a', is_spike: false, niche_clusters: { id: 'c1', label: 'A' } },
+        { id: 'niche-b', youtube_channel_id: 'UC_b', is_spike: false, niche_clusters: { id: 'c2', label: 'B' } },
+      ],
+    }
+    const client = makeMockClient(state)
+
+    const result = await getDailyDemoNiche(asSupabase(client), { now: FIXED_DAY_UTC })
+
+    expect(result).not.toBeNull()
+    expect(result?.scanResultId).toBe('niche-a') // top faceless by order
+    expect(state.pins).toHaveLength(1) // persisted via the cold-path insert
+  })
+
+  it('never returns a non-faceless pin from the fallback (gate still applied)', async () => {
+    const state = {
+      pins: [] as PinRow[],
+      candidates: [
+        { id: 'niche-face', youtube_channel_id: 'UC_face', is_spike: false, niche_clusters: { id: 'c1', label: 'Face' } },
+        { id: 'niche-ok', youtube_channel_id: 'UC_ok', is_spike: false, niche_clusters: { id: 'c2', label: 'OK' } },
+      ],
+      allowedChannelIds: ['UC_ok'], // UC_face is NOT faceless-allowed
+    }
+    const client = makeMockClient(state)
+
+    const result = await getDailyDemoNiche(asSupabase(client), { now: FIXED_DAY_UTC })
+
+    expect(result?.youtubeChannelId).toBe('UC_ok')
+    expect(result?.youtubeChannelId).not.toBe('UC_face')
+  })
+
+  it('returns null only when the allowed faceless catalog is truly empty (not merely non-spiking)', async () => {
+    // No faceless channels at all → null. (Contrast: non-spiking but faceless
+    // candidates DO produce a pin via the fallback — covered above.)
+    const state = {
+      pins: [] as PinRow[],
+      candidates: [
+        { id: 'niche-x', youtube_channel_id: 'UC_x', is_spike: false, niche_clusters: { id: 'c1', label: 'X' } },
+      ],
+      allowedChannelIds: [], // gate resolves empty
+    }
+    const client = makeMockClient(state)
+
+    const result = await getDailyDemoNiche(asSupabase(client), { now: FIXED_DAY_UTC })
+
+    expect(result).toBeNull()
   })
 })

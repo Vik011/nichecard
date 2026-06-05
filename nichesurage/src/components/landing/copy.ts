@@ -30,6 +30,8 @@ export const COPY = {
     // Sprint A.7 reveal mechanic copy
     revealNextLabel: 'Next reveal in',
     revealFreeBadge: '1 of 1 niche unlocked · top 4 paywalled',
+    revealFreeBadgeNone: '0 of 1 niche unlocked · top 4 paywalled',
+    revealCheckingBadge: "Checking today's unlock…",
     revealBasicBadge: '5 niches unlocked',
     revealPremiumBadge: 'All niches unlocked',
     upsellTitleFree: "You've unlocked 1 of 5",
@@ -387,6 +389,8 @@ export const COPY = {
     // Sprint A.7 reveal mechanic copy
     revealNextLabel: 'Nächste Freischaltung in',
     revealFreeBadge: '1 von 1 Nische freigeschaltet · Top 4 hinter Paywall',
+    revealFreeBadgeNone: '0 von 1 Nische freigeschaltet · Top 4 hinter Paywall',
+    revealCheckingBadge: 'Heutige Freischaltung wird geprüft…',
     revealBasicBadge: '5 Nischen freigeschaltet',
     revealPremiumBadge: 'Alle Nischen freigeschaltet',
     upsellTitleFree: 'Du hast 1 von 5 freigeschaltet',

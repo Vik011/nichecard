@@ -65,6 +65,11 @@ function DiscoverPageInner() {
   const [upsellOpen, setUpsellOpen] = useState(false)
   const [todayPinId, setTodayPinId] = useState<string | null>(null)
   const [pinNiche, setPinNiche] = useState<NicheCardData | null>(null)
+  // Whether daily-pin resolution has SETTLED: the /api/demo/today id fetch
+  // finished and, if an id exists, the niche fetch finished too. Until then
+  // the reveal banner shows a neutral "checking" state instead of briefly
+  // flashing "0 of 1" while the pin is still in flight.
+  const [pinResolved, setPinResolved] = useState(false)
   const [dailyModalDismissed, setDailyModalDismissed] = useState(false)
 
   useEffect(() => {
@@ -75,8 +80,10 @@ function DiscoverPageInner() {
         if (cancelled) return
         const id = typeof body?.scanResultId === 'string' ? body.scanResultId : null
         setTodayPinId(id)
+        // No pin id → settled now (the niche effect below won't run for null).
+        if (!id) setPinResolved(true)
       })
-      .catch(() => { if (!cancelled) setTodayPinId(null) })
+      .catch(() => { if (!cancelled) { setTodayPinId(null); setPinResolved(true) } })
     return () => { cancelled = true }
   }, [])
 
@@ -92,17 +99,20 @@ function DiscoverPageInner() {
     }
     let cancelled = false
     fetchNicheById(todayPinId).then((pin) => {
-      if (cancelled || !pin) return
-      setPinNiche(pin)
-      fetchSpikeHistory(pin.youtubeChannelId).then((points) => {
-        if (cancelled) return
-        setHistories((prev) => {
-          const next = new Map(prev)
-          next.set(pin.id, points)
-          return next
+      if (cancelled) return
+      setPinNiche(pin) // pin may be null (genuinely unavailable)
+      setPinResolved(true)
+      if (pin) {
+        fetchSpikeHistory(pin.youtubeChannelId).then((points) => {
+          if (cancelled) return
+          setHistories((prev) => {
+            const next = new Map(prev)
+            next.set(pin.id, points)
+            return next
+          })
         })
-      })
-    }).catch(() => { if (!cancelled) setPinNiche(null) })
+      }
+    }).catch(() => { if (!cancelled) { setPinNiche(null); setPinResolved(true) } })
     return () => { cancelled = true }
   }, [todayPinId])
 
@@ -307,7 +317,7 @@ function DiscoverPageInner() {
 
       {!userLoading && (
         <div className="flex justify-center mb-5">
-          <RevealCountdown tier={userTier} copy={copy} />
+          <RevealCountdown tier={userTier} copy={copy} revealedCount={revealedIds.size} revealPending={!pinResolved} />
         </div>
       )}
 
