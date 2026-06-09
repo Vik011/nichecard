@@ -47,6 +47,9 @@ interface NicheDetailHeaderProps {
   isSaved?: boolean
   savedCount?: number
   onBookmarkToggle?: (id: string, saved: boolean) => void
+  // PR 4: catalog-only detail (wl: card). Hides the opportunity-score hero
+  // (would be a fake 0/WEAK) and the bookmark button (keyed off scan_result_id).
+  catalogOnly?: boolean
 }
 
 export function NicheDetailHeader({
@@ -56,6 +59,7 @@ export function NicheDetailHeader({
   isSaved,
   savedCount,
   onBookmarkToggle,
+  catalogOnly,
 }: NicheDetailHeaderProps) {
   const tier = scoreTier(niche.opportunityScore)
   const eyebrow = niche.contentType === 'shorts' ? copy.discoverShortsEyebrow : copy.discoverLongformEyebrow
@@ -122,7 +126,7 @@ export function NicheDetailHeader({
                 internally (free → upgrade tooltip, basic at 10/10 →
                 premium tooltip) and short-circuits when any of the props
                 isn't supplied. */}
-            {userTier && onBookmarkToggle && (
+            {!catalogOnly && userTier && onBookmarkToggle && (
               <BookmarkButton
                 nicheId={niche.id}
                 isSaved={isSaved ?? false}
@@ -133,17 +137,19 @@ export function NicheDetailHeader({
             )}
           </div>
         </div>
-        <div className="shrink-0 text-right">
-          <div className={`text-7xl font-extrabold leading-none tabular-nums ${tier.textClass} ${tier.glowShadow}`}>
-            {niche.opportunityScore}
+        {!catalogOnly && (
+          <div className="shrink-0 text-right">
+            <div className={`text-7xl font-extrabold leading-none tabular-nums ${tier.textClass} ${tier.glowShadow}`}>
+              {niche.opportunityScore}
+            </div>
+            <div className="flex items-center justify-end gap-2 mt-2">
+              <span className="text-ink-subtle text-sm">/100</span>
+              <span className={`text-[10px] font-semibold tracking-[0.22em] uppercase ${tier.textClass}`}>
+                {tier.label}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center justify-end gap-2 mt-2">
-            <span className="text-ink-subtle text-sm">/100</span>
-            <span className={`text-[10px] font-semibold tracking-[0.22em] uppercase ${tier.textClass}`}>
-              {tier.label}
-            </span>
-          </div>
-        </div>
+        )}
       </div>
     </section>
   )

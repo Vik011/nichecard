@@ -9,7 +9,11 @@ type ScanResultWithCluster = DbScanResult & {
   niche_clusters?: { id: string; label: string } | null
 }
 
-export function toSubscriberRange(count: number): string {
+export function toSubscriberRange(count: number | null | undefined): string {
+  // PR 4: catalog rows can carry no subscriber count. Never render a misleading
+  // band ('<1K') for missing data — say "Unknown" instead. (NULLs are excluded
+  // upstream for catalog cards, but guard here so the helper is safe anywhere.)
+  if (count == null || !Number.isFinite(count)) return 'Unknown'
   if (count < 1000)   return '<1K'
   if (count < 5000)   return '1K–5K'
   if (count < 10000)  return '5K–10K'
@@ -63,6 +67,61 @@ export function mapRow(row: DbScanResult | ScanResultWithCluster): NicheCardData
     competitionScore: row.competition_score ?? undefined,
     avgViewsPerVideo: row.views_avg,
   } satisfies LongformNicheCardData
+}
+
+// PR 4: the subset of channels_watchlist columns a catalog-only card needs.
+// Kept local (not in database.ts which is hand-written, not generated) to
+// match the existing inline-cast watchlist queries in this codebase.
+export interface WatchlistCatalogRow {
+  youtube_channel_id: string
+  channel_name: string | null
+  niche_label: string | null
+  content_type: 'shorts' | 'longform'
+  language: 'en' | 'de'
+  category: string | null
+  subscriber_count: number
+  video_count: number
+  last_upload_at: string | null
+  first_discovered_at: string | null
+}
+
+/**
+ * PR 4: build a catalog-only NicheCardData from a channels_watchlist row (a
+ * faceless channel with no scan_results/outlier row). The card renders the
+ * honest catalog variant — it shows channel name, category, content type,
+ * subscriber band, video count, and last-upload age, and nothing else.
+ *
+ * `id` is the synthetic `wl:<youtube_channel_id>` so the detail surface can
+ * round-trip it via fetchNicheById's `wl:` branch. The score-shaped fields
+ * (opportunityScore / viralityRating / spikeMultiplier) are required by the
+ * shared type but are INERT placeholders here — the NicheCard catalog branch
+ * never reads them, so no fake performance data is ever displayed.
+ */
+export function mapWatchlistRow(row: WatchlistCatalogRow): NicheCardData {
+  const base = {
+    id: `wl:${row.youtube_channel_id}`,
+    youtubeChannelId: row.youtube_channel_id,
+    channelCreatedAt: row.first_discovered_at ?? '',
+    videoCount: row.video_count,
+    subscriberCount: row.subscriber_count,
+    subscriberRange: toSubscriberRange(row.subscriber_count),
+    // Inert placeholders — never rendered (catalogOnly guards every use).
+    spikeMultiplier: 0,
+    opportunityScore: 0,
+    viralityRating: 'average' as const,
+    language: row.language,
+    channelName: row.channel_name ?? undefined,
+    nicheLabel: row.niche_label ?? undefined,
+    category: row.category ?? undefined,
+    lastUploadAt: row.last_upload_at ?? undefined,
+    catalogOnly: true,
+    spikingNow: false,
+  }
+
+  if (row.content_type === 'shorts') {
+    return { ...base, contentType: 'shorts' } satisfies ShortsNicheCardData
+  }
+  return { ...base, contentType: 'longform' } satisfies LongformNicheCardData
 }
 
 function channelAgeCutoff(age: Exclude<ChannelAge, 'any'>): string {
@@ -397,6 +456,10 @@ export async function fetchRelatedNiches(source: NicheCardData, limit = 3): Prom
 }
 
 export async function fetchNicheById(id: string): Promise<NicheCardData | null> {
+  // PR 4: catalog-only cards use synthetic `wl:<youtube_channel_id>` ids that
+  // have no scan_results row. Resolve them from channels_watchlist instead.
+  if (id.startsWith('wl:')) return fetchCatalogNicheById(id.slice(3))
+
   const supabase = createClient()
   // Faceless catalog gate: a direct niche-detail lookup must not resolve a
   // face/uncertain/evicted channel (a guessed or shared URL would otherwise
@@ -413,6 +476,29 @@ export async function fetchNicheById(id: string): Promise<NicheCardData | null> 
   const mapped = mapRow(data as ScanResultWithCluster)
   await attachCategories(supabase, [mapped])
   return mapped
+}
+
+/**
+ * PR 4: resolve a catalog-only detail by youtube_channel_id (from a `wl:` id).
+ * Fail-closed through the SAME faceless gate as every other read: a guessed
+ * `wl:` id can only resolve a channel that is faceless + active + not-evicted
+ * AND has populated catalog fields. Anything else returns null.
+ */
+async function fetchCatalogNicheById(channelId: string): Promise<NicheCardData | null> {
+  const supabase = createClient()
+  const allowedIds = await getAllowedChannelIds(supabase)
+  if (!allowedIds.includes(channelId)) return null
+  const { data, error } = await supabase
+    .from('channels_watchlist')
+    .select(
+      'youtube_channel_id, channel_name, niche_label, content_type, language, category, subscriber_count, video_count, last_upload_at, first_discovered_at',
+    )
+    .eq('youtube_channel_id', channelId)
+    .not('subscriber_count', 'is', null)
+    .not('video_count', 'is', null)
+    .maybeSingle()
+  if (error || !data) return null
+  return mapWatchlistRow(data as WatchlistCatalogRow)
 }
 
 export async function fetchSpikeHistory(youtubeChannelId: string): Promise<SpikePoint[]> {

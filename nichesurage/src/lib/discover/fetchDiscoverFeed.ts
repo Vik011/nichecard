@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
-import { mapRow } from '@/lib/supabase/queries'
+import { mapRow, mapWatchlistRow, type WatchlistCatalogRow } from '@/lib/supabase/queries'
 import type { DbScanResult } from '@/lib/types/database'
 import type { NicheCardData, UserTier } from '@/lib/types'
 import { isSpikingNow, isSpikingNowFromMomentum, MOMENTUM_TREND_FLOOR, type ChannelMomentum } from './spike'
@@ -402,16 +402,50 @@ async function fetchAllMode(
     mapped = mapped.filter((n) => isSpikingNow(n))
     mapped = mapped.slice(0, limit)
   } else {
-    // All tab. Order is opportunity_score DESC (SQL already applied it). We do
-    // NOT query channel_current_momentum here — that view aggregates
-    // video_snapshots per request and was the initial-load bottleneck. Spiking
-    // badges + pinning live only on the dedicated Spiking Now tab.
-    mapped = mapped.slice(0, limit)
+    // All tab. Segment 1 = scan_results_latest rows (opportunity_score DESC,
+    // SQL already applied it) — the proven outlier performers, byte-for-byte
+    // unchanged. We do NOT query channel_current_momentum here — that view
+    // aggregates video_snapshots per request and was the initial-load
+    // bottleneck. Spiking badges + pinning live only on the Spiking Now tab.
+    const seg1 = mapped.slice(0, limit)
+    const seg1Ids = new Set(seg1.map((n) => n.youtubeChannelId))
+
+    // ── PR 4 Segment 2: catalog-only channels ────────────────────────────
+    // Faceless channels that passed the gate (allowedIds) but produced no
+    // scan_results row (no ≥2× outlier) and have populated catalog fields.
+    // Sourced straight from channels_watchlist, appended AFTER Segment 1.
+    // allowedIds already enforces faceless_verdict='faceless' + is_active +
+    // evicted_at IS NULL + the category filter, so Segment 2 only adds the
+    // NOT-NULL catalog requirements and its own ordering.
+    const catalogIds = allowedIds.filter((id) => !seg1Ids.has(id))
+    let seg2: NicheCardData[] = []
+    if (catalogIds.length > 0) {
+      const { data: wlData, error: wlErr } = await supabase
+        .from('channels_watchlist')
+        .select(
+          'youtube_channel_id, channel_name, niche_label, content_type, language, category, subscriber_count, video_count, last_upload_at, first_discovered_at',
+        )
+        .in('youtube_channel_id', catalogIds)
+        .not('subscriber_count', 'is', null)
+        .not('video_count', 'is', null)
+        .not('last_upload_at', 'is', null)
+        .order('subscriber_count', { ascending: false, nullsFirst: false })
+        .order('last_upload_at', { ascending: false, nullsFirst: false })
+        .limit(limit)
+      // Fail-soft: a Segment 2 error must never blank Segment 1.
+      if (!wlErr) {
+        seg2 = ((wlData ?? []) as WatchlistCatalogRow[]).map((r) => mapWatchlistRow(r))
+      }
+    }
+
+    // Dedupe by channel, enriched (Segment 1) wins; append Segment 2 after.
+    const merged = [...seg1, ...seg2.filter((n) => !seg1Ids.has(n.youtubeChannelId))]
+    mapped = merged.slice(0, limit)
     if (momentumModeOn()) {
       // Explicit false (not undefined) so NicheCard does not fall back to the
-      // legacy isSpikingNow badge on this surface. Flag OFF leaves spikingNow
-      // undefined → legacy badge (rollback path).
-      for (const n of mapped) n.spikingNow = false
+      // legacy isSpikingNow badge on this surface. Catalog cards already carry
+      // spikingNow=false from mapWatchlistRow; leave them as-is.
+      for (const n of mapped) if (!n.catalogOnly) n.spikingNow = false
     }
   }
 

@@ -212,3 +212,70 @@ describe('Spiking Now badge (Part B momentum)', () => {
 // bootstrapped in production and the badge component was deleted along
 // with the rest of the trend UI. Card render now stops at the badge row
 // without any trend overlay.
+
+describe('catalog-only card (PR 4)', () => {
+  const catalogCard: NicheCardData = {
+    id: 'wl:UCcat',
+    youtubeChannelId: 'UCcat',
+    contentType: 'longform',
+    channelCreatedAt: '2026-05-01T00:00:00Z',
+    videoCount: 120,
+    subscriberCount: 42000,
+    subscriberRange: '10K–50K',
+    spikeMultiplier: 0,
+    opportunityScore: 0,
+    viralityRating: 'average',
+    language: 'en',
+    channelName: 'Catalog Channel',
+    nicheLabel: 'Faceless History',
+    category: undefined,
+    lastUploadAt: '2026-06-01T00:00:00Z',
+    catalogOnly: true,
+    spikingNow: false,
+  }
+
+  it('shows honest catalog fields (name, label, videos, size band, last upload)', () => {
+    render(<NicheCard data={catalogCard} userTier="premium" rank={5} revealed />)
+    expect(screen.getByText('Catalog Channel')).toBeInTheDocument()
+    expect(screen.getByText('Faceless History')).toBeInTheDocument()
+    expect(screen.getByText(/120 videos/)).toBeInTheDocument()
+    expect(screen.getByText('10K–50K')).toBeInTheDocument()
+    expect(screen.getByText(/Last upload/i)).toBeInTheDocument()
+  })
+
+  it('renders no fake score / virality / spike / Spiking-Now', () => {
+    render(<NicheCard data={catalogCard} userTier="premium" rank={5} revealed />)
+    expect(screen.queryByText('0')).not.toBeInTheDocument()        // no hero score number
+    expect(screen.queryByText('AVERAGE')).not.toBeInTheDocument()  // no score-tier label
+    expect(screen.queryByText('Average')).not.toBeInTheDocument()  // no virality chip
+    expect(screen.queryByText(/0×/)).not.toBeInTheDocument()       // no spike multiplier chip
+    expect(screen.queryByRole('status', { name: /spiking now/i })).not.toBeInTheDocument()
+  })
+
+  it('renders no bookmark button even when onBookmarkToggle is provided (no scan_result_id)', () => {
+    render(
+      <NicheCard
+        data={catalogCard}
+        userTier="premium"
+        rank={5}
+        revealed
+        isSaved={false}
+        savedCount={0}
+        onBookmarkToggle={() => {}}
+      />,
+    )
+    expect(screen.queryByRole('button', { name: /save niche/i })).not.toBeInTheDocument()
+  })
+
+  it('revealed catalog card links to the wl: detail route', () => {
+    render(<NicheCard data={catalogCard} userTier="premium" rank={5} revealed />)
+    const link = screen.getByRole('link', { name: /Catalog Channel/i })
+    expect(link.getAttribute('href')).toBe('/discover/niche/wl:UCcat')
+  })
+
+  it('locked catalog card blurs the channel name and shows the lock icon', () => {
+    render(<NicheCard data={catalogCard} userTier="free" rank={5} revealed={false} />)
+    expect(screen.getByLabelText('Locked')).toBeTruthy()
+    expect(screen.getByText('Catalog Channel').closest('[style*="blur"]')).not.toBeNull()
+  })
+})

@@ -73,6 +73,22 @@ export function NicheDetailContent({
   // + scan match) before bypassing the quota gate.
   const isLegitimateDemo = demoState === 'legitimate' && tier === 'free'
 
+  // PR 4: catalog-only card (wl: id, no scan_results row). Render the honest
+  // subset — header (no score hero / bookmark) + stats (no NaN age / 0× spike) +
+  // channel videos + related. Omit every scan_result_id / score / history-driven
+  // section (HealthCheckInline, AIContentAngles, PerformanceChart, FreeDemoBanner)
+  // so the detail never fires bogus `wl:` API calls or shows fake metrics.
+  if (niche.catalogOnly) {
+    return (
+      <div className="animate-fade-in">
+        <NicheDetailHeader niche={niche} copy={copy} userTier={tier} catalogOnly />
+        <NicheStatsPanel niche={niche} copy={copy} catalogOnly />
+        <ChannelVideoGrid channelId={niche.youtubeChannelId} copy={copy} />
+        <RelatedNiches niche={niche} userTier={tier} copy={copy} onCardClick={onRelatedClick} />
+      </div>
+    )
+  }
+
   return (
     <div className="animate-fade-in">
       <FreeDemoBanner nicheId={niche.id} copy={copy} />

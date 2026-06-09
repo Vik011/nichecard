@@ -1,11 +1,13 @@
 import {
   toSubscriberRange,
   mapRow,
+  mapWatchlistRow,
   fetchRelatedNiches,
   fetchNicheById,
   fetchTrendingClusters,
   fetchNiches,
 } from './queries'
+import type { WatchlistCatalogRow } from './queries'
 import type { DbScanResult } from '@/lib/types/database'
 import type { NicheCardData, SearchFilters } from '@/lib/types'
 import { createClient } from './client'
@@ -364,5 +366,98 @@ describe('fetchTrendingClusters — faceless gate', () => {
     const result = await fetchTrendingClusters('longform')
     expect(result.map((c) => c.id)).toEqual(['cl1'])
     expect(scan[0].in.mock.calls).toContainEqual(['youtube_channel_id', ['UCok']])
+  })
+})
+
+// ─── PR 4: catalog-only cards (channels_watchlist backbone) ───────────────
+
+describe('toSubscriberRange — null/invalid guard (PR 4)', () => {
+  it('returns "Unknown" for null / undefined / NaN, not a misleading band', () => {
+    expect(toSubscriberRange(null)).toBe('Unknown')
+    expect(toSubscriberRange(undefined)).toBe('Unknown')
+    expect(toSubscriberRange(Number.NaN)).toBe('Unknown')
+  })
+})
+
+const wlRow: WatchlistCatalogRow = {
+  youtube_channel_id: 'UCcat',
+  channel_name: 'Catalog Channel',
+  niche_label: 'Faceless History',
+  content_type: 'longform',
+  language: 'en',
+  category: 'history',
+  subscriber_count: 42000,
+  video_count: 120,
+  last_upload_at: '2026-06-01T00:00:00Z',
+  first_discovered_at: '2026-05-01T00:00:00Z',
+}
+
+describe('mapWatchlistRow (PR 4)', () => {
+  it('builds an honest catalog card with a synthetic wl: id', () => {
+    const card = mapWatchlistRow(wlRow)
+    expect(card.id).toBe('wl:UCcat')
+    expect(card.youtubeChannelId).toBe('UCcat')
+    expect(card.catalogOnly).toBe(true)
+    expect(card.spikingNow).toBe(false)
+    expect(card.subscriberRange).toBe('10K–50K')
+    expect(card.videoCount).toBe(120)
+    expect(card.lastUploadAt).toBe('2026-06-01T00:00:00Z')
+    expect(card.channelName).toBe('Catalog Channel')
+    expect(card.category).toBe('history')
+  })
+
+  it('maps content_type to the right card variant', () => {
+    expect(mapWatchlistRow(wlRow).contentType).toBe('longform')
+    expect(mapWatchlistRow({ ...wlRow, content_type: 'shorts' }).contentType).toBe('shorts')
+  })
+
+  it('carries inert (never-rendered) placeholders for score-shaped fields', () => {
+    const card = mapWatchlistRow(wlRow)
+    expect(card.opportunityScore).toBe(0)
+    expect(card.spikeMultiplier).toBe(0)
+    expect(card.viralityRating).toBe('average')
+  })
+
+  it('tolerates null name/category/last_upload without producing fake values', () => {
+    const card = mapWatchlistRow({
+      ...wlRow,
+      channel_name: null,
+      niche_label: null,
+      category: null,
+      last_upload_at: null,
+    })
+    expect(card.channelName).toBeUndefined()
+    expect(card.category).toBeUndefined()
+    expect(card.lastUploadAt).toBeUndefined()
+  })
+})
+
+describe('fetchNicheById — wl: catalog resolver (PR 4)', () => {
+  beforeEach(() => jest.resetAllMocks())
+
+  it('resolves a catalog detail through the faceless gate', async () => {
+    setupQueriesMock({ watchlist: { data: [wlRow], error: null } })
+    const card = await fetchNicheById('wl:UCcat')
+    expect(card?.id).toBe('wl:UCcat')
+    expect(card?.catalogOnly).toBe(true)
+  })
+
+  it('returns null (fail-closed) when the wl channel is not in the allow-list', async () => {
+    setupQueriesMock({ watchlist: { data: [wlRow], error: null } }) // only UCcat allowed
+    expect(await fetchNicheById('wl:UCnope')).toBeNull()
+  })
+
+  it('requires populated catalog fields via NOT NULL predicates', async () => {
+    const { cw } = setupQueriesMock({ watchlist: { data: [wlRow], error: null } })
+    await fetchNicheById('wl:UCcat')
+    // cw[0] = gate (getAllowedChannelIds); cw[1] = catalog lookup.
+    expect(cw[1].not.mock.calls).toContainEqual(['subscriber_count', 'is', null])
+    expect(cw[1].not.mock.calls).toContainEqual(['video_count', 'is', null])
+  })
+
+  it('does not hit scan_results_latest for a wl: id', async () => {
+    const { scan } = setupQueriesMock({ watchlist: { data: [wlRow], error: null } })
+    await fetchNicheById('wl:UCcat')
+    expect(scan).toHaveLength(0)
   })
 })
