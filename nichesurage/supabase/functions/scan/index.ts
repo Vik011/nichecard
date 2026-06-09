@@ -159,6 +159,27 @@ Deno.serve(async (_req: Request) => {
           scannedAt,
         }))
 
+        // ─── Catalog fields update ───────────────────────────────────
+        // Written before the outlier gate so ALL scanned channels get
+        // subscriber_count, video_count, and last_upload_at regardless
+        // of whether they produce a scan_results row.
+        // max publishedAt via reduce — avoids relying on playlist ordering.
+        const latestUploadAt = enriched.reduce(
+          (max, v) => v.publishedAt > max ? v.publishedAt : max,
+          enriched[0].publishedAt,
+        )
+        const { error: catalogErr } = await supabase
+          .from('channels_watchlist')
+          .update({
+            subscriber_count: stats.subscriberCount,
+            video_count: stats.videoCount,
+            last_upload_at: latestUploadAt,
+          })
+          .eq('id', channel.id)
+        if (catalogErr) {
+          console.error('scan: catalog update failed for', channel.youtube_channel_id, catalogErr)
+        }
+
         // ─── Phase 3: derive video_metrics from snapshot history ─────
         // For every video we just snapshotted, fetch its latest 3 snapshots
         // (ONE bulk query for the whole channel — no N+1), compute velocity
