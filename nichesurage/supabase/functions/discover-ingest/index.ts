@@ -383,6 +383,10 @@ async function ingestRun(
       // reaches this insert) so downstream policy can distinguish uncertain
       // from confirmed-faceless.
       faceless_verdict: facelessVerdict,
+      // PR 3 catalog fields (migration 0063). last_upload_at intentionally
+      // omitted — no video fetch here; scan populates it on first run.
+      subscriber_count: channel.subscriberCount,
+      video_count: channel.videoCount,
     })
     if (insertErr) {
       // 23505 = unique violation - a concurrent insert won the race. Benign.

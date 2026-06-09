@@ -24,6 +24,10 @@ export interface WatchlistChannel {
   // Sprint B Phase 1+: industry-standard category (12-niche enum).
   // NULL until recategorize backfill runs.
   category?: string | null
+  // PR 3 catalog fields (migration 0063). NULL until scan or discover-ingest writes them.
+  subscriber_count?: number | null
+  video_count?: number | null
+  last_upload_at?: string | null
 }
 
 export interface SeedKeyword {
