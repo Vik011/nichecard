@@ -89,6 +89,14 @@ interface BaseNicheCardData {
   momentumViewsPerHour?: number
   momentumLifecycleStatus?: LifecycleStatus | null
   momentumVideoId?: string | null
+  // PR 4: catalog-only card sourced from channels_watchlist (no scan_results
+  // row). When true, NicheCard renders the honest catalog variant — no score /
+  // virality / spike / Spiking-Now / health / bookmark. The required
+  // score-shaped base fields carry inert placeholders the catalog branch never
+  // reads. `lastUploadAt` (channels_watchlist.last_upload_at) drives the
+  // "Last upload" chip in that variant.
+  catalogOnly?: boolean
+  lastUploadAt?: string
 }
 
 export interface TrendingCluster {

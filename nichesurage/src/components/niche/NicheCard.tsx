@@ -88,6 +88,20 @@ function formatK(n: number): string {
   return String(n)
 }
 
+// PR 4: human "last upload" age for catalog cards. Guards invalid/missing
+// dates so a bad timestamp renders "—" rather than "NaNd ago".
+function formatUploadAge(iso: string): string {
+  const t = new Date(iso).getTime()
+  if (!Number.isFinite(t)) return '—'
+  const days = Math.floor((Date.now() - t) / 86_400_000)
+  if (days <= 0) return 'today'
+  if (days === 1) return '1d ago'
+  if (days < 7) return `${days}d ago`
+  if (days < 30) return `${Math.floor(days / 7)}w ago`
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`
+  return `${Math.floor(days / 365)}y ago`
+}
+
 interface ScoreTier {
   textClass: string
   glowShadow: string
@@ -340,6 +354,81 @@ export function NicheCard({
     </>
   )
 
+  // PR 4: catalog-only card (channels_watchlist, no scan_results row). Renders
+  // ONLY honest fields — no score hero, no virality/spike/Spiking-Now, no
+  // health/bookmark (those key off a scan_result_id this card doesn't have).
+  const catalogBody = (
+    <>
+      <div className="flex justify-between items-start mb-1">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="text-ink-subtle text-[10px] uppercase tracking-[0.18em] font-semibold shrink-0">
+            Niche #{rank}
+          </div>
+          <ContentTypeBadge type={data.contentType} />
+        </div>
+      </div>
+
+      <div className="flex justify-between items-start gap-3 mb-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <LockedField locked={locked}>
+              <span className="text-ink text-base font-bold block truncate">
+                {data.channelName ?? '—'}
+              </span>
+            </LockedField>
+            {locked && (
+              <LockSimple
+                weight="fill"
+                size={12}
+                className="text-ink-subtle shrink-0"
+                aria-label="Locked"
+              />
+            )}
+          </div>
+          {(() => {
+            const bucketId = enumValueToBucket(data.category)
+            const bucketLabel = bucketId
+              ? CATEGORY_BUCKETS.find((b) => b.id === bucketId)?.label
+              : null
+            const label = bucketLabel ?? data.nicheLabel
+            return label ? (
+              <div className="text-ink-muted text-xs mt-0.5 truncate">{label}</div>
+            ) : null
+          })()}
+        </div>
+        {data.lastUploadAt && (
+          <div className="shrink-0 text-right">
+            <div className="text-ink-subtle text-[9px] uppercase tracking-[0.18em] font-semibold">
+              Last upload
+            </div>
+            <div className="text-ink text-sm font-semibold mt-0.5">
+              {formatUploadAge(data.lastUploadAt)}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        <span className={`${CHIP_BASE} text-ink-muted`}>
+          <Television size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
+          {data.videoCount} videos
+        </span>
+        <span className={`${CHIP_BASE} text-ink-muted`}>
+          <UsersThree size={CHIP_ICON_SIZE} weight="bold" aria-hidden />
+          {data.subscriberRange}
+        </span>
+        <span className={`${CHIP_BASE} text-ink-muted`}>
+          <span aria-hidden className="leading-none text-[11px]">
+            {LANG_FLAG[data.language]}
+          </span>
+          {data.language.toUpperCase()}
+        </span>
+      </div>
+    </>
+  )
+
+  const body = data.catalogOnly ? catalogBody : cardBody
+
   if (locked) {
     return (
       <button
@@ -348,7 +437,7 @@ export function NicheCard({
         aria-label={`Locked niche — upgrade to unlock`}
         className={wrapperClass}
       >
-        {cardBody}
+        {body}
       </button>
     )
   }
@@ -366,7 +455,7 @@ export function NicheCard({
         aria-label={`Open detail for ${data.channelName ?? 'this niche'}`}
         className={wrapperClass}
       >
-        {cardBody}
+        {body}
       </button>
     )
   }
@@ -376,7 +465,7 @@ export function NicheCard({
       aria-label={`Open detail page for ${data.channelName ?? 'this niche'}`}
       className={wrapperClass}
     >
-      {cardBody}
+      {body}
     </Link>
   )
 }

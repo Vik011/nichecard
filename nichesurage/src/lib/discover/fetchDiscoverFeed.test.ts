@@ -10,6 +10,7 @@ interface Chain {
   gte: jest.Mock
   in: jest.Mock
   is: jest.Mock
+  not: jest.Mock
   eq: jest.Mock
   order: jest.Mock
   limit: jest.Mock
@@ -19,21 +20,39 @@ interface Chain {
 function makeChain(resolved: Resolved): Chain {
   const chain: Partial<Chain> = {}
   const ret = () => chain as Chain
+  // Honor `.not(col, 'is', null)` (IS NOT NULL) so the mock reflects the
+  // server-side filter — rows missing that column are dropped. PR 4's Segment 2
+  // uses these guards to exclude channels without populated catalog fields.
+  const notNullCols: string[] = []
   // Per-method jest.fns (not one shared passthrough) so tests can assert
   // which query predicates were applied (e.g. the faceless_verdict filter).
   chain.select = jest.fn(ret)
   chain.gte = jest.fn(ret)
   chain.in = jest.fn(ret)
   chain.is = jest.fn(ret)
+  chain.not = jest.fn((col: string, op: string, val: unknown) => {
+    if (op === 'is' && val === null) notNullCols.push(col)
+    return chain as Chain
+  })
   chain.eq = jest.fn(ret)
   chain.order = jest.fn(ret)
   chain.limit = jest.fn(ret)
-  chain.then = (onFulfilled) => Promise.resolve(resolved).then(onFulfilled)
+  chain.then = (onFulfilled) => {
+    let data = resolved.data
+    if (Array.isArray(data) && notNullCols.length > 0) {
+      data = (data as Array<Record<string, unknown>>).filter((row) =>
+        notNullCols.every((c) => row[c] !== null && row[c] !== undefined),
+      )
+    }
+    return Promise.resolve({ data, error: resolved.error }).then(onFulfilled)
+  }
   return chain as Chain
 }
 
 interface MockSetup {
-  watchlist?: Resolved
+  // PR 4: array form lets a test vary the per-call channels_watchlist result
+  // (gate call → Segment 2 call → attachCategories call) to exercise fail-soft.
+  watchlist?: Resolved | Resolved[]
   scanResults?: Resolved
   momentum?: Resolved
 }
@@ -47,10 +66,15 @@ function setupMock(setup: MockSetup): {
   const cwChains: Chain[] = []
   const scanChains: Chain[] = []
   const momChains: Chain[] = []
+  let cwCall = 0
   ;(createClient as jest.Mock).mockReturnValue({
     from: jest.fn((table: string) => {
       if (table === 'channels_watchlist') {
-        const c = makeChain(setup.watchlist ?? { data: [], error: null })
+        const wl = Array.isArray(setup.watchlist)
+          ? (setup.watchlist[cwCall] ?? setup.watchlist[setup.watchlist.length - 1] ?? { data: [], error: null })
+          : (setup.watchlist ?? { data: [], error: null })
+        cwCall++
+        const c = makeChain(wl)
         cwChains.push(c)
         return c
       }
@@ -127,6 +151,23 @@ function fixtureMomentumRow(overrides: Record<string, unknown> = {}) {
   }
 }
 
+// PR 4: minimal channels_watchlist catalog row (WatchlistCatalogRow shape) for
+// the Segment 2 union tests.
+function fixtureWlRow(overrides: Record<string, unknown> = {}) {
+  return {
+    youtube_channel_id: overrides.youtube_channel_id ?? 'UCw',
+    channel_name: overrides.channel_name ?? 'Catalog Ch',
+    niche_label: overrides.niche_label ?? 'Faceless',
+    content_type: overrides.content_type ?? 'longform',
+    language: overrides.language ?? 'en',
+    category: overrides.category ?? null,
+    subscriber_count: overrides.subscriber_count ?? 10000,
+    video_count: overrides.video_count ?? 80,
+    last_upload_at: overrides.last_upload_at ?? '2026-06-01T00:00:00Z',
+    first_discovered_at: overrides.first_discovered_at ?? '2026-05-01T00:00:00Z',
+  }
+}
+
 describe('fetchDiscoverFeed — all mode', () => {
   beforeEach(() => {
     jest.resetAllMocks()
@@ -172,6 +213,99 @@ describe('fetchDiscoverFeed — all mode', () => {
     const result = await fetchDiscoverFeed({ mode: 'all' })
     expect(result.error).toBe('Discover fetch failed')
     expect(result.data).toEqual([])
+  })
+})
+
+describe('fetchDiscoverFeed — all mode Segment 2 (PR 4 catalog backbone)', () => {
+  beforeEach(() => {
+    jest.resetAllMocks()
+  })
+
+  it('appends catalog-only cards after the outlier (Segment 1) cards, no dupes', async () => {
+    setupMock({
+      watchlist: {
+        data: [
+          fixtureWlRow({ youtube_channel_id: 'UCa' }), // also in Segment 1
+          fixtureWlRow({ youtube_channel_id: 'UCb', subscriber_count: 50000 }),
+          fixtureWlRow({ youtube_channel_id: 'UCc', subscriber_count: 9000 }),
+        ],
+        error: null,
+      },
+      scanResults: {
+        data: [fixtureScanRow({ id: 'a-row', youtube_channel_id: 'UCa', opportunity_score: 80 })],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'all' })
+    expect(result.error).toBeNull()
+    // Segment 1 (outlier) first, then catalog-only; UCa not duplicated.
+    expect(result.data.map((d) => d.id)).toEqual(['a-row', 'wl:UCb', 'wl:UCc'])
+    expect(result.data[0].catalogOnly).toBeUndefined()
+    expect(result.data[1].catalogOnly).toBe(true)
+    expect(result.data[2].catalogOnly).toBe(true)
+  })
+
+  it('queries the catalog-only ids with NOT-NULL guards + subscriber/upload ordering', async () => {
+    const { cwChains } = setupMock({
+      watchlist: {
+        data: [fixtureWlRow({ youtube_channel_id: 'UCa' }), fixtureWlRow({ youtube_channel_id: 'UCb' })],
+        error: null,
+      },
+      scanResults: {
+        data: [fixtureScanRow({ id: 'a-row', youtube_channel_id: 'UCa' })],
+        error: null,
+      },
+    })
+    await fetchDiscoverFeed({ surface: 'all' })
+    // cwChains[0] = gate; cwChains[1] = Segment 2 catalog query.
+    const seg2 = cwChains[1]
+    expect(seg2.in.mock.calls).toContainEqual(['youtube_channel_id', ['UCb']])
+    expect(seg2.not.mock.calls).toContainEqual(['subscriber_count', 'is', null])
+    expect(seg2.not.mock.calls).toContainEqual(['video_count', 'is', null])
+    expect(seg2.not.mock.calls).toContainEqual(['last_upload_at', 'is', null])
+    expect(seg2.order.mock.calls[0][0]).toBe('subscriber_count')
+    expect(seg2.order.mock.calls[1][0]).toBe('last_upload_at')
+  })
+
+  it('fail-soft: a Segment 2 error never blanks Segment 1', async () => {
+    setupMock({
+      watchlist: [
+        { data: [{ youtube_channel_id: 'UCa' }, { youtube_channel_id: 'UCb' }], error: null }, // gate
+        { data: null, error: { message: 'boom' } }, // Segment 2 errors
+        { data: [], error: null }, // attachCategories
+      ],
+      scanResults: {
+        data: [fixtureScanRow({ id: 'a-row', youtube_channel_id: 'UCa' })],
+        error: null,
+      },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'all' })
+    expect(result.error).toBeNull()
+    expect(result.data.map((d) => d.id)).toEqual(['a-row'])
+  })
+
+  it('adds no catalog query when every allowed channel already has a scan row', async () => {
+    const { cwChains } = setupMock({
+      watchlist: { data: [fixtureWlRow({ youtube_channel_id: 'UCa' })], error: null },
+      scanResults: { data: [fixtureScanRow({ id: 'a-row', youtube_channel_id: 'UCa' })], error: null },
+    })
+    const result = await fetchDiscoverFeed({ surface: 'all' })
+    expect(result.data.map((d) => d.id)).toEqual(['a-row'])
+    // cwChains: [0] gate, [1] attachCategories — no Segment 2 query (catalogIds empty).
+    expect(cwChains).toHaveLength(2)
+  })
+
+  it('does not source catalog cards on the spiking-now surface', async () => {
+    const { cwChains } = setupMock({
+      watchlist: { data: [fixtureWlRow({ youtube_channel_id: 'UCa' })], error: null },
+      scanResults: { data: [], error: null },
+      momentum: { data: [], error: null },
+    })
+    await fetchDiscoverFeed({ surface: 'spiking-now' })
+    // No Segment 2 catalog query: only the gate (and no attachCategories on empty).
+    for (const c of cwChains) {
+      expect(c.not.mock.calls).toHaveLength(0)
+    }
   })
 })
 

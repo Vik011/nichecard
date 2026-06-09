@@ -165,11 +165,14 @@ function DiscoverPageInner() {
     setError(fetchError)
     setLoading(false)
     if (data.length > 0) {
+      // PR 4: catalog-only cards (wl: ids) have no spike history — skip the
+      // per-card fetch for them so we don't fan out queries that only return [].
+      const enriched = data.filter((n) => !n.id.startsWith('wl:'))
       const points = await Promise.all(
-        data.map((n) => fetchSpikeHistory(n.youtubeChannelId)),
+        enriched.map((n) => fetchSpikeHistory(n.youtubeChannelId)),
       )
       const histMap = new Map<string, SpikePoint[]>()
-      data.forEach((n, i) => histMap.set(n.id, points[i]))
+      enriched.forEach((n, i) => histMap.set(n.id, points[i]))
       setHistories(histMap)
     } else {
       setHistories(new Map())
