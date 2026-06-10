@@ -397,6 +397,7 @@ describe('mapWatchlistRow (PR 4)', () => {
     const card = mapWatchlistRow(wlRow)
     expect(card.id).toBe('wl:UCcat')
     expect(card.youtubeChannelId).toBe('UCcat')
+    expect(card.channelUrl).toBe('https://www.youtube.com/channel/UCcat')
     expect(card.catalogOnly).toBe(true)
     expect(card.spikingNow).toBe(false)
     expect(card.subscriberRange).toBe('10K–50K')

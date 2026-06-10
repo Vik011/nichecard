@@ -160,6 +160,7 @@ export const COPY = {
     videosLoading: 'Loading recent videos…',
     videosError: 'Could not load recent videos.',
     videosEmpty: 'This channel has no recent videos.',
+    videosUnavailable: 'Recent uploads aren’t available right now.',
     videosRetry: 'Try again',
     videosViewsLabel: 'views',
 
@@ -517,6 +518,7 @@ export const COPY = {
     videosLoading: 'Lade neueste Videos…',
     videosError: 'Videos konnten nicht geladen werden.',
     videosEmpty: 'Dieser Kanal hat keine neuen Videos.',
+    videosUnavailable: 'Neueste Uploads sind derzeit nicht verfügbar.',
     videosRetry: 'Erneut versuchen',
     videosViewsLabel: 'Aufrufe',
 
