@@ -101,6 +101,12 @@ export function mapWatchlistRow(row: WatchlistCatalogRow): NicheCardData {
   const base = {
     id: `wl:${row.youtube_channel_id}`,
     youtubeChannelId: row.youtube_channel_id,
+    // PR 4.2: canonical channel URL so the existing NicheDetailHeader
+    // "Visit on YouTube" CTA (which renders whenever channelUrl is truthy,
+    // not behind the catalogOnly guard) lights up on catalog detail. This
+    // keeps the detail useful even when Recent Uploads can't load. The card
+    // surface never reads channelUrl, so no card-level change results.
+    channelUrl: `https://www.youtube.com/channel/${row.youtube_channel_id}`,
     channelCreatedAt: row.first_discovered_at ?? '',
     videoCount: row.video_count,
     subscriberCount: row.subscriber_count,

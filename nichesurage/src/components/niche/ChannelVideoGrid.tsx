@@ -20,6 +20,11 @@ interface ChannelVideoGridProps {
 type LoadState =
   | { kind: 'loading' }
   | { kind: 'error'; message: string }
+  // PR 4.2: graceful-failure degrade state. Distinct from `ready` with an
+  // empty list so we can render an honest "unavailable right now" message
+  // instead of "no recent videos" — a genuine 200-with-zero-videos still
+  // resolves to `ready` and keeps showing copy.videosEmpty.
+  | { kind: 'unavailable' }
   | { kind: 'ready'; videos: ChannelVideo[] }
 
 const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-accent-emerald-bright'
@@ -36,10 +41,10 @@ export function ChannelVideoGrid({ channelId, copy, gracefulFailure = false }: C
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))
           if (!cancelled) {
-            // gracefulFailure: degrade to the neutral empty state (no red error).
+            // gracefulFailure: degrade to the neutral "unavailable" state (no red error).
             setState(
               gracefulFailure
-                ? { kind: 'ready', videos: [] }
+                ? { kind: 'unavailable' }
                 : { kind: 'error', message: body?.error ?? `Request failed (${res.status})` },
             )
           }
@@ -51,7 +56,7 @@ export function ChannelVideoGrid({ channelId, copy, gracefulFailure = false }: C
         if (!cancelled) {
           setState(
             gracefulFailure
-              ? { kind: 'ready', videos: [] }
+              ? { kind: 'unavailable' }
               : { kind: 'error', message: (err as Error).message },
           )
         }
@@ -77,6 +82,13 @@ export function ChannelVideoGrid({ channelId, copy, gracefulFailure = false }: C
           >
             {copy.videosRetry}
           </button>
+        </div>
+      )}
+
+      {state.kind === 'unavailable' && (
+        <div className="flex flex-col items-center gap-3 py-8 text-center">
+          <EmptyMagnifier size={64} />
+          <p className="text-ink-subtle text-sm">{copy.videosUnavailable}</p>
         </div>
       )}
 
