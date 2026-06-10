@@ -6,6 +6,7 @@ import { NicheCard } from '@/components/niche/NicheCard'
 import { NicheCardSkeleton } from '@/components/niche/NicheCardSkeleton'
 import { RevealCountdown } from '@/components/niche/RevealCountdown'
 import { UpsellModal } from '@/components/niche/UpsellModal'
+import { BackToTop } from '@/components/niche/BackToTop'
 import { NicheDetailModal } from '@/components/niche/NicheDetailModal'
 import { NicheDetailContent } from '@/components/niche/NicheDetailContent'
 import { fetchNicheById, fetchSpikeHistory } from '@/lib/supabase/queries'
@@ -433,6 +434,12 @@ function DiscoverPageInner() {
           />
         )}
       </NicheDetailModal>
+
+      {/* Deep-scroll affordance for the long All list. Hidden while any
+          overlay is open so it never sits focusable under a z-50 modal. */}
+      {!nicheParam && !upsellOpen && !showDailyModal && (
+        <BackToTop label={copy.discoverBackToTop} />
+      )}
     </main>
   )
 }
