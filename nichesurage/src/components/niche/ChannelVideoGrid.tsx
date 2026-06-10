@@ -9,6 +9,12 @@ import { EmptyMagnifier } from '@/components/ui/illustrations/EmptyMagnifier'
 interface ChannelVideoGridProps {
   channelId: string
   copy: CopyKeys
+  // PR 4.1: when true, a failed/non-OK fetch renders the neutral empty state
+  // instead of the red error + "Try again". Used on catalog-only detail, where
+  // channels are always uncached so the live-fetch path commonly fails on
+  // tier/quota/rate limits — we never want a red error on every catalog card.
+  // Default false keeps outlier-detail behavior byte-for-byte unchanged.
+  gracefulFailure?: boolean
 }
 
 type LoadState =
@@ -18,7 +24,7 @@ type LoadState =
 
 const eyebrow = 'text-[10px] font-semibold tracking-[0.22em] uppercase text-accent-emerald-bright'
 
-export function ChannelVideoGrid({ channelId, copy }: ChannelVideoGridProps) {
+export function ChannelVideoGrid({ channelId, copy, gracefulFailure = false }: ChannelVideoGridProps) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
 
   useEffect(() => {
@@ -30,19 +36,30 @@ export function ChannelVideoGrid({ channelId, copy }: ChannelVideoGridProps) {
         if (!res.ok) {
           const body = await res.json().catch(() => ({}))
           if (!cancelled) {
-            setState({ kind: 'error', message: body?.error ?? `Request failed (${res.status})` })
+            // gracefulFailure: degrade to the neutral empty state (no red error).
+            setState(
+              gracefulFailure
+                ? { kind: 'ready', videos: [] }
+                : { kind: 'error', message: body?.error ?? `Request failed (${res.status})` },
+            )
           }
           return
         }
         const data = (await res.json()) as { videos: ChannelVideo[] }
         if (!cancelled) setState({ kind: 'ready', videos: data.videos ?? [] })
       } catch (err) {
-        if (!cancelled) setState({ kind: 'error', message: (err as Error).message })
+        if (!cancelled) {
+          setState(
+            gracefulFailure
+              ? { kind: 'ready', videos: [] }
+              : { kind: 'error', message: (err as Error).message },
+          )
+        }
       }
     }
     run()
     return () => { cancelled = true }
-  }, [channelId])
+  }, [channelId, gracefulFailure])
 
   return (
     <section className="glass rounded-2xl p-6 mb-6">

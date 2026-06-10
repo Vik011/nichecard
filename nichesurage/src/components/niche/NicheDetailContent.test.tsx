@@ -4,6 +4,11 @@ import { NicheDetailContent } from './NicheDetailContent'
 import { COPY } from '@/components/landing/copy'
 import type { NicheCardData } from '@/lib/types'
 
+// Captures the props ChannelVideoGrid is rendered with, so we can assert the
+// catalog branch passes gracefulFailure (PR 4.1). Mock-prefixed so jest's hoist
+// guard allows the factory below to reference it.
+const mockVideoGridCalls: Array<{ gracefulFailure?: boolean }> = []
+
 // Stub the scan_result_id / score / history-driven children with marker
 // elements so the test can assert which sections render WITHOUT triggering
 // their on-mount fetches. Each marker is wrapped in its own <div> so getByText
@@ -15,7 +20,12 @@ jest.mock('@/components/niche/FreeDemoBanner', () => ({ FreeDemoBanner: () => mo
 jest.mock('@/components/niche/PerformanceChart', () => ({ PerformanceChart: () => mockReact.createElement('div', null, 'PERF_CHART') }))
 jest.mock('@/components/niche/HealthCheckInline', () => ({ HealthCheckInline: () => mockReact.createElement('div', null, 'HEALTH_CHECK') }))
 jest.mock('@/components/niche/AIContentAngles', () => ({ AIContentAngles: () => mockReact.createElement('div', null, 'AI_ANGLES') }))
-jest.mock('@/components/niche/ChannelVideoGrid', () => ({ ChannelVideoGrid: () => mockReact.createElement('div', null, 'VIDEO_GRID') }))
+jest.mock('@/components/niche/ChannelVideoGrid', () => ({
+  ChannelVideoGrid: (props: { gracefulFailure?: boolean }) => {
+    mockVideoGridCalls.push({ gracefulFailure: props.gracefulFailure })
+    return mockReact.createElement('div', null, 'VIDEO_GRID')
+  },
+}))
 jest.mock('@/components/niche/RelatedNiches', () => ({ RelatedNiches: () => mockReact.createElement('div', null, 'RELATED') }))
 
 const copy = COPY.en
@@ -49,6 +59,21 @@ const enrichedNiche: NicheCardData = {
 }
 
 describe('NicheDetailContent — catalogOnly guard (PR 4)', () => {
+  beforeEach(() => {
+    mockVideoGridCalls.length = 0
+  })
+
+  it('passes gracefulFailure to ChannelVideoGrid for a catalog card (PR 4.1)', () => {
+    render(<NicheDetailContent niche={catalogNiche} history={[]} tier="premium" copy={copy} />)
+    expect(mockVideoGridCalls.some((c) => c.gracefulFailure === true)).toBe(true)
+  })
+
+  it('does NOT pass gracefulFailure for a regular (non-catalog) niche (PR 4.1)', () => {
+    render(<NicheDetailContent niche={enrichedNiche} history={[]} tier="premium" copy={copy} />)
+    expect(mockVideoGridCalls.length).toBeGreaterThan(0)
+    expect(mockVideoGridCalls.every((c) => !c.gracefulFailure)).toBe(true)
+  })
+
   it('does not leak fake score / WEAK / 0× spike / NaN for a catalog card', () => {
     render(<NicheDetailContent niche={catalogNiche} history={[]} tier="premium" copy={copy} />)
     expect(screen.queryByText('0')).not.toBeInTheDocument()

@@ -83,7 +83,7 @@ export function NicheDetailContent({
       <div className="animate-fade-in">
         <NicheDetailHeader niche={niche} copy={copy} userTier={tier} catalogOnly />
         <NicheStatsPanel niche={niche} copy={copy} catalogOnly />
-        <ChannelVideoGrid channelId={niche.youtubeChannelId} copy={copy} />
+        <ChannelVideoGrid channelId={niche.youtubeChannelId} copy={copy} gracefulFailure />
         <RelatedNiches niche={niche} userTier={tier} copy={copy} onCardClick={onRelatedClick} />
       </div>
     )
