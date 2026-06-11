@@ -44,6 +44,7 @@ import type {
   VideoSnapshot,
   LifecycleStatus,
 } from '../_shared/types.ts'
+import { toRecentVideoCache, type ChannelVideoCacheItem } from '../_shared/recentVideosCache.ts'
 
 const OUTLIER_DB_FLOOR = parseFloat(Deno.env.get('OUTLIER_DB_FLOOR') ?? '2')
 const OUTLIER_SPIKE_THRESHOLD = parseFloat(Deno.env.get('OUTLIER_SPIKE_THRESHOLD') ?? '5')
@@ -99,6 +100,18 @@ Deno.serve(async (_req: Request) => {
     // Caller-side filter per spec; computeNoveltyScore stays niche-relative.
     const CHANNEL_HISTORICAL_FACTOR = 1.5
 
+    // Recent-uploads cache warming (per-scan accumulator). Each channel's
+    // already-fetched recent videos are mapped to the ChannelVideo cache shape
+    // and batch-upserted into channel_recent_videos after the loop, so the
+    // niche-detail Recent Uploads grid serves from cache (no live YouTube fetch,
+    // no paywall) for every scanned channel. Zero extra YouTube quota — the
+    // fetch already happens below for video_snapshots.
+    const recentVideoCacheRows: {
+      youtube_channel_id: string
+      videos: ChannelVideoCacheItem[]
+      fetched_at: string
+    }[] = []
+
     for (const channel of channels as WatchlistChannel[]) {
       try {
         const stats = statsMap.get(channel.youtube_channel_id)
@@ -114,6 +127,15 @@ Deno.serve(async (_req: Request) => {
         const enriched = await getRecentVideosWithStats(youtubeKeys, stats.uploadsPlaylistId, 20)
         if (enriched.length === 0) continue
         scanned++
+
+        // Warm the Recent Uploads cache for this channel. Pushed here — before
+        // the outlier gate — so catalog-only / non-outlier channels (which
+        // `continue` before producing a scan_results row) still get cached.
+        recentVideoCacheRows.push({
+          youtube_channel_id: channel.youtube_channel_id,
+          videos: toRecentVideoCache(enriched),
+          fetched_at: scannedAt,
+        })
 
         // ─── Phase 2: append-only video_snapshots ingest ─────────────
         // Filter to fresh videos (last 30d) and insert one row per video,
@@ -668,6 +690,25 @@ Deno.serve(async (_req: Request) => {
           .eq('id', channel.id)
       } catch (err) {
         console.error(`Scan failed for channel ${channel.youtube_channel_id}:`, err)
+      }
+    }
+
+    // Batch-warm the Recent Uploads cache. Best-effort: a failure here must
+    // never fail the scan (snapshots, metrics and scan_results are already
+    // persisted). Dedupe by channel so ON CONFLICT can't affect a row twice.
+    if (recentVideoCacheRows.length > 0) {
+      try {
+        const deduped = Array.from(
+          new Map(recentVideoCacheRows.map((r) => [r.youtube_channel_id, r])).values(),
+        )
+        const { error: cacheWarmErr } = await supabase
+          .from('channel_recent_videos')
+          .upsert(deduped, { onConflict: 'youtube_channel_id' })
+        if (cacheWarmErr) {
+          console.error('scan: recent-videos cache warm failed', cacheWarmErr)
+        }
+      } catch (warmErr) {
+        console.error('scan: recent-videos cache warm threw', warmErr)
       }
     }
 
