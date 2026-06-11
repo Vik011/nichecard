@@ -53,9 +53,13 @@ const OUTLIER_SPIKE_THRESHOLD = parseFloat(Deno.env.get('OUTLIER_SPIKE_THRESHOLD
 // least-recently-scanned active channels and advances their last_scanned_at, so
 // successive runs rotate through the whole watchlist. Bounds BOTH the Edge
 // wall-clock ceiling (~150s) and YouTube quota — a full ~591-channel sweep
-// overruns both (~28.6k u/day vs the 10k default). 100/run cycles the ~591
-// active channels in ~6h, well within the 24h Recent-Uploads cache TTL.
-const SCAN_BATCH_SIZE = 100
+// overruns both (~28.6k u/day vs the 10k default). 50/run cycles the ~591
+// active channels in ~12h, well within the 24h Recent-Uploads cache TTL.
+// Sized to 50, not 100: a deployed batch of 100 only reached ~83 channels
+// before the wall-clock cut and skipped the post-loop final cache flush (only
+// the chunk-of-50 was written). 50 completes the loop with margin so the final
+// flush always runs and every scanned channel is warmed.
+const SCAN_BATCH_SIZE = 50
 
 Deno.serve(async (_req: Request) => {
   try {
