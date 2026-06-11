@@ -2,8 +2,7 @@ import type { CopyKeys } from './copy'
 
 interface LiveTickerBarProps {
   copy: CopyKeys
-  spikedLastHour: number
-  nichesSurfacedToday: number
+  spikedLast24h: number
 }
 
 /**
@@ -23,13 +22,12 @@ interface LiveTickerBarProps {
  */
 export function LiveTickerBar({
   copy,
-  spikedLastHour,
-  nichesSurfacedToday,
+  spikedLast24h,
 }: LiveTickerBarProps) {
   return (
     <div
       role="status"
-      aria-label={`Live activity: ${copy.tickerSpikedLastHour(spikedLastHour)}, ${copy.tickerNichesToday(nichesSurfacedToday)}`}
+      aria-label={`Live activity: ${copy.tickerSpikedLast24h(spikedLast24h)}, ${copy.tickerChannelsMonitored}`}
       // mt-16 (= h-16, same as LandingNav height) pushes the ticker
       // BELOW the fixed nav. Without it, the nav (position:fixed) takes
       // no vertical space in flow and the ticker renders at top:0,
@@ -48,15 +46,19 @@ export function LiveTickerBar({
           </span>
         </span>
 
-        {/* Stat 1: spiked last hour */}
+        {/* Stat 1: spiked in the last 24h — wired to the real radar
+            snapshot (scan_results_latest spike count), not hardcoded. */}
         <span className="text-ink-muted whitespace-nowrap">
-          {copy.tickerSpikedLastHour(spikedLastHour)}
+          {copy.tickerSpikedLast24h(spikedLast24h)}
         </span>
 
-        {/* Separator + Stat 2 hidden on small screens to avoid wrap */}
+        {/* Separator + Stat 2 hidden on small screens to avoid wrap.
+            Static claim — channels_watchlist is auth-gated so the count
+            can't be wired anon-side; 591 active rows verified 2026-06-11
+            and the number only grows. */}
         <span aria-hidden className="text-ink-subtle hidden sm:inline">·</span>
         <span className="text-ink-muted whitespace-nowrap hidden sm:inline">
-          {copy.tickerNichesToday(nichesSurfacedToday)}
+          {copy.tickerChannelsMonitored}
         </span>
       </div>
     </div>

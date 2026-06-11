@@ -38,10 +38,11 @@ export const metadata: Metadata = {
     template: "%s — SurgeNiche",
   },
   description:
-    "AI-powered YouTube niche discovery. Hourly scans of 230+ channels. Opportunity scores, viral spike detection, and Shorts + Longform discovery.",
+    "AI-powered faceless YouTube niche discovery. Hourly scans, 250+ faceless channels tracked. Opportunity scores, viral spike detection, and Shorts + Longform discovery.",
   openGraph: {
     title: "SurgeNiche — Find YouTube Niches Before They Explode",
-    description: "AI-powered opportunity scanner. Real data, updated hourly.",
+    description:
+      "AI-powered opportunity scanner for faceless channels. Real data, updated hourly.",
     siteName: "SurgeNiche",
     url: "https://surgeniche.com",
     type: "website",
@@ -50,7 +51,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@surgeniche",
     title: "SurgeNiche — Find YouTube Niches Before They Explode",
-    description: "AI-powered opportunity scanner. Real data, updated hourly.",
+    description:
+      "AI-powered opportunity scanner for faceless channels. Real data, updated hourly.",
   },
 };
 

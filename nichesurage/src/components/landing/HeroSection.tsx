@@ -135,7 +135,7 @@ export function HeroSection({ copy, isLoggedIn = false, radar }: HeroSectionProp
             center, scan interval on the right. Replaces the orphan
             NextScanCountdown chip that lived in the bottom-left corner
             of HeroBackdrop. */}
-        <HeroStatsBar copy={copy} spikingNow={47} />
+        <HeroStatsBar copy={copy} spikedLast24h={radar.channelsLast24h} />
       </div>
     </section>
   )
