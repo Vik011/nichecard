@@ -39,11 +39,7 @@ export function LandingPage({ niches, radar }: LandingPageProps) {
   return (
     <div className="relative min-h-screen text-ink">
       <LandingNav copy={copy} lang={lang} onLangChange={setLang} />
-      <LiveTickerBar
-        copy={copy}
-        spikedLastHour={47}
-        nichesSurfacedToday={radar.channelsLast24h}
-      />
+      <LiveTickerBar copy={copy} spikedLast24h={radar.channelsLast24h} />
       <HeroSection copy={copy} isLoggedIn={isLoggedIn} radar={radar} />
       <Reveal><AppPreviewSection niches={niches} copy={copy} isLoggedIn={isLoggedIn} /></Reveal>
       <Reveal><PainSolutionSection copy={copy} /></Reveal>

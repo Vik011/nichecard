@@ -218,9 +218,8 @@ export const COPY = {
     // channels every hour" data has been moved into the HeroStatsBar
     // (230+ CHANNELS / SCAN), so the sub can pivot straight to value.
     heroSubLeading: 'SurgeNiche flags',
-    heroSubBold: 'the small accounts that started moving',
+    heroSubBold: 'the small faceless channels that started moving',
     heroSubTrailing: ' — before anyone else notices. No keyword guessing, no copy-paste tactics.',
-    heroBadge: '47 channels spiked in the last hour',
     heroCta: 'Try it free',
     heroCta2: 'How it works',
     heroNextScanLabel: 'Next scan in',
@@ -240,17 +239,19 @@ export const COPY = {
     // top-left LIVE chip + bottom-right ping notification with a single
     // multi-stat row.
     tickerLive: 'LIVE',
-    tickerSpikedLastHour: (n: number) =>
-      `${n} channels spiked in the last hour`,
-    tickerNichesToday: (n: number) =>
-      `${n} new niches surfaced today`,
+    tickerSpikedLast24h: (n: number) =>
+      `${n} channels spiked in the last 24h`,
+    tickerChannelsMonitored: '590+ channels monitored',
 
     // Hero stats bar (3 columns) anchoring the bottom of the hero. Frames
-    // the system rhythm: how much we scan, when next scan fires, how
-    // many spikes we caught right now.
-    heroStatsChannelsScan: 'CHANNELS / SCAN',
+    // the system rhythm: how much we track, when next scan fires, how
+    // many spikes we caught in the last day. Channel count verified against
+    // channels_watchlist (active faceless = 252 on 2026-06-11); spike count
+    // is wired to the real radar snapshot, not hardcoded.
+    heroStatsChannelsValue: '250+',
+    heroStatsChannelsScan: 'FACELESS CHANNELS TRACKED',
     heroStatsNextScan: 'Next scan',
-    heroStatsSpikingNow: 'SPIKING NOW',
+    heroStatsSpikingNow: 'SPIKED · LAST 24H',
     heroStatsScanInterval: 'SCAN INTERVAL',
     heroStatsScanIntervalValue: '1h',
 
@@ -269,7 +270,7 @@ export const COPY = {
     solutionItems: [
       '230+ channels under 10k subs analysed every hour',
       'Opportunity scores ranked by spike, engagement, saturation',
-      "Email alert the moment a niche you're tracking starts moving",
+      'A live Spiking Now feed the moment a tracked niche starts moving',
     ],
 
     featuresTitle: 'Everything you need to dominate a niche',
@@ -565,9 +566,8 @@ export const COPY = {
     heroHeadlineEmphasis: 'bevor sie explodieren',
     heroNarrative: 'Ich habe das gebaut, weil Recherche meine Wochenenden gefressen hat.',
     heroSubLeading: 'SurgeNiche markiert',
-    heroSubBold: 'die kleinen Accounts, die zu steigen beginnen',
+    heroSubBold: 'die kleinen Faceless-Kanäle, die zu steigen beginnen',
     heroSubTrailing: ' — bevor es jemand anderes bemerkt. Kein Keyword-Raten, keine Copy-Paste-Taktik.',
-    heroBadge: '47 Kanäle sind in der letzten Stunde gestiegen',
     heroCta: 'Kostenlos ausprobieren',
     heroCta2: 'Wie es funktioniert',
     heroNextScanLabel: 'Nächster Scan in',
@@ -584,14 +584,14 @@ export const COPY = {
       `${n.toLocaleString('de-DE')} Kanäle in den letzten 24 Stunden entdeckt`,
 
     tickerLive: 'LIVE',
-    tickerSpikedLastHour: (n: number) =>
-      `${n} Kanäle stiegen in der letzten Stunde`,
-    tickerNichesToday: (n: number) =>
-      `${n} neue Nischen heute entdeckt`,
+    tickerSpikedLast24h: (n: number) =>
+      `${n} Kanäle stiegen in den letzten 24h`,
+    tickerChannelsMonitored: '590+ Kanäle im Monitoring',
 
-    heroStatsChannelsScan: 'KANÄLE / SCAN',
+    heroStatsChannelsValue: '250+',
+    heroStatsChannelsScan: 'FACELESS-KANÄLE IM TRACKING',
     heroStatsNextScan: 'Nächster Scan',
-    heroStatsSpikingNow: 'STEIGEN GERADE',
+    heroStatsSpikingNow: 'SPIKES · LETZTE 24H',
     heroStatsScanInterval: 'SCAN-INTERVALL',
     heroStatsScanIntervalValue: '1h',
 
@@ -610,7 +610,7 @@ export const COPY = {
     solutionItems: [
       '230+ Kanäle unter 10k Subs werden stündlich analysiert',
       'Opportunity-Scores nach Spike, Engagement und Sättigung sortiert',
-      'E-Mail-Alert in dem Moment, in dem deine getrackte Nische zu steigen beginnt',
+      'Ein Live-„Spiking Now"-Feed in dem Moment, in dem deine getrackte Nische zu steigen beginnt',
     ],
 
     featuresTitle: 'Alles, was du brauchst, um eine Nische zu dominieren',
