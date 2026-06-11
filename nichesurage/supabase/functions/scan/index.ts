@@ -49,6 +49,14 @@ import { toRecentVideoCache, type ChannelVideoCacheItem } from '../_shared/recen
 const OUTLIER_DB_FLOOR = parseFloat(Deno.env.get('OUTLIER_DB_FLOOR') ?? '2')
 const OUTLIER_SPIKE_THRESHOLD = parseFloat(Deno.env.get('OUTLIER_SPIKE_THRESHOLD') ?? '5')
 
+// Deterministic batch rotation: each hourly run scans the SCAN_BATCH_SIZE
+// least-recently-scanned active channels and advances their last_scanned_at, so
+// successive runs rotate through the whole watchlist. Bounds BOTH the Edge
+// wall-clock ceiling (~150s) and YouTube quota — a full ~591-channel sweep
+// overruns both (~28.6k u/day vs the 10k default). 100/run cycles the ~591
+// active channels in ~6h, well within the 24h Recent-Uploads cache TTL.
+const SCAN_BATCH_SIZE = 100
+
 Deno.serve(async (_req: Request) => {
   try {
     const youtubeKeys = getYoutubeKeys()
@@ -63,6 +71,10 @@ Deno.serve(async (_req: Request) => {
       .from('channels_watchlist')
       .select('*')
       .eq('is_active', true)
+      // Rotate the watchlist: take the least-recently-scanned block this run.
+      // NULLS FIRST → never-scanned channels are picked up first.
+      .order('last_scanned_at', { ascending: true, nullsFirst: true })
+      .limit(SCAN_BATCH_SIZE)
 
     if (fetchError) throw fetchError
     if (!channels || channels.length === 0) {
@@ -80,7 +92,6 @@ Deno.serve(async (_req: Request) => {
     // Single timestamp for the entire scan run — every snapshot row inserted
     // in this invocation shares it, giving downstream a clean join key.
     const scannedAt = new Date().toISOString()
-    const now = scannedAt
     // Sprint B Phase 2: drop videos older than 30 days BEFORE snapshot insert.
     // Avoids ingesting stale channel back-catalog noise on first scan.
     const SNAPSHOT_FRESHNESS_CUTOFF_MS = Date.now() - 30 * 24 * 3600 * 1000
@@ -219,10 +230,13 @@ Deno.serve(async (_req: Request) => {
           scannedAt,
         }))
 
-        // ─── Catalog fields update ───────────────────────────────────
+        // ─── Catalog fields + rotation cursor update ─────────────────
         // Written before the outlier gate so ALL scanned channels get
-        // subscriber_count, video_count, and last_upload_at regardless
-        // of whether they produce a scan_results row.
+        // subscriber_count, video_count, last_upload_at AND last_scanned_at,
+        // regardless of whether they produce a scan_results row.
+        // last_scanned_at is the batch-rotation cursor: the SELECT above orders
+        // by it ASC (nulls first), so advancing it here moves this channel to
+        // the back of the queue and the next run picks the next block.
         // max publishedAt via reduce — avoids relying on playlist ordering.
         const latestUploadAt = enriched.reduce(
           (max, v) => v.publishedAt > max ? v.publishedAt : max,
@@ -234,6 +248,7 @@ Deno.serve(async (_req: Request) => {
             subscriber_count: stats.subscriberCount,
             video_count: stats.videoCount,
             last_upload_at: latestUploadAt,
+            last_scanned_at: scannedAt,
           })
           .eq('id', channel.id)
         if (catalogErr) {
@@ -721,11 +736,6 @@ Deno.serve(async (_req: Request) => {
           continue
         }
         persisted++
-
-        await supabase
-          .from('channels_watchlist')
-          .update({ last_scanned_at: now })
-          .eq('id', channel.id)
       } catch (err) {
         console.error(`Scan failed for channel ${channel.youtube_channel_id}:`, err)
       }
