@@ -102,15 +102,48 @@ Deno.serve(async (_req: Request) => {
 
     // Recent-uploads cache warming (per-scan accumulator). Each channel's
     // already-fetched recent videos are mapped to the ChannelVideo cache shape
-    // and batch-upserted into channel_recent_videos after the loop, so the
-    // niche-detail Recent Uploads grid serves from cache (no live YouTube fetch,
-    // no paywall) for every scanned channel. Zero extra YouTube quota — the
-    // fetch already happens below for video_snapshots.
+    // and flushed into channel_recent_videos, so the niche-detail Recent Uploads
+    // grid serves from cache (no live YouTube fetch, no paywall) for every
+    // scanned channel. Zero extra YouTube quota — the fetch already happens
+    // below for video_snapshots.
+    //
+    // Flushed in CHUNKS during the loop, not as one batch at the very end: the
+    // scan runs near the edge-function wall-clock ceiling (~150s for ~591
+    // channels), so a single trailing upsert was being killed before it ran
+    // (channel_recent_videos stayed stale with no error log). Chunked flushes
+    // write while there is still time budget and give partial coverage even if
+    // the run is cut short. Best-effort throughout: a flush failure is logged
+    // and never throws / never aborts the scan.
+    const RECENT_VIDEO_CACHE_FLUSH_SIZE = 50
     const recentVideoCacheRows: {
       youtube_channel_id: string
       videos: ChannelVideoCacheItem[]
       fetched_at: string
     }[] = []
+    const flushRecentVideoCacheRows = async (reason: string): Promise<void> => {
+      if (recentVideoCacheRows.length === 0) return
+      // Dedupe by channel (last-wins) so ON CONFLICT can't affect a row twice,
+      // then clear the buffer immediately (bounded memory; best-effort, no retry).
+      const deduped = Array.from(
+        new Map(recentVideoCacheRows.map((r) => [r.youtube_channel_id, r])).values(),
+      )
+      recentVideoCacheRows.length = 0
+      try {
+        const { error: cacheWarmErr } = await supabase
+          .from('channel_recent_videos')
+          .upsert(deduped, { onConflict: 'youtube_channel_id' })
+        if (cacheWarmErr) {
+          console.error('scan: recent-videos cache warm failed', cacheWarmErr)
+        } else {
+          console.log(
+            'scan: recent-videos cache warm flushed',
+            JSON.stringify({ reason, count: deduped.length }),
+          )
+        }
+      } catch (warmErr) {
+        console.error('scan: recent-videos cache warm threw', warmErr)
+      }
+    }
 
     for (const channel of channels as WatchlistChannel[]) {
       try {
@@ -136,6 +169,11 @@ Deno.serve(async (_req: Request) => {
           videos: toRecentVideoCache(enriched),
           fetched_at: scannedAt,
         })
+        // Flush in chunks DURING the loop so warming completes while there is
+        // still wall-clock budget (a single trailing batch was being killed).
+        if (recentVideoCacheRows.length >= RECENT_VIDEO_CACHE_FLUSH_SIZE) {
+          await flushRecentVideoCacheRows('chunk')
+        }
 
         // ─── Phase 2: append-only video_snapshots ingest ─────────────
         // Filter to fresh videos (last 30d) and insert one row per video,
@@ -693,24 +731,10 @@ Deno.serve(async (_req: Request) => {
       }
     }
 
-    // Batch-warm the Recent Uploads cache. Best-effort: a failure here must
-    // never fail the scan (snapshots, metrics and scan_results are already
-    // persisted). Dedupe by channel so ON CONFLICT can't affect a row twice.
-    if (recentVideoCacheRows.length > 0) {
-      try {
-        const deduped = Array.from(
-          new Map(recentVideoCacheRows.map((r) => [r.youtube_channel_id, r])).values(),
-        )
-        const { error: cacheWarmErr } = await supabase
-          .from('channel_recent_videos')
-          .upsert(deduped, { onConflict: 'youtube_channel_id' })
-        if (cacheWarmErr) {
-          console.error('scan: recent-videos cache warm failed', cacheWarmErr)
-        }
-      } catch (warmErr) {
-        console.error('scan: recent-videos cache warm threw', warmErr)
-      }
-    }
+    // Final flush for the remainder (< RECENT_VIDEO_CACHE_FLUSH_SIZE). Correctness
+    // no longer depends on reaching here — the chunk flushes above already warmed
+    // most channels during the loop; this just catches the tail. Best-effort.
+    await flushRecentVideoCacheRows('final')
 
     return new Response(JSON.stringify({ success: true, scanned, persisted }), {
       headers: { 'Content-Type': 'application/json' },
