@@ -58,7 +58,7 @@ Sva mesta moraju imati key dostupan u runtime-u.
 - End-to-end UI screenshot pre claim-a "live"
 
 ### Migration numbering
-Najnoviji: `0054_admin_rls.sql` (Phase 0a admin foundation). Numerisi sledeću kao `0055_*.sql`. Migration se primenjuje **manuelno** preko Supabase SQL editora — `db push` se NE koristi u ovom projektu (CI nije setup). Note: 0052 is intentionally skipped (rate limit moved to Upstash Redis in Phase 0a review).
+Najnoviji: `0064_consolidate_scan_cron.sql` (scan cron consolidation — vidi "Scan cadence" sekciju dole). Numerisi sledeću kao `0065_*.sql`. Migration se primenjuje **manuelno** preko Supabase SQL editora — `db push` se NE koristi u ovom projektu (CI nije setup). Note: 0052 is intentionally skipped (rate limit moved to Upstash Redis in Phase 0a review).
 
 ---
 
@@ -77,7 +77,7 @@ Najnoviji: `0054_admin_rls.sql` (Phase 0a admin foundation). Numerisi sledeću k
 - **Webhook idempotency:** `stripe_webhook_events` table sa `event_id` PRIMARY KEY. Handler radi INSERT-then-process; PG_UNIQUE_VIOLATION (23505) → 200 duplicate bez rerun. Na processing failure → DELETE claim row da Stripe retry može da prođe.
 - **Webhook URL:** `https://surgeniche.com/api/stripe/webhook` (production) — Stripe Dashboard → Webhooks
 - **Event types:** `customer.subscription.created/updated/deleted`. `subscription.deleted` flipuje tier nazad na FREE kad pretplata istekne na period end.
-- **Live mode aktivacija:** zahteva business info + bank. Nije aktivirano (sredinom maja 2026).
+- **Live mode:** AKTIVAN (real payments). Webhook je jedini tier-fulfillment put. (Ranija beleška „nije aktivirano sredinom maja 2026" je zastarela.)
 
 ### Stripe price env mapping
 - `STRIPE_PRICE_BASIC_MONTHLY` (€9), `STRIPE_PRICE_BASIC_YEARLY` (€90)
@@ -377,9 +377,13 @@ Phases 7A–7C shipped in commits `cc155b5`, `162127e`, `e4db2aa`, `dc5f459` (ch
 
 Migration `0007_cron_discover_scan.sql` originally scheduled `daily-scan` at 03:30 UTC (1×/day) — fine for a static channel-quality scanner but starves the Sprint B trend engine: time-series snapshots need ≥2 readings to compute velocity_delta, ≥3 for view_acceleration. With 1×/day, first velocity reading takes 24h.
 
-Migration `0026_scan_cadence_increase.sql` reschedules to `30 */6 * * *` (4×/day at 03:30, 09:30, 15:30, 21:30 UTC). Quota math: 104 channels × 25 videos / 50 per call ≈ 52 units per scan × 4 ticks = 208 units/day. Headroom remains under YouTube's 10k/key/day. If we add `/api/discovery/expand` later, audit quota again.
+Migration `0026_scan_cadence_increase.sql` raised `daily-scan` to `30 */6 * * *` (4×/day).
 
-The `daily-scan` jobname is intentionally retained across migrations so `cron.job_run_details` history stays linked to one logical job. Bump cadence further (every 4h or every 2h) only after Phase 5b ships tier-aware throttling so the cold pool doesn't burn quota uselessly.
+**CANONICAL (post-0064): `hourly-scan` @ `0 * * * *` = 24 scan runs/day.** Migration `0064_consolidate_scan_cron.sql` consolidated the scan cron: production had drifted to running scan on TWO jobs at once — `hourly-scan` (hand-created in the SQL editor, never in the repo) AND `daily-scan` (the 0026 6-hourly job) — double-scanning 4× extra/day. 0064 codifies `hourly-scan` with the Vault helper (`public.invoke_edge_function('scan')`) and retires `daily-scan`. The `scan` edge function sweeps **all** `is_active` channels in `channels_watchlist` (no limit) — that's **~591** as of 2026-06-11, not the 104 the old 0026 estimate assumed.
+
+**Quota:** the old "52 units × 4 ticks = 208 units/day" figure is OBSOLETE (wrong channel count AND wrong run count — scan runs 24×/day hourly, over ~591 channels). Do NOT trust an estimate here — read actual usage from the **Google Cloud Console → YouTube Data API v3 → Quotas** dashboard. Note: pg_cron `status='succeeded'` only means the HTTP POST was queued (`pg_net` is fire-and-forget), NOT that the scan edge function or its YouTube calls succeeded; confirm scan health via fresh rows in `scan_results` hourly buckets instead.
+
+⚠️ Latent capacity question (not yet addressed): 24 hourly sweeps over ~591 channels may sit near the daily quota — check the dashboard before bumping cadence or expanding the universe (`/api/discovery/expand`).
 
 ### Open follow-ups (queued, not blockers for ship)
 
