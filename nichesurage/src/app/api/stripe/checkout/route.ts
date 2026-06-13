@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { stripe } from '@/lib/stripe/client'
 import { resolvePriceId, isValidTier, isValidInterval } from '@/lib/stripe/prices'
 import { captureServer } from '@/lib/analytics/posthog-server'
@@ -32,7 +33,12 @@ export async function POST(req: Request) {
       })
       customerId = customer.id
 
-      const { error: updateError } = await supabase
+      // stripe_customer_id is a billing-linkage field: migration 0066 freezes it
+      // for the `authenticated` role (writing it as the user would allow pointing
+      // one's row at another customer → billing-portal takeover). So this write
+      // must go through service_role. Scoped to the caller's own row via .eq(id).
+      const service = createServiceClient()
+      const { error: updateError } = await service
         .from('users')
         .update({ stripe_customer_id: customerId })
         .eq('id', user.id)
