@@ -34,18 +34,21 @@ export async function fetchRadarPings(): Promise<RadarSnapshot> {
   const sincePings = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
   // 1) snapshot of recent outlier pings.
-  //    NOTE: we deliberately do NOT use a PostgREST embedded select like
-  //    `niche_clusters(label)` here. The /discover page uses that pattern
-  //    successfully but it queries with an authenticated browser client.
-  //    fetchRadarPings runs at build/revalidate time with the anon key via
-  //    createStaticClient, and the embedded join was returning an empty
-  //    result set in production despite labeled rows existing in the DB
-  //    (the parallel count query below — which doesn't traverse the join —
-  //    consistently returned non-zero, confirming anon CAN read scan_results
-  //    but the embed wasn't materializing). Two separate queries + a manual
-  //    Map join is identical in result and removes the moving part.
-  const { data: scanRows, error } = await supabase
-    .from('scan_results_latest')
+  //    PR-C.1 (C1): anon can no longer read scan_results_latest directly
+  //    (0068 revokes it), so the ping pool now comes from the safe
+  //    public_landing_niches() RPC (0067), which returns the same
+  //    non-identity columns this radar needs (id, outlier_ratio, language,
+  //    content_type, cluster_id) and applies the same latest-per-channel +
+  //    quality-floor logic the old view did.
+  //
+  //    Cluster labels are still hydrated in a SEPARATE query against
+  //    niche_clusters below (anon read of niche_clusters is unchanged by
+  //    PR-C.1). We deliberately do NOT use a PostgREST embedded select like
+  //    `niche_clusters(label)` here: the embedded join returned an empty
+  //    result set under the anon key in production despite labeled rows
+  //    existing, so the two-query + manual Map join is kept.
+  const { data: scanData, error } = await supabase
+    .rpc('public_landing_niches')
     .select('id, outlier_ratio, language, content_type, cluster_id')
     .eq('is_spike', true)
     .gte('scanned_at', sincePings)
@@ -53,10 +56,14 @@ export async function fetchRadarPings(): Promise<RadarSnapshot> {
     .order('outlier_ratio', { ascending: false })
     .limit(50)
 
-  if (error || !scanRows) {
+  if (error || !scanData) {
     if (error) console.error('[fetchRadarPings] scans', error.message)
     return { pings: [], channelsLast24h: 0 }
   }
+
+  // The static (anon) client is untyped, so the RPC result comes back loosely
+  // typed; the projection above guarantees these columns.
+  const scanRows = scanData as unknown as ScanRow[]
 
   // Hydrate cluster labels in a second query and build a lookup Map.
   const clusterIds = Array.from(
@@ -94,10 +101,10 @@ export async function fetchRadarPings(): Promise<RadarSnapshot> {
 
   // 2) total count of channels with a spike in the last 24h (for the
   //    "Live · N channels in last 24h" counter — kept at 24h because the
-  //    counter is a freshness signal, not a curation feed).
+  //    counter is a freshness signal, not a curation feed). Same safe RPC as
+  //    above; count + head go in the rpc() options arg.
   const { count, error: countError } = await supabase
-    .from('scan_results_latest')
-    .select('id', { count: 'exact', head: true })
+    .rpc('public_landing_niches', undefined, { count: 'exact', head: true })
     .eq('is_spike', true)
     .gte('scanned_at', since24h)
 
