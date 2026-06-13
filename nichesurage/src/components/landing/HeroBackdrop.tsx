@@ -102,10 +102,13 @@ export function HeroBackdrop({ copy, pings, channelsLast24h }: HeroBackdropProps
                   <div className="text-ink text-lg font-semibold tracking-tight tabular-nums leading-none mb-1.5">
                     {current.outlierRatio.toFixed(1)}× outlier
                   </div>
+                  {/* PR-C.1 (J1): the label is a coarse, content-type-derived
+                      tag from fetchRadarPings (e.g. "Faceless Long-form"), never
+                      a real niche/cluster name. It already encodes the format,
+                      so the standalone format segment was dropped to avoid a
+                      redundant "Faceless Long-form · Longform" read. */}
                   <div className="text-ink-muted text-[11px] truncate">
                     {current.clusterLabel ?? copy.radarUnclusteredLabel}
-                    <span className="text-ink-subtle mx-1">·</span>
-                    {current.contentType === 'shorts' ? copy.radarFormatShorts : copy.radarFormatLongform}
                     <span className="text-ink-subtle mx-1">·</span>
                     {current.language?.toUpperCase()}
                   </div>
