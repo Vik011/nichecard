@@ -1,0 +1,56 @@
+-- 0066: freeze privileged public.users columns from REST writes — security fix C3.
+--
+-- WHY: the users UPDATE policy (0001) is `using (auth.uid() = id)` with no
+-- WITH CHECK and no column restriction, and Supabase grants `authenticated` a
+-- table-level UPDATE by default. So a logged-in user could
+--   PATCH /rest/v1/users?id=eq.<self> {"tier":"premium"}     -- free upgrade
+--   PATCH ...                          {"is_admin":true}      -- admin escalation
+--   PATCH ...                          {"stripe_customer_id":"cus_victim"}
+-- The last one is a billing-portal takeover: /api/stripe/portal opens a Stripe
+-- billing portal for the row's stripe_customer_id.
+--
+-- WHAT: remove the broad table-level UPDATE from anon/authenticated and grant
+-- back column-level UPDATE on ONLY the one column a normal authenticated path
+-- legitimately writes (welcome_email_sent_at, set in src/app/auth/callback).
+-- Every privileged column (tier, tier_source, tier_expires_at, is_admin,
+-- banned_at, banned_reason, billing_interval, subscription_status,
+-- stripe_subscription_id, subscription_current_period_end, stripe_customer_id,
+-- daily_searches_*, email, created_at, first_login_at) becomes un-writable by
+-- anon/authenticated. service_role is unaffected (Stripe webhook + the moved
+-- checkout stripe_customer_id write keep working).
+--
+-- COMPANION CODE CHANGE (same PR): src/app/api/stripe/checkout/route.ts now
+-- writes stripe_customer_id via createServiceClient() instead of the
+-- authenticated server client, so checkout still links customers after this
+-- column is frozen. SELECTs on users are unchanged (SELECT policy untouched).
+--
+-- DEPLOY: apply manually in the Supabase SQL editor (no db push / CI here).
+-- Rollback: 0066_freeze_privileged_user_columns_DOWN.sql.
+
+REVOKE UPDATE ON public.users FROM anon, authenticated;
+GRANT  UPDATE (welcome_email_sent_at) ON public.users TO authenticated;
+
+-- ── Pre-apply baseline (run BEFORE, to record the starting grants) ───────────
+--   SELECT grantee, privilege_type FROM information_schema.role_table_grants
+--    WHERE table_schema='public' AND table_name='users' AND privilege_type='UPDATE'
+--    ORDER BY grantee;
+--   SELECT grantee, column_name FROM information_schema.column_privileges
+--    WHERE table_schema='public' AND table_name='users' AND privilege_type='UPDATE'
+--    ORDER BY grantee, column_name;
+--
+-- ── Post-apply verification ──────────────────────────────────────────────────
+--   SELECT
+--     has_table_privilege('authenticated','public.users','UPDATE')                          AS auth_table_update,   -- false
+--     has_column_privilege('authenticated','public.users','tier','UPDATE')                  AS auth_tier,           -- false
+--     has_column_privilege('authenticated','public.users','is_admin','UPDATE')              AS auth_is_admin,       -- false
+--     has_column_privilege('authenticated','public.users','stripe_customer_id','UPDATE')    AS auth_customer,       -- false
+--     has_column_privilege('authenticated','public.users','welcome_email_sent_at','UPDATE') AS auth_welcome,        -- true
+--     has_table_privilege('service_role','public.users','UPDATE')                           AS service_update;      -- true
+--
+-- ── Functional (end-to-end, as a logged-in non-paying user) ──────────────────
+--   PATCH /rest/v1/users?id=eq.<self> {"tier":"premium"}            -> denied / no-op
+--   PATCH /rest/v1/users?id=eq.<self> {"is_admin":true}            -> denied / no-op
+--   PATCH /rest/v1/users?id=eq.<self> {"stripe_customer_id":"x"}   -> denied / no-op
+--   welcome-email flag write (auth/callback) still succeeds
+--   checkout still creates+links a customer (now via service_role)
+--   Stripe webhook tier updates still succeed (service_role)
