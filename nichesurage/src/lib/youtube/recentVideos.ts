@@ -19,16 +19,20 @@ interface PlaylistItemsItem {
 
 interface VideosListItem {
   id: string
-  snippet: {
-    title: string
-    publishedAt: string
-    thumbnails: {
+  // snippet/statistics are optional: YouTube's videos.list can return a 200 with
+  // items missing these sub-objects (stats-disabled, deleted, region-blocked).
+  // Treating them as guaranteed-present throws on a partial response and 502s the
+  // whole channel-videos fetch for a paying user. Guard + skip instead.
+  snippet?: {
+    title?: string
+    publishedAt?: string
+    thumbnails?: {
       high?: { url: string }
       medium?: { url: string }
       default?: { url: string }
     }
   }
-  statistics: { viewCount?: string }
+  statistics?: { viewCount?: string }
 }
 
 async function ytFetch<T>(url: string): Promise<T> {
@@ -74,16 +78,20 @@ export async function fetchRecentVideos(
   const videosData = await ytFetch<{ items?: VideosListItem[] }>(videosUrl.toString())
 
   return (videosData.items ?? [])
+    // Skip malformed items (no snippet / no publishedAt) rather than throwing.
+    .filter((it): it is VideosListItem & { snippet: NonNullable<VideosListItem['snippet']> } =>
+      Boolean(it.snippet?.publishedAt),
+    )
     .map(it => ({
       id: it.id,
-      title: it.snippet.title,
+      title: it.snippet.title ?? '',
       thumbnail:
-        it.snippet.thumbnails.high?.url ??
-        it.snippet.thumbnails.medium?.url ??
-        it.snippet.thumbnails.default?.url ??
+        it.snippet.thumbnails?.high?.url ??
+        it.snippet.thumbnails?.medium?.url ??
+        it.snippet.thumbnails?.default?.url ??
         '',
-      viewCount: parseInt(it.statistics.viewCount ?? '0', 10),
-      publishedAt: it.snippet.publishedAt,
+      viewCount: parseInt(it.statistics?.viewCount ?? '0', 10),
+      publishedAt: it.snippet.publishedAt as string,
     }))
     .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
 }
