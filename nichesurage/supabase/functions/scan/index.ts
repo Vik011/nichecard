@@ -91,6 +91,25 @@ Deno.serve(async (_req: Request) => {
     const statsArray = await getChannelStats(youtubeKeys, channelIds)
     const statsMap = new Map(statsArray.map(s => [s.channelId, s]))
 
+    // Auto-evict channels YouTube no longer returns. channels.list silently omits
+    // terminated/deleted/suspended channels (no error). getChannelStats throws on
+    // quota/API failures (see _shared/youtube.ts tryFetchWithFallback), so reaching
+    // here means the response was valid — a channel in our batch but absent from it
+    // is definitively gone. Reversible (is_active can be set back to true) and
+    // matches the discovery/evict eviction semantics ({ is_active, evicted_at }).
+    const missingIds = channelIds.filter(id => !statsMap.has(id))
+    if (missingIds.length > 0) {
+      const { error: evictErr } = await supabase
+        .from('channels_watchlist')
+        .update({ is_active: false, evicted_at: new Date().toISOString() })
+        .in('youtube_channel_id', missingIds)
+      if (evictErr) {
+        console.error('scan: auto-evict failed', evictErr)
+      } else {
+        console.log('scan_evict_terminated', JSON.stringify({ count: missingIds.length, ids: missingIds }))
+      }
+    }
+
     let scanned = 0
     let persisted = 0
     // Single timestamp for the entire scan run — every snapshot row inserted
