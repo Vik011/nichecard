@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { mapRow } from '@/lib/supabase/queries'
+import { getAllowedChannelIds } from '@/lib/discover/channelGate'
 import { SavedNichesList } from './SavedNichesList'
 import { ManageSubscriptionButton } from './ManageSubscriptionButton'
 import type { DbScanResult, UserTier } from '@/lib/types'
@@ -28,9 +29,16 @@ export default async function DashboardPage() {
   const email = profile?.email ?? user.email ?? ''
   const hasSubscription = Boolean(profile?.stripe_subscription_id)
 
-  const savedNiches = (savedResult.data ?? []).map(item =>
-    mapRow(item.scan_results as unknown as DbScanResult)
-  )
+  // Gate saved niches through the same faceless/active/not-evicted set every other
+  // in-app surface uses. user_saved_niches pins scan_results indefinitely (0015
+  // retention never prunes saved rows), so a channel that later gets
+  // YouTube-terminated and auto-evicted would otherwise still render here as a
+  // "live" card with stale metrics and a dead YouTube link. Fail-closed: a gate
+  // error returns [] → no stale rows shown.
+  const allowedSet = new Set(await getAllowedChannelIds(supabase))
+  const savedNiches = (savedResult.data ?? [])
+    .map(item => mapRow(item.scan_results as unknown as DbScanResult))
+    .filter(niche => allowedSet.has(niche.youtubeChannelId))
 
   const tierLabel: Record<UserTier, string> = {
     free: 'Free',
