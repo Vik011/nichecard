@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from './client'
 import type { SearchFilters, ChannelAge, SpikePoint, TrendingCluster } from '@/lib/types'
 import type { NicheCardData, ShortsNicheCardData, LongformNicheCardData } from '@/lib/types'
@@ -461,12 +462,17 @@ export async function fetchRelatedNiches(source: NicheCardData, limit = 3): Prom
   return mapped
 }
 
-export async function fetchNicheById(id: string): Promise<NicheCardData | null> {
+export async function fetchNicheById(
+  id: string,
+  client?: SupabaseClient,
+): Promise<NicheCardData | null> {
   // PR 4: catalog-only cards use synthetic `wl:<youtube_channel_id>` ids that
   // have no scan_results row. Resolve them from channels_watchlist instead.
-  if (id.startsWith('wl:')) return fetchCatalogNicheById(id.slice(3))
+  // PR-C.2: an injected server client lets the detail endpoint run this
+  // server-side before redaction; the client-side path passes nothing.
+  if (id.startsWith('wl:')) return fetchCatalogNicheById(id.slice(3), client)
 
-  const supabase = createClient()
+  const supabase = client ?? createClient()
   // Faceless catalog gate: a direct niche-detail lookup must not resolve a
   // face/uncertain/evicted channel (a guessed or shared URL would otherwise
   // leak one that never appears in the gated feeds).
@@ -490,8 +496,11 @@ export async function fetchNicheById(id: string): Promise<NicheCardData | null> 
  * `wl:` id can only resolve a channel that is faceless + active + not-evicted
  * AND has populated catalog fields. Anything else returns null.
  */
-async function fetchCatalogNicheById(channelId: string): Promise<NicheCardData | null> {
-  const supabase = createClient()
+async function fetchCatalogNicheById(
+  channelId: string,
+  client?: SupabaseClient,
+): Promise<NicheCardData | null> {
+  const supabase = client ?? createClient()
   const allowedIds = await getAllowedChannelIds(supabase)
   if (!allowedIds.includes(channelId)) return null
   const { data, error } = await supabase

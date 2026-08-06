@@ -12,6 +12,7 @@ import { NicheDetailContent } from '@/components/niche/NicheDetailContent'
 import { fetchNicheById, fetchSpikeHistory } from '@/lib/supabase/queries'
 import { fetchSavedNicheIds } from '@/lib/supabase/savedNiches'
 import { fetchDiscoverFeed, type DiscoverSurface } from '@/lib/discover/fetchDiscoverFeed'
+import { isServerFeedEnabled, fetchDiscoverFeedApi, fetchNicheByIdApi } from '@/lib/discover/discoverApi'
 import { CATEGORY_BUCKETS, bucketToEnumValues, type CategoryBucketId } from '@/lib/discover/categoryBuckets'
 import { CategoryFilterChips } from '@/components/niche/CategoryFilterChips'
 import { DiscoverSurfaceTabs } from '@/components/niche/DiscoverSurfaceTabs'
@@ -99,11 +100,14 @@ function DiscoverPageInner() {
       return
     }
     let cancelled = false
-    fetchNicheById(todayPinId).then((pin) => {
+    const pinFetch = isServerFeedEnabled()
+      ? fetchNicheByIdApi(todayPinId)
+      : fetchNicheById(todayPinId)
+    pinFetch.then((pin) => {
       if (cancelled) return
       setPinNiche(pin) // pin may be null (genuinely unavailable)
       setPinResolved(true)
-      if (pin) {
+      if (pin && pin.youtubeChannelId) {
         fetchSpikeHistory(pin.youtubeChannelId).then((points) => {
           if (cancelled) return
           setHistories((prev) => {
@@ -157,18 +161,27 @@ function DiscoverPageInner() {
     setVisibleCount(VISIBLE_STEP)
     setLoading(true)
     setError(null)
-    const { data, error: fetchError } = await fetchDiscoverFeed({
-      surface: validSurface,
-      categories: bucketToEnumValues(validCategory),
-      tier: userTier,
-    })
+    // PR-C.2: when the flag is on, read the feed from the authenticated server
+    // endpoint (identity already redacted server-side). Default off → existing
+    // client-side path (rollback). Both return the same { data, error } shape.
+    const { data, error: fetchError } = isServerFeedEnabled()
+      ? await fetchDiscoverFeedApi({
+          surface: validSurface,
+          categories: bucketToEnumValues(validCategory),
+        })
+      : await fetchDiscoverFeed({
+          surface: validSurface,
+          categories: bucketToEnumValues(validCategory),
+          tier: userTier,
+        })
     setResults(data)
     setError(fetchError)
     setLoading(false)
     if (data.length > 0) {
-      // PR 4: catalog-only cards (wl: ids) have no spike history — skip the
-      // per-card fetch for them so we don't fan out queries that only return [].
-      const enriched = data.filter((n) => !n.id.startsWith('wl:'))
+      // PR 4: catalog-only cards (wl: ids) have no spike history — skip them.
+      // PR-C.2: redacted/locked rows carry an empty youtubeChannelId, so skip
+      // those too (no identity-derived history fetch for locked cards).
+      const enriched = data.filter((n) => !n.id.startsWith('wl:') && n.youtubeChannelId)
       const points = await Promise.all(
         enriched.map((n) => fetchSpikeHistory(n.youtubeChannelId)),
       )
@@ -245,19 +258,32 @@ function DiscoverPageInner() {
     let cancelled = false
     setModalLoading(true)
     ;(async () => {
-      const n = await fetchNicheById(nicheParam)
+      // PR-C.2: prefer an already-loaded feed row (already full-or-redacted per
+      // entitlement) so a revealed card stays full and a locked card stays
+      // redacted without a second identity fetch. Fall back to the detail
+      // endpoint (B2 rule) for context-free / deep-link opens.
+      const fromFeed = enrichedResults.find((r) => r.id === nicheParam)
+      const n = fromFeed
+        ?? (isServerFeedEnabled() ? await fetchNicheByIdApi(nicheParam) : await fetchNicheById(nicheParam))
       if (cancelled) return
       if (!n) {
         setModalLoading(false)
         return
       }
       setModalNiche(n)
-      const h = await fetchSpikeHistory(n.youtubeChannelId)
-      if (cancelled) return
-      setModalHistory(h)
+      // Gate spike-history on a present youtubeChannelId — redacted/locked rows
+      // carry '' and must not fetch identity-derived history.
+      if (n.youtubeChannelId) {
+        const h = await fetchSpikeHistory(n.youtubeChannelId)
+        if (cancelled) return
+        setModalHistory(h)
+      } else {
+        setModalHistory([])
+      }
       setModalLoading(false)
     })()
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nicheParam])
 
   const openNicheModal = useCallback((id: string) => {

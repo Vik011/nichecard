@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { mapRow, mapWatchlistRow, type WatchlistCatalogRow } from '@/lib/supabase/queries'
 import type { DbScanResult } from '@/lib/types/database'
@@ -154,11 +155,15 @@ function applySpikeFreshnessGate(
  */
 export async function fetchDiscoverFeed(
   opts: FetchDiscoverFeedOptions,
+  client?: SupabaseClient,
 ): Promise<{ data: NicheCardData[]; error: string | null }> {
   const tier = opts.tier ?? 'free'
   const isPremium = tier === 'premium'
   const limit = opts.limit ?? (isPremium ? PREMIUM_LIMIT : DEFAULT_LIMIT)
-  const supabase = createClient()
+  // PR-C.2: callers (the server endpoint) inject a trusted server client so the
+  // feed runs server-side and redaction can happen before serialization. The
+  // existing client-side path passes nothing and keeps the browser client.
+  const supabase = client ?? createClient()
   const categories = opts.categories ?? []
 
   // Resolve the surface. New `surface` param wins; otherwise fall back to
@@ -192,7 +197,7 @@ export async function fetchDiscoverFeed(
 }
 
 async function fetchWatchlistWindow(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   limit: number,
   windowDays: number,
   categories: string[],
@@ -281,7 +286,7 @@ async function fetchWatchlistWindow(
 // (The view already proves freshness via video_snapshots.scanned_at through the
 // last_metric_age_hours ≤ 26 condition inside current_eligible.)
 async function fetchSpikingNowMomentum(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   limit: number,
   allowedIds: string[],
 ): Promise<{ data: NicheCardData[]; error: string | null }> {
@@ -340,7 +345,7 @@ async function fetchSpikingNowMomentum(
 }
 
 async function fetchAllMode(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   limit: number,
   categories: string[] = [],
   spikingOnly = false,
@@ -463,7 +468,7 @@ async function fetchAllMode(
  * Mutates the input array in place. Idempotent on re-call.
  */
 export async function attachCategories(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   niches: NicheCardData[],
 ): Promise<void> {
   if (niches.length === 0) return
@@ -518,7 +523,7 @@ function compareSpikingTab(a: NicheCardData, b: NicheCardData): number {
  * never fall back to legacy on the momentum surface). Mutates in place.
  */
 export async function attachMomentum(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient,
   niches: NicheCardData[],
 ): Promise<void> {
   if (niches.length === 0) return
